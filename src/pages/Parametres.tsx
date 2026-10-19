@@ -1,5 +1,31 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Download, FileSpreadsheet, FileText, Save, ShieldCheck, Users, UserCog, Trash2, Loader2, CheckCircle2, Building2, Image as ImageIcon, Sun, Moon, Monitor, Languages, Plus, X, UserPlus, ShieldAlert } from 'lucide-react';
+import {
+  Upload,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Save,
+  ShieldCheck,
+  Users,
+  UserCog,
+  Trash2,
+  Loader2,
+  CheckCircle2,
+  Building2,
+  Image as ImageIcon,
+  Sun,
+  Moon,
+  Monitor,
+  Languages,
+  Plus,
+  X,
+  UserPlus,
+  ShieldAlert,
+  Database,
+  Sliders,
+  Layers,
+  KeyRound,
+} from 'lucide-react';
 import { useAuth, type Profile } from '@/lib/auth';
 import { canManageUsers, ROLE_LABELS, type Role } from '@/lib/permissions';
 import { supabase, type ProduitWithCategorie, type Categorie, type Fournisseur, type Client, type MouvementWithProduit, type CommandeWithRelations, type Entreprise } from '@/lib/supabase';
@@ -11,16 +37,27 @@ import { ModulesParEntreprise } from '@/components/ModulesParEntreprise';
 import { usePrefs, type ThemeMode } from '@/lib/prefs';
 import { Card, Callout, InfoBox } from '@/components/adminlte';
 
+export type ParametresTab = 'donnees' | 'preferences' | 'entreprise' | 'utilisateurs' | 'modules' | 'integrations';
+export type DonneesSubTab = 'all' | 'export' | 'import';
+
 export function Parametres({
   entreprise,
   entreprises = [],
   onEntrepriseSaved,
   onRefreshEntreprises,
+  activeTab = 'donnees',
+  onTabChange,
+  donneesSubTab = 'all',
+  onDonneesSubTabChange,
 }: {
   entreprise: Entreprise | null;
   entreprises?: Entreprise[];
   onEntrepriseSaved: (e: Entreprise) => void;
   onRefreshEntreprises?: () => void;
+  activeTab?: ParametresTab;
+  onTabChange?: (tab: ParametresTab) => void;
+  donneesSubTab?: DonneesSubTab;
+  onDonneesSubTabChange?: (sub: DonneesSubTab) => void;
 }) {
   const { profile, refreshProfile } = useAuth();
   const { t, lang, setLang, theme, setTheme } = usePrefs();
@@ -294,154 +331,390 @@ export function Parametres({
     await toggleActive(deleteUser);
   };
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Paramètres</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Import, export, sauvegarde et gestion des utilisateurs</p>
-      </div>
+  const [localTab, setLocalTab] = useState<ParametresTab>(activeTab);
+  const [localDonneesSubTab, setLocalDonneesSubTab] = useState<DonneesSubTab>(donneesSubTab);
 
-      {/* Import / Export Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card
-          title="Exports de Données & Sauvegardes"
-          variant="primary"
-          outline={true}
-          collapsible={true}
-          icon={<Download className="w-4 h-4 text-[#0d6efd]" />}
-        >
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Catalogue Produits</p>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => doExportProduits('csv')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-outline-secondary disabled:opacity-50"><FileText className="w-3.5 h-3.5" /> CSV</button>
-                <button onClick={() => doExportProduits('excel')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"><FileSpreadsheet className="w-3.5 h-3.5" /> Excel</button>
-                <button onClick={() => doExportProduits('pdf')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-danger disabled:opacity-50"><Save className="w-3.5 h-3.5" /> PDF</button>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Mouvements de stock</p>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => doExportStock('csv')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-outline-secondary disabled:opacity-50"><FileText className="w-3.5 h-3.5" /> CSV</button>
-                <button onClick={() => doExportStock('excel')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"><FileSpreadsheet className="w-3.5 h-3.5" /> Excel</button>
-                <button onClick={() => doExportStock('pdf')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-danger disabled:opacity-50"><Save className="w-3.5 h-3.5" /> PDF</button>
-              </div>
-            </div>
-            <div className="pt-3 border-t border-gray-200 dark:border-slate-800">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Sauvegarde complète globale (JSON)</p>
-              <button onClick={doBackup} disabled={busy === 'backup'} className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50">
-                {busy === 'backup' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Télécharger la sauvegarde
-              </button>
-              <p className="text-xs text-gray-400 mt-1.5">Produits, catégories, tiers, mouvements et commandes dans un format unique importable.</p>
-            </div>
-          </div>
-        </Card>
+  useEffect(() => {
+    if (activeTab) setLocalTab(activeTab);
+  }, [activeTab]);
 
-        <Card
-          title="Import de Produits (CSV)"
-          variant="success"
-          outline={true}
-          collapsible={true}
-          icon={<Upload className="w-4 h-4 text-[#198754]" />}
-        >
-          <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-            Colonnes attendues : <code className="text-[11px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">nom; sku; categorie; quantite; seuil; prix_unitaire; prix_vente; unite; emplacement</code>.
-            Seule la colonne « nom » est obligatoire.
-          </p>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleImport(f);
-              e.target.value = '';
-            }}
-          />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={busy === 'import'}
-            className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"
-          >
-            {busy === 'import' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            Choisir un fichier CSV
-          </button>
+  useEffect(() => {
+    if (donneesSubTab) setLocalDonneesSubTab(donneesSubTab);
+  }, [donneesSubTab]);
 
-          {importResult && (
-            <div className="mt-4 rounded border border-gray-200 dark:border-slate-800 p-3 text-xs">
-              <div className="flex items-center gap-4 mb-2">
-                <span className="inline-flex items-center gap-1.5 text-[#198754] font-bold"><CheckCircle2 className="w-3.5 h-3.5" /> {importResult.ok} importé(s)</span>
-                {importResult.failed > 0 && <span className="text-[#dc3545] font-bold">{importResult.failed} en échec</span>}
-              </div>
-              {importResult.errors.length > 0 && (
-                <div className="max-h-32 overflow-y-auto text-[11px] text-[#dc3545] space-y-1">
-                  {importResult.errors.map((e, i) => <div key={i}>{e}</div>)}
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
-      </div>
+  const currentTab = onTabChange ? activeTab : localTab;
+  const currentDonneesSubTab = onDonneesSubTabChange ? donneesSubTab : localDonneesSubTab;
 
-      {/* Préférences: langue & thème */}
-      <Card
-        title={t('pref.title')}
-        variant="info"
-        outline={true}
-        collapsible={true}
-        icon={<Languages className="w-4 h-4 text-[#0dcaf0]" />}
-      >
-        <p className="text-xs text-gray-500 mb-4">{t('pref.subtitle')}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t('pref.language')}</label>
-            <div className="flex gap-2">
-              {(['fr', 'en'] as const).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className={`btn-lte btn-lte-sm ${
-                    lang === l
-                      ? 'btn-lte-primary'
-                      : 'btn-lte-outline-secondary'
-                  }`}
-                >
-                  {l === 'fr' ? 'Français' : 'English'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t('pref.theme')}</label>
-            <div className="flex gap-2">
-              {(
-                [
-                  { value: 'light' as ThemeMode, icon: Sun, label: t('pref.light') },
-                  { value: 'dark' as ThemeMode, icon: Moon, label: t('pref.dark') },
-                  { value: 'system' as ThemeMode, icon: Monitor, label: t('pref.system') },
-                ]
-              ).map(({ value, icon: Icon, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setTheme(value)}
-                  className={`btn-lte btn-lte-sm ${
-                    theme === value
-                      ? 'btn-lte-primary'
-                      : 'btn-lte-outline-secondary'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" /> {label}
-                </button>
-              ))}
-            </div>
+  const switchTab = (tab: ParametresTab) => {
+    if (onTabChange) onTabChange(tab);
+    else setLocalTab(tab);
+  };
+
+  const switchDonneesSub = (sub: DonneesSubTab) => {
+    if (onDonneesSubTabChange) onDonneesSubTabChange(sub);
+    else setLocalDonneesSubTab(sub);
+  };
+
+  const downloadCSVTemplate = () => {
+    const columns = [
+      { key: 'nom', label: 'nom' },
+      { key: 'sku', label: 'sku' },
+      { key: 'categorie', label: 'categorie' },
+      { key: 'quantite', label: 'quantite' },
+      { key: 'seuil', label: 'seuil' },
+      { key: 'prix_unitaire', label: 'prix_unitaire' },
+      { key: 'prix_vente', label: 'prix_vente' },
+      { key: 'unite', label: 'unite' },
+      { key: 'emplacement', label: 'emplacement' },
+    ];
+    const sampleRows = [
+      {
+        nom: 'Exemple Produit A',
+        sku: 'PRD-001',
+        categorie: 'Alimentation',
+        quantite: 50,
+        seuil: 10,
+        prix_unitaire: 1000,
+        prix_vente: 1500,
+        unite: 'pièce',
+        emplacement: 'Rayon A1',
+      },
+      {
+        nom: 'Exemple Produit B',
+        sku: 'PRD-002',
+        categorie: 'Boissons',
+        quantite: 24,
+        seuil: 5,
+        prix_unitaire: 600,
+        prix_vente: 800,
+        unite: 'bouteille',
+        emplacement: 'Frigo 1',
+      },
+    ];
+    exportCSV(sampleRows, columns, 'modele_import_produits_yos360');
+    showToast('Modèle CSV exemple téléchargé');
+  };
+
+  const renderExportsCard = () => (
+    <Card
+      title="Exports de Données & Sauvegardes"
+      variant="primary"
+      outline={true}
+      collapsible={true}
+      maximizable={true}
+      icon={<Download className="w-4 h-4 text-[#0d6efd]" />}
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Catalogue Produits</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => doExportProduits('csv')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-outline-secondary disabled:opacity-50"><FileText className="w-3.5 h-3.5" /> CSV</button>
+            <button onClick={() => doExportProduits('excel')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"><FileSpreadsheet className="w-3.5 h-3.5" /> Excel</button>
+            <button onClick={() => doExportProduits('pdf')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-danger disabled:opacity-50"><Save className="w-3.5 h-3.5" /> PDF</button>
           </div>
         </div>
-      </Card>
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Mouvements de stock</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => doExportStock('csv')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-outline-secondary disabled:opacity-50"><FileText className="w-3.5 h-3.5" /> CSV</button>
+            <button onClick={() => doExportStock('excel')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"><FileSpreadsheet className="w-3.5 h-3.5" /> Excel</button>
+            <button onClick={() => doExportStock('pdf')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-danger disabled:opacity-50"><Save className="w-3.5 h-3.5" /> PDF</button>
+          </div>
+        </div>
+        <div className="pt-3 border-t border-gray-200 dark:border-slate-800">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Sauvegarde complète globale (JSON)</p>
+          <button onClick={doBackup} disabled={busy === 'backup'} className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50">
+            {busy === 'backup' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Télécharger la sauvegarde
+          </button>
+          <p className="text-xs text-gray-400 mt-1.5">Produits, catégories, tiers, mouvements et commandes dans un format unique importable.</p>
+        </div>
+      </div>
+    </Card>
+  );
 
-      {/* Entreprise (facturation) — admin seulement */}
-      {isAdmin && (
+  const renderImportCard = () => (
+    <Card
+      title="Import de Produits (CSV)"
+      variant="success"
+      outline={true}
+      collapsible={true}
+      maximizable={true}
+      icon={<Upload className="w-4 h-4 text-[#198754]" />}
+    >
+      <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+        Colonnes attendues : <code className="text-[11px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">nom; sku; categorie; quantite; seuil; prix_unitaire; prix_vente; unite; emplacement</code>.
+        Seule la colonne « nom » est obligatoire.
+      </p>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleImport(f);
+          e.target.value = '';
+        }}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={busy === 'import'}
+          className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"
+        >
+          {busy === 'import' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          Choisir un fichier CSV
+        </button>
+        <button
+          type="button"
+          onClick={downloadCSVTemplate}
+          className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+          title="Télécharger un modèle CSV avec les en-têtes pré-remplis"
+        >
+          <Download className="w-3.5 h-3.5" /> Modèle CSV (exemple)
+        </button>
+      </div>
+
+      {importResult && (
+        <div className="mt-4 rounded border border-gray-200 dark:border-slate-800 p-3 text-xs">
+          <div className="flex items-center gap-4 mb-2">
+            <span className="inline-flex items-center gap-1.5 text-[#198754] font-bold"><CheckCircle2 className="w-3.5 h-3.5" /> {importResult.ok} importé(s)</span>
+            {importResult.failed > 0 && <span className="text-[#dc3545] font-bold">{importResult.failed} en échec</span>}
+          </div>
+          {importResult.errors.length > 0 && (
+            <div className="max-h-32 overflow-y-auto text-[11px] text-[#dc3545] space-y-1">
+              {importResult.errors.map((e, i) => <div key={i}>{e}</div>)}
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Page Title & Context Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Paramètres du Système</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1 text-xs sm:text-sm">
+          Configuration globale, gestion des données, préférences, gouvernance multi-entreprises et intégrations
+        </p>
+      </div>
+
+      {/* AdminLTE v4 Sub-Menu Navigation Tabs */}
+      <div className="card card-outline card-primary shadow-sm">
+        <div className="card-header p-2 bg-slate-50/70 dark:bg-slate-900/70 border-b border-gray-200 dark:border-slate-800">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            {/* Primary Sub-Menu Tabs */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => switchTab('donnees')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  currentTab === 'donnees'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Database className="w-3.5 h-3.5" />
+                <span>Données</span>
+                <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${currentTab === 'donnees' ? 'bg-sky-500 text-white' : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300'}`}>
+                  2
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchTab('preferences')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  currentTab === 'preferences'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Préférences</span>
+              </button>
+
+              {isAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => switchTab('entreprise')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      currentTab === 'entreprise'
+                        ? 'bg-sky-600 text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Entreprise</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchTab('utilisateurs')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      currentTab === 'utilisateurs'
+                        ? 'bg-sky-600 text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Utilisateurs</span>
+                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${currentTab === 'utilisateurs' ? 'bg-sky-500 text-white' : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300'}`}>
+                      {users.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchTab('modules')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      currentTab === 'modules'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Modules (Gouvernance)</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                      SAAS
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchTab('integrations')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      currentTab === 'integrations'
+                        ? 'bg-sky-600 text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>API & Intégrations</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Sub-selector for Données */}
+            {currentTab === 'donnees' && (
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg border border-gray-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => switchDonneesSub('all')}
+                  className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                    currentDonneesSubTab === 'all'
+                      ? 'bg-white dark:bg-slate-700 shadow-sm text-sky-600 dark:text-sky-300'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Vue globale
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchDonneesSub('export')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                    currentDonneesSubTab === 'export'
+                      ? 'bg-white dark:bg-slate-700 shadow-sm text-sky-600 dark:text-sky-300'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Download className="w-3 h-3" /> Exports & Sauvegardes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchDonneesSub('import')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                    currentDonneesSubTab === 'import'
+                      ? 'bg-white dark:bg-slate-700 shadow-sm text-sky-600 dark:text-sky-300'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Upload className="w-3 h-3" /> Import CSV
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 1. Sous-menu : Données (Exports de Données & Sauvegardes / Import de Produits CSV) */}
+      {currentTab === 'donnees' && (
+        <div className="space-y-4">
+          {currentDonneesSubTab === 'all' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {renderExportsCard()}
+              {renderImportCard()}
+            </div>
+          )}
+          {currentDonneesSubTab === 'export' && renderExportsCard()}
+          {currentDonneesSubTab === 'import' && renderImportCard()}
+        </div>
+      )}
+
+      {/* 2. Sous-menu : Préférences (langue & thème) */}
+      {currentTab === 'preferences' && (
+        <Card
+          title={t('pref.title')}
+          variant="info"
+          outline={true}
+          collapsible={true}
+          icon={<Languages className="w-4 h-4 text-[#0dcaf0]" />}
+        >
+          <p className="text-xs text-gray-500 mb-4">{t('pref.subtitle')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t('pref.language')}</label>
+              <div className="flex gap-2">
+                {(['fr', 'en'] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`btn-lte btn-lte-sm ${
+                      lang === l
+                        ? 'btn-lte-primary'
+                        : 'btn-lte-outline-secondary'
+                    }`}
+                  >
+                    {l === 'fr' ? 'Français' : 'English'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t('pref.theme')}</label>
+              <div className="flex gap-2">
+                {(
+                  [
+                    { value: 'light' as ThemeMode, icon: Sun, label: t('pref.light') },
+                    { value: 'dark' as ThemeMode, icon: Moon, label: t('pref.dark') },
+                    { value: 'system' as ThemeMode, icon: Monitor, label: t('pref.system') },
+                  ]
+                ).map(({ value, icon: Icon, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => setTheme(value)}
+                    className={`btn-lte btn-lte-sm ${
+                      theme === value
+                        ? 'btn-lte-primary'
+                        : 'btn-lte-outline-secondary'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" /> {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* 3. Sous-menu : Entreprise (facturation & identité légale) — admin seulement */}
+      {currentTab === 'entreprise' && isAdmin && (
         <Card
           title="Entreprise & Paramètres de Facturation"
           variant="primary"
@@ -536,8 +809,8 @@ export function Parametres({
         </Card>
       )}
 
-      {/* Gestion des utilisateurs (admin seulement) */}
-      {isAdmin && (
+      {/* 4. Sous-menu : Utilisateurs & Permissions (admin seulement) */}
+      {currentTab === 'utilisateurs' && isAdmin && (
         <Card
           title="Gestion des Utilisateurs & Permissions"
           variant="primary"
@@ -652,16 +925,20 @@ export function Parametres({
         </Card>
       )}
 
-      {/* Modules par entreprise (admin) */}
-      <ModulesParEntreprise
-        entreprise={entreprise}
-        entreprises={entreprises}
-        onEntrepriseSaved={onEntrepriseSaved}
-        onEntrepriseCreated={onRefreshEntreprises}
-      />
+      {/* 5. Sous-menu : Modules (Gouvernance des entreprises clientes) — admin seulement */}
+      {currentTab === 'modules' && isAdmin && (
+        <ModulesParEntreprise
+          entreprise={entreprise}
+          entreprises={entreprises}
+          onEntrepriseSaved={onEntrepriseSaved}
+          onEntrepriseCreated={onRefreshEntreprises}
+        />
+      )}
 
-      {/* API & Intégrations */}
-      <Integrations />
+      {/* 6. Sous-menu : API & Intégrations — admin seulement */}
+      {currentTab === 'integrations' && isAdmin && (
+        <Integrations />
+      )}
 
       <ConfirmDialog
         open={!!deleteUser}

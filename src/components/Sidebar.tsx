@@ -21,7 +21,15 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Sparkles,
+  Database,
+  Download,
+  Upload,
+  Sliders,
+  Building2,
+  Layers,
+  KeyRound,
 } from 'lucide-react';
 import type { Page } from '@/App';
 import type { Role } from '@/lib/supabase';
@@ -60,12 +68,22 @@ const labelKeys: Record<string, string> = {
   Paramètres: 'nav.settings',
 };
 
-type NavItem = {
+export type NavSubItem = {
+  id: string;
+  label: string;
+  icon?: any;
+  badge?: { text: string; color: string };
+  adminOnly?: boolean;
+  subChildren?: { id: string; label: string; icon?: any }[];
+};
+
+export type NavItem = {
   id: Page;
   label: string;
   icon: typeof LayoutDashboard;
   module: Module;
   badge?: { text: string; color: string };
+  children?: NavSubItem[];
 };
 
 type NavSection = { title: string; items: NavItem[] };
@@ -125,14 +143,36 @@ const navSections: NavSection[] = [
     title: 'Administration',
     items: [
       { id: 'audit', label: "Journal d'audit", icon: ShieldCheck, module: 'audit', badge: { text: 'LOG', color: 'bg-violet-600 text-white' } },
-      { id: 'parametres', label: 'Paramètres', icon: Settings, module: 'parametres' },
+      {
+        id: 'parametres',
+        label: 'Paramètres',
+        icon: Settings,
+        module: 'parametres',
+        children: [
+          {
+            id: 'donnees',
+            label: 'Données',
+            icon: Database,
+            subChildren: [
+              { id: 'donnees-export', label: 'Exports de Données & Sauvegardes', icon: Download },
+              { id: 'donnees-import', label: 'Import de Produits (CSV)', icon: Upload },
+            ],
+          },
+          { id: 'preferences', label: 'Préférences', icon: Sliders },
+          { id: 'entreprise', label: 'Entreprise', icon: Building2, adminOnly: true },
+          { id: 'utilisateurs', label: 'Utilisateurs', icon: Users, adminOnly: true },
+          { id: 'modules', label: 'Modules (Gouvernance)', icon: Layers, adminOnly: true, badge: { text: 'SAAS', color: 'bg-emerald-600 text-white' } },
+          { id: 'integrations', label: 'API & Intégrations', icon: KeyRound, adminOnly: true },
+        ],
+      },
     ],
   },
 ];
 
 type Props = {
   currentPage: Page;
-  onNavigate: (page: Page) => void;
+  currentSubPage?: string;
+  onNavigate: (page: Page, subTab?: string) => void;
   open: boolean;
   role: Role | null;
   modulesActifs: string[];
@@ -142,6 +182,7 @@ type Props = {
 
 export function Sidebar({
   currentPage,
+  currentSubPage,
   onNavigate,
   open,
   role,
@@ -152,6 +193,10 @@ export function Sidebar({
   const { t } = usePrefs();
   const { profile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedTrees, setExpandedTrees] = useState<Record<string, boolean>>({
+    parametres: true,
+    donnees: true,
+  });
 
   // Filtrage en direct de la sidebar (feature signature AdminLTE)
   const filteredSections = useMemo(() => {
@@ -163,7 +208,12 @@ export function Sidebar({
         items: sec.items.filter((item) =>
           item.label.toLowerCase().includes(q) ||
           sec.title.toLowerCase().includes(q) ||
-          item.id.toLowerCase().includes(q)
+          item.id.toLowerCase().includes(q) ||
+          item.children?.some((c) =>
+            c.label.toLowerCase().includes(q) ||
+            c.id.toLowerCase().includes(q) ||
+            c.subChildren?.some((sc) => sc.label.toLowerCase().includes(q))
+          )
         ),
       }))
       .filter((sec) => sec.items.length > 0);
@@ -278,30 +328,134 @@ export function Sidebar({
                 {items.map((item) => {
                   const Icon = item.icon;
                   const active = currentPage === item.id;
+                  const hasChildren = item.children && item.children.length > 0;
+                  const isTreeOpen = expandedTrees[item.id] ?? (currentPage === item.id);
 
                   return (
-                    <button
-                      key={item.id}
-                      onClick={() => onNavigate(item.id)}
-                      title={collapsed ? t(labelKeys[item.label] || item.label) : undefined}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                        active
-                          ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30 font-semibold'
-                          : 'text-slate-300 hover:bg-[#1e293b] hover:text-white'
-                      } ${collapsed ? 'justify-center px-0' : ''}`}
-                    >
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400'}`} />
-                      {!collapsed && (
-                        <span className="truncate flex-1 text-left">
-                          {t(labelKeys[item.label] || item.label)}
-                        </span>
+                    <div key={item.id} className="space-y-0.5">
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => {
+                            onNavigate(item.id);
+                            if (hasChildren) {
+                              setExpandedTrees((prev) => ({ ...prev, [item.id]: true }));
+                            }
+                          }}
+                          title={collapsed ? t(labelKeys[item.label] || item.label) : undefined}
+                          className={`flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                            active
+                              ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30 font-semibold'
+                              : 'text-slate-300 hover:bg-[#1e293b] hover:text-white'
+                          } ${collapsed ? 'justify-center px-0' : ''}`}
+                        >
+                          <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400'}`} />
+                          {!collapsed && (
+                            <span className="truncate flex-1 text-left">
+                              {t(labelKeys[item.label] || item.label)}
+                            </span>
+                          )}
+                          {!collapsed && item.badge && (
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${item.badge.color}`}>
+                              {item.badge.text}
+                            </span>
+                          )}
+                        </button>
+
+                        {!collapsed && hasChildren && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedTrees((prev) => ({ ...prev, [item.id]: !isTreeOpen }));
+                            }}
+                            className="p-1.5 ml-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] transition-colors"
+                            title={isTreeOpen ? 'Réduire' : 'Déplier'}
+                          >
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isTreeOpen ? '' : '-rotate-90'}`} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* AdminLTE v4 Treeview Sub-menu */}
+                      {!collapsed && hasChildren && isTreeOpen && (
+                        <div className="ml-4 pl-3 py-1 space-y-1 border-l-2 border-slate-700/60 my-1">
+                          {item.children!.map((sub) => {
+                            if (sub.adminOnly && role !== 'admin' && !profile?.super_admin) return null;
+                            const SubIcon = sub.icon;
+                            const isSubActive =
+                              currentSubPage === sub.id ||
+                              (sub.id === 'donnees' && (currentSubPage === 'donnees-export' || currentSubPage === 'donnees-import'));
+                            const isSubTreeOpen = expandedTrees[sub.id] ?? true;
+
+                            return (
+                              <div key={sub.id} className="space-y-0.5">
+                                <div className="flex items-center">
+                                  <button
+                                    onClick={() => onNavigate(item.id, sub.id)}
+                                    className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                      isSubActive && !sub.subChildren
+                                        ? 'bg-sky-500/20 text-sky-300 font-semibold border border-sky-500/30'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                                    }`}
+                                  >
+                                    {SubIcon ? (
+                                      <SubIcon className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-sky-400' : 'text-slate-400'}`} />
+                                    ) : (
+                                      <span className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-sky-400' : 'bg-slate-500'}`} />
+                                    )}
+                                    <span className="truncate flex-1 text-left">{sub.label}</span>
+                                    {sub.badge && (
+                                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${sub.badge.color}`}>
+                                        {sub.badge.text}
+                                      </span>
+                                    )}
+                                  </button>
+                                  {sub.subChildren && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedTrees((prev) => ({ ...prev, [sub.id]: !isSubTreeOpen }));
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-white"
+                                      title={isSubTreeOpen ? 'Réduire' : 'Déplier'}
+                                    >
+                                      <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isSubTreeOpen ? '' : '-rotate-90'}`} />
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Sous-enfants Données (Exports & Sauvegardes, Import CSV) */}
+                                {sub.subChildren && isSubTreeOpen && (
+                                  <div className="ml-3 pl-2.5 py-0.5 space-y-0.5 border-l border-slate-700/40">
+                                    {sub.subChildren.map((sc) => {
+                                      const ScIcon = sc.icon;
+                                      const isScActive = currentSubPage === sc.id;
+                                      return (
+                                        <button
+                                          key={sc.id}
+                                          onClick={() => onNavigate(item.id, sc.id)}
+                                          className={`w-full flex items-center gap-2 px-2 py-1 rounded text-[11px] transition-all ${
+                                            isScActive
+                                              ? 'bg-sky-500/25 text-sky-200 font-bold border border-sky-500/20'
+                                              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                                          }`}
+                                        >
+                                          {ScIcon ? (
+                                            <ScIcon className={`w-3 h-3 flex-shrink-0 ${isScActive ? 'text-sky-400' : 'text-slate-500'}`} />
+                                          ) : (
+                                            <span className={`w-1 h-1 rounded-full ${isScActive ? 'bg-sky-400' : 'bg-slate-600'}`} />
+                                          )}
+                                          <span className="truncate text-left">{sc.label}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
-                      {!collapsed && item.badge && (
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${item.badge.color}`}>
-                          {item.badge.text}
-                        </span>
-                      )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>

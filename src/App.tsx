@@ -104,6 +104,8 @@ function Shell() {
   const { session, profile, entrepriseId, setEntrepriseId, loading: authLoading, signOut } = useAuth();
   const { t, theme, setTheme } = usePrefs();
   const [page, setPage] = useState<Page>('dashboard');
+  const [parametresTab, setParametresTab] = useState<'donnees' | 'preferences' | 'entreprise' | 'utilisateurs' | 'modules' | 'integrations'>('donnees');
+  const [donneesSubTab, setDonneesSubTab] = useState<'all' | 'export' | 'import'>('all');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -201,7 +203,7 @@ function Shell() {
     return stop;
   }, [loadAll]);
 
-  const navigate = (p: Page) => {
+  const navigate = (p: Page, subTab?: string) => {
     // Garde-fou côté client: rôle sans droit de vue, ou module désactivé pour cette entreprise
     if (!can(role, p as Module, 'view')) {
       showToast('Vous n\'avez pas accès à cette section', 'error');
@@ -212,6 +214,26 @@ function Shell() {
       return;
     }
     setPage(p);
+    if (p === 'parametres' && subTab) {
+      if (subTab === 'donnees') {
+        setParametresTab('donnees');
+        setDonneesSubTab('all');
+      } else if (subTab === 'donnees-export') {
+        setParametresTab('donnees');
+        setDonneesSubTab('export');
+      } else if (subTab === 'donnees-import') {
+        setParametresTab('donnees');
+        setDonneesSubTab('import');
+      } else if (
+        subTab === 'preferences' ||
+        subTab === 'entreprise' ||
+        subTab === 'utilisateurs' ||
+        subTab === 'modules' ||
+        subTab === 'integrations'
+      ) {
+        setParametresTab(subTab as any);
+      }
+    }
     setSidebarOpen(false);
   };
 
@@ -261,6 +283,13 @@ function Shell() {
       {/* AdminLTE v4 Sidebar */}
       <Sidebar
         currentPage={visiblePage}
+        currentSubPage={
+          visiblePage === 'parametres'
+            ? (parametresTab === 'donnees'
+                ? (donneesSubTab === 'export' ? 'donnees-export' : (donneesSubTab === 'import' ? 'donnees-import' : 'donnees'))
+                : parametresTab)
+            : undefined
+        }
         onNavigate={navigate}
         open={sidebarOpen}
         role={role}
@@ -466,14 +495,61 @@ function Shell() {
         <div className="bg-white/70 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 py-3">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <h1 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
-              {BREADCRUMBS[visiblePage]?.title}
+              {visiblePage === 'parametres' ? (
+                <span>
+                  Paramètres{' '}
+                  <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                    &rsaquo;{' '}
+                    {parametresTab === 'donnees'
+                      ? (donneesSubTab === 'export'
+                          ? 'Exports & Sauvegardes'
+                          : donneesSubTab === 'import'
+                          ? 'Import Produits (CSV)'
+                          : 'Données (Exports & Import)')
+                      : parametresTab === 'preferences'
+                      ? 'Préférences'
+                      : parametresTab === 'entreprise'
+                      ? 'Entreprise'
+                      : parametresTab === 'utilisateurs'
+                      ? 'Utilisateurs'
+                      : parametresTab === 'modules'
+                      ? 'Modules (Gouvernance)'
+                      : 'API & Intégrations'}
+                  </span>
+                </span>
+              ) : (
+                BREADCRUMBS[visiblePage]?.title
+              )}
             </h1>
             <ol className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <li><button onClick={() => navigate('dashboard')} className="hover:text-sky-600 transition-colors">Accueil</button></li>
               <li>/</li>
               <li>{BREADCRUMBS[visiblePage]?.section}</li>
               <li>/</li>
-              <li className="text-slate-800 dark:text-slate-200 font-semibold">{BREADCRUMBS[visiblePage]?.title}</li>
+              <li className="text-slate-800 dark:text-slate-200 font-semibold">
+                {visiblePage === 'parametres' ? (
+                  <span>
+                    Paramètres &rsaquo;{' '}
+                    {parametresTab === 'donnees'
+                      ? (donneesSubTab === 'export'
+                          ? 'Exports'
+                          : donneesSubTab === 'import'
+                          ? 'Import CSV'
+                          : 'Données')
+                      : parametresTab === 'preferences'
+                      ? 'Préférences'
+                      : parametresTab === 'entreprise'
+                      ? 'Entreprise'
+                      : parametresTab === 'utilisateurs'
+                      ? 'Utilisateurs'
+                      : parametresTab === 'modules'
+                      ? 'Modules'
+                      : 'API & Intégrations'}
+                  </span>
+                ) : (
+                  BREADCRUMBS[visiblePage]?.title
+                )}
+              </li>
             </ol>
           </div>
         </div>
@@ -538,6 +614,10 @@ function Shell() {
               entreprises={entreprisesDisponibles}
               onEntrepriseSaved={(e) => setEntreprise(e)}
               onRefreshEntreprises={refreshEntreprises}
+              activeTab={parametresTab}
+              onTabChange={setParametresTab}
+              donneesSubTab={donneesSubTab}
+              onDonneesSubTabChange={setDonneesSubTab}
             />
           )}
         </main>
