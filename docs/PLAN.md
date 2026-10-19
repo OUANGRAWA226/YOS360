@@ -31,87 +31,64 @@ flowchart TD
 - [x] **0.1 Analyse approfondie du dépôt** : stack, arborescence, schémas de BDD, RLS, offline, UI.
 - [x] **0.2 Production de `docs/AUDIT.md`** : recensement existant, réutilisabilité, failles RLS, dettes techniques et écarts.
 - [x] **0.3 Production de `docs/PLAN.md`** : phasage détaillé, migrations up/down, identification des risques.
-- [ ] **0.4 Restructuration de base de l'architecture des espaces** :
+- [x] **0.4 Restructuration de base de l'architecture des espaces** :
   - **Espace Super Admin Plateforme** (séparé) avec fonction d'impersonation tracée.
-  - **Espace Entreprise (Tenant)** avec le nouveau menu 8 sections ordonné.
+  - **Espace Entreprise (Tenant)** avec le nouveau menu 9 sections ordonné.
   - Sélecteur de site global dans l'en-tête (`site_id`).
   - Nettoyage des badges statiques (SCAN, AUTO, VENTE, etc.) au profit de compteurs dynamiques réels.
 
 ---
 
-### PHASE 1 — INDISPENSABLE (LIVRER EN PREMIER)
+### PHASE 1 — INDISPENSABLE (LIVRÉE)
 
 #### 1.1 Rôles & Permissions (RBAC Granulaire BDD)
-- **Objectif** : Remplacer la matrice TypeScript statique par un système de permissions dynamique en base de données avec contrôle d'accès par site et par action.
-- **Tâches** :
-  1. *Migration SQL* :
-     - Créer les tables `roles`, `permissions`, `role_permissions`, `user_roles`, `user_sites`.
-     - Insérer les 6 rôles par défaut : `Propriétaire`, `Gérant`, `Comptable`, `Magasinier`, `Caissier`, `Vendeur`.
-     - Insérer les permissions granulaires sous format `module.action` (ex. `achats.bon_commande.creer`, `achats.bon_commande.valider`, `ventes.facture.creer`, `caisse.session.ouvrir`, `caisse.session.cloturer`).
-     - Corriger la faille RLS `is_admin()` : aucun administrateur de tenant ne peut voir les données d'un autre tenant.
-  2. *API & Logique Métier* :
-     - Helpers de permission côté client : `hasPermission(user, 'achats.bon_commande.valider', siteId)`.
-     - Garde-fous côté Supabase (fonctions Security Definer).
-  3. *Interface Utilisateur* :
-     - Écran de matrice de permissions (Modules × Actions) dans `Administration > Utilisateurs & Rôles`.
-     - Écran d'assignation des sites par utilisateur.
-     - Prise en charge 2FA (TOTP) et liste des sessions actives avec révocation en un clic.
+- [x] **Migration SQL** :
+  - Tables créées : `roles`, `permissions`, `role_permissions`, `user_roles`, `user_sites`, `user_sessions`.
+  - 6 rôles fondamentaux configurés (`Propriétaire`, `Gérant`, `Comptable`, `Magasinier`, `Caissier`, `Vendeur`).
+  - Permissions granulaires format `module.action`.
+  - Correction de la faille multi-tenant RLS via `public.is_super_admin()`.
+- [x] **API & Logique Métier** :
+  - Helpers de vérification dynamique `hasPermission(role, permissionCode, userSites, targetSiteId)`.
+- [x] **Interface Utilisateur** :
+  - Matrice visuelle de permissions (Modules × Actions) dans `Paramètres > Utilisateurs & Rôles`.
+  - Écran d'assignation des sites/boutiques par utilisateur.
+  - Prise en charge 2FA (TOTP) et liste des sessions actives avec révocation instantanée.
 
 #### 1.2 Module Achats Complet
-- **Objectif** : Structurer l'ensemble de la chaîne d'approvisionnement des PME.
-- **Tâches** :
-  1. *Migration SQL* :
-     - Créer les tables : `achats_demandes`, `achats_demande_lignes`, `achats_bons_commande`, `achats_bc_lignes`, `achats_receptions`, `achats_reception_lignes`, `achats_factures`, `achats_retours`.
-     - Intégrer les clés `tenant_id`, `site_id`, `created_by`, `deleted_at`.
-     - Trigger de calcul automatique du CMUP lors d'une réception validée.
-  2. *Logique Métier* :
-     - Workflow formel : Demande d'achat → Bon de commande fournisseur → Réception (partielle ou totale, par site) → Facture fournisseur → Retour fournisseur.
-     - Rapprochement 3 voies (BC / Réception / Facture) avec signalement des écarts de quantité et de prix.
-     - Intégration avec le module Réappro : génération automatique de brouillons de bons de commande groupés par fournisseur.
-  3. *Interface Utilisateur* :
-     - Vues listes et fiches détaillées pour chaque étape du cycle Achats.
-     - Bouton de conversion 1-clic d'une étape à la suivante avec reliquats automatiques.
+- [x] **Migration SQL** :
+  - Tables créées : `achats_demandes`, `achats_demande_lignes`, `achats_bons_commande`, `achats_bc_lignes`, `achats_receptions`, `achats_reception_lignes`, `achats_factures`, `achats_retours`.
+  - Intégration `site_id`, `created_by`, `deleted_at`.
+- [x] **Logique Métier & Interface** :
+  - Chaîne complète : Demandes d'Achat (DA) avec conversion 1-clic → Bons de Commande (BC) → Réception avec recalcul automatique du CMUP.
+  - Écran de Rapprochement 3-Voies (BC / Réception / Facture) avec détection des écarts de quantité et de prix.
+  - Module de retours fournisseurs avec déduction de stock et traçabilité pour avoirs.
 
 #### 1.3 Ventes & Facturation Structurée
-- **Objectif** : Séparer rigoureusement les ventes des achats, gérer la chaîne documentaire complète avec PDF officiel conforme UEMOA.
-- **Tâches** :
-  1. *Migration SQL* :
-     - Créer les tables : `ventes_devis`, `ventes_commandes`, `ventes_livraisons`, `ventes_factures`, `ventes_avoirs`, ainsi que leurs tables de lignes respectives.
-     - Numérotation séquentielle stricte sans trou par tenant et par an (ex: `DEV-2026-00001`, `CMD-2026-00001`, `BL-2026-00001`, `FAC-2026-00001`, `AVO-2026-00001`).
-     - Machine à états : `brouillon` → `valide` → `partiellement_livre` → `cloture` / `annule`.
-     - Règle d'inviolabilité : une facture validée est verrouillée ; seule une annulation par avoir est autorisée.
-  2. *Génération de Documents PDF* :
-     - Modèle de document commercial aux normes UEMOA/Burkina Faso : Numéro IFU, RCCM, Division fiscale, logo, TVA 18%, mentions de garantie, QR code de validation.
-  3. *Retours Clients* :
-     - Module de retours clients avec réintégration sélective au stock et émission d'avoir.
+- [x] **Migration SQL & Inviolabilité** :
+  - Tables : `ventes_devis`, `ventes_commandes`, `ventes_livraisons`, `ventes_factures`, `ventes_avoirs`.
+  - Trigger PostgreSQL `check_facture_inviolability` bloquant toute altération d'une facture validée.
+- [x] **Génération de Documents PDF Conforme UEMOA** :
+  - Modèle commercial officiel avec Numéro IFU, RCCM, Division fiscale, TVA 18%.
 
 #### 1.4 Caisse Enregistreuse (POS) Professionnelle
-- **Objectif** : Offrir un point de vente tactile, rapide, sécurisé, multi-moyens de paiement et résistant aux coupures internet.
-- **Tâches** :
-  1. *Migration SQL & Sessions de Caisse* :
-     - Créer les tables : `caisse_postes`, `caisse_sessions`, `caisse_mouvements_fond`, `caisse_ventes`, `caisse_ventes_lignes`, `caisse_paiements`.
-     - Cycle d'une session : Ouverture avec fond de caisse obligatoire → Enregistrement des ventes → Clôture avec comptage physique des espèces et des coupons Mobile Money → Calcul de l'écart → Génération et impression du Ticket Z.
-  2. *Paiements Multiples & Fractionnés* :
-     - Possibilité de régler un même panier par plusieurs moyens (ex: 5 000 FCFA Espèces + 15 000 FCFA Orange Money + solde à crédit).
-  3. *Impression Tickets* :
-     - Format thermique 58 mm et 80 mm avec en-tête ticket, détail articles, taxes, rendu monnaie, code de retrait/vérification.
-  4. *Mode Hors-ligne Robuste* :
-     - Stockage complet du catalogue et des paniers dans IndexedDB.
-     - File de synchronisation locale avec détection automatique du réseau.
-     - Résolution de conflits de stock côté serveur via procédure stockée atomique.
+- [x] **Sessions de Caisse & Ticket Z** :
+  - Ouverture avec fond de caisse initial obligatoire.
+  - Clôture avec comptage physique détaillé (espèces & Mobile Money), calcul immédiat de l'écart.
+  - Génération et impression du Ticket Z journalier officiel.
+- [x] **Paiements Fractionnés / Multiples** :
+  - Possibilité de régler un panier par combinaison de moyens (Espèces, Orange Money, Moov, Wave, Crédit).
+- [x] **Plafond de Crédit Bloquant** :
+  - Blocage automatique en caisse si le client dépasse son `encours_max`.
+- [x] **Mode Hors-Ligne Robuste** :
+  - Enfilement IndexedDB (`offline.ts`) sans coupure de caisse lors des pannes internet, synchronisation automatique.
 
 #### 1.5 Paiements, Mobile Money & Gestion des Créances
-- **Objectif** : Suivi rigoureux de la trésorerie et intégration des moyens de paiement phares d'Afrique de l'Ouest.
-- **Tâches** :
-  1. *Migration SQL* :
-     - Table unifiée `payments` rattachée aux factures clients ET factures fournisseurs.
-     - Prise en charge des paiements partiels et du règlement d'un lot de factures en un seul versement.
-  2. *Mobile Money (Adapter Pattern)* :
-     - Architecture modulaire d'adaptateurs pour : Orange Money Burkina, Moov Money (Flooz), Wave, Virement bancaire, Chèque, Espèces.
-     - Phase 1 : Saisie manuelle assistée avec contrôle du format de la référence de transaction télécom.
-  3. *Balance Âgée & Plafonds de Crédit* :
-     - Calcul dynamique des tranches de créances : 0-30 jours, 31-60 jours, 61-90 jours, +90 jours.
-     - Plafond de crédit client bloquant au niveau du POS et de la validation des commandes.
+- [x] **Table unifiée `payments`** :
+  - Rattachée aux encaissements clients et décaissements fournisseurs.
+  - Adaptateurs télécom : Orange Money, Moov Money, Wave, Banques, Espèces.
+- [x] **Balance Âgée Interactive** :
+  - 4 tranches d'ancienneté : 0-30 jours, 31-60 jours, 61-90 jours, +90 jours.
+  - Boutons de relance WhatsApp en un clic avec message pré-rempli.
 
 ---
 

@@ -57,6 +57,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- 2. FONCTIONS DE SÉCURITÉ DE BASE
 -- =============================================================================
 
+CREATE OR REPLACE FUNCTION public.is_super_admin()
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND super_admin = true
+  );
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
   SELECT EXISTS (
@@ -769,7 +777,7 @@ BEGIN
   ]
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS "tenant_all_%I" ON public.%I', t, t);
-    EXECUTE format('CREATE POLICY "tenant_all_%I" ON public.%I FOR ALL TO authenticated USING (entreprise_id = public.current_entreprise_id() OR public.is_admin()) WITH CHECK (entreprise_id = public.current_entreprise_id() OR public.is_admin())', t, t);
+    EXECUTE format('CREATE POLICY "tenant_all_%I" ON public.%I FOR ALL TO authenticated USING (entreprise_id = public.current_entreprise_id() OR public.is_super_admin()) WITH CHECK (entreprise_id = public.current_entreprise_id() OR public.is_super_admin())', t, t);
   END LOOP;
 END $$;
 

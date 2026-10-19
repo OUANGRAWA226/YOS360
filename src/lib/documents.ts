@@ -109,8 +109,11 @@ export function printDocumentCommercial(
     </div>
     <div class="meta">
       <strong>${esc(entreprise?.nom || '')}</strong><br/>
-      ${entreprise?.tva_active ? 'N° TVA: ________________<br/>' : ''}
-      ${esc(new Date().toLocaleDateString('fr-FR'))}
+      ${entreprise?.ifu ? `<strong>N° IFU :</strong> ${esc(entreprise.ifu)}<br/>` : ''}
+      ${entreprise?.rccm ? `<strong>RCCM :</strong> ${esc(entreprise.rccm)}<br/>` : ''}
+      ${entreprise?.division_fiscale ? `<strong>Division Fiscale :</strong> ${esc(entreprise.division_fiscale)}<br/>` : ''}
+      ${entreprise?.tva_active ? 'Assujetti à la TVA (18%)<br/>' : 'Non assujetti à la TVA<br/>'}
+      Date : ${esc(new Date().toLocaleDateString('fr-FR'))}
     </div>
   </div>
 

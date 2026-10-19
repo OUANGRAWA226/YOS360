@@ -36,6 +36,9 @@ import { Integrations } from '@/components/Integrations';
 import { ModulesParEntreprise } from '@/components/ModulesParEntreprise';
 import { usePrefs, type ThemeMode } from '@/lib/prefs';
 import { Card, Callout, InfoBox } from '@/components/adminlte';
+import { CentreImportExport } from '@/components/CentreImportExport';
+import { PermissionsMatrix } from '@/components/PermissionsMatrix';
+import type { Entrepot } from '@/lib/supabase';
 
 export type ParametresTab = 'donnees' | 'preferences' | 'entreprise' | 'utilisateurs' | 'modules' | 'integrations';
 export type DonneesSubTab = 'all' | 'export' | 'import';
@@ -43,6 +46,7 @@ export type DonneesSubTab = 'all' | 'export' | 'import';
 export function Parametres({
   entreprise,
   entreprises = [],
+  entrepots = [],
   onEntrepriseSaved,
   onRefreshEntreprises,
   activeTab = 'donnees',
@@ -52,6 +56,7 @@ export function Parametres({
 }: {
   entreprise: Entreprise | null;
   entreprises?: Entreprise[];
+  entrepots?: Entrepot[];
   onEntrepriseSaved: (e: Entreprise) => void;
   onRefreshEntreprises?: () => void;
   activeTab?: ParametresTab;
@@ -88,6 +93,9 @@ export function Parametres({
     tva_active: entreprise?.tva_active ?? true,
     devise: entreprise?.devise ?? 'XOF',
     mention_bas: entreprise?.mention_bas ?? '',
+    ifu: entreprise?.ifu ?? '',
+    rccm: entreprise?.rccm ?? '',
+    division_fiscale: entreprise?.division_fiscale ?? '',
   });
   useEffect(() => {
     if (entreprise) setEnt({ ...entreprise });
@@ -109,6 +117,9 @@ export function Parametres({
       tva_active: ent.tva_active !== false,
       devise: ent.devise || 'XOF',
       mention_bas: ent.mention_bas?.trim() || null,
+      ifu: ent.ifu?.trim() || null,
+      rccm: ent.rccm?.trim() || null,
+      division_fiscale: ent.division_fiscale?.trim() || null,
     };
     const { data, error } = await supabase.from('entreprises').update(row).eq('id', entreprise.id).select().single();
     setBusy(null);
@@ -642,18 +653,12 @@ export function Parametres({
         </div>
       </div>
 
-      {/* 1. Sous-menu : Données (Exports de Données & Sauvegardes / Import de Produits CSV) */}
+      {/* 1. Sous-menu : Centre Import / Export Générique */}
       {currentTab === 'donnees' && (
-        <div className="space-y-4">
-          {currentDonneesSubTab === 'all' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {renderExportsCard()}
-              {renderImportCard()}
-            </div>
-          )}
-          {currentDonneesSubTab === 'export' && renderExportsCard()}
-          {currentDonneesSubTab === 'import' && renderImportCard()}
-        </div>
+        <CentreImportExport
+          entrepriseId={entreprise?.id ?? null}
+          onImportComplete={() => {}}
+        />
       )}
 
       {/* 2. Sous-menu : Préférences (langue & thème) */}
@@ -764,6 +769,21 @@ export function Parametres({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-3.5">
             <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">N° IFU (Identifiant Fiscal Unique)</label>
+              <input value={ent.ifu ?? ''} onChange={(e) => setEnt({ ...ent, ifu: e.target.value })} placeholder="Ex: 00123456A" className="form-control-lte text-xs" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">N° RCCM</label>
+              <input value={ent.rccm ?? ''} onChange={(e) => setEnt({ ...ent, rccm: e.target.value })} placeholder="Ex: BF OUA 2024 B 1234" className="form-control-lte text-xs" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Division Fiscale / Centre des Impôts</label>
+              <input value={ent.division_fiscale ?? ''} onChange={(e) => setEnt({ ...ent, division_fiscale: e.target.value })} placeholder="Ex: DGI Ouaga I" className="form-control-lte text-xs" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-3.5">
+            <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Taux de TVA (%)</label>
               <input type="number" min={0} max={100} step={0.5} value={ent.tva_taux ?? 18} onChange={(e) => setEnt({ ...ent, tva_taux: Number(e.target.value) })} className="form-control-lte text-xs" />
             </div>
@@ -811,22 +831,30 @@ export function Parametres({
 
       {/* 4. Sous-menu : Utilisateurs & Permissions (admin seulement) */}
       {currentTab === 'utilisateurs' && isAdmin && (
-        <Card
-          title="Gestion des Utilisateurs & Permissions"
-          variant="primary"
-          outline={true}
-          collapsible={true}
-          maximizable={true}
-          icon={<Users className="w-4 h-4 text-[#0d6efd]" />}
-          tools={
-            <button
-              onClick={() => setShowUserModal(true)}
-              className="btn-lte btn-lte-sm btn-lte-primary"
-            >
-              <UserPlus className="w-3.5 h-3.5" /> Nouvel utilisateur
-            </button>
-          }
-        >
+        <div className="space-y-6">
+          <PermissionsMatrix
+            users={users}
+            entrepots={entrepots || []}
+            entrepriseId={entreprise?.id ?? null}
+            onRefresh={loadUsers}
+          />
+
+          <Card
+            title="Gestion des Comptes & Accès Utilisateurs"
+            variant="primary"
+            outline={true}
+            collapsible={true}
+            maximizable={true}
+            icon={<Users className="w-4 h-4 text-[#0d6efd]" />}
+            tools={
+              <button
+                onClick={() => setShowUserModal(true)}
+                className="btn-lte btn-lte-sm btn-lte-primary"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> Nouvel utilisateur
+              </button>
+            }
+          >
           <div className="overflow-x-auto -mx-4 sm:-mx-5 -mb-4 sm:-mb-5">
             <table className="table-adminlte">
               <thead>
@@ -923,6 +951,7 @@ export function Parametres({
             </table>
           </div>
         </Card>
+      </div>
       )}
 
       {/* 5. Sous-menu : Modules (Gouvernance des entreprises clientes) — admin seulement */}

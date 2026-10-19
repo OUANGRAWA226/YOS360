@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type {
   Categorie,
   ProduitWithCategorie,
@@ -36,6 +36,7 @@ import { Reappro } from '@/pages/Reappro';
 import { Fournisseurs } from '@/pages/Fournisseurs';
 import { Clients } from '@/pages/Clients';
 import { Commandes } from '@/pages/Commandes';
+import { Achats, type AchatsTab } from '@/pages/Achats';
 import { Rapports } from '@/pages/Rapports';
 import { Audit } from '@/pages/Audit';
 import { Parametres } from '@/pages/Parametres';
@@ -57,6 +58,7 @@ import {
   Sparkles,
   ChevronDown,
   Settings,
+  Warehouse,
 } from 'lucide-react';
 import { ROLE_LABELS } from '@/lib/permissions';
 
@@ -74,6 +76,7 @@ export type Page =
   | 'fournisseurs'
   | 'clients'
   | 'commandes'
+  | 'achats'
   | 'paiements'
   | 'caisse'
   | 'rapports'
@@ -83,19 +86,21 @@ export type Page =
 const BREADCRUMBS: Record<Page, { section: string; title: string }> = {
   dashboard: { section: "Vue d'ensemble", title: 'Tableau de bord' },
   rapports: { section: "Vue d'ensemble", title: 'Rapports & Analyses' },
-  produits: { section: 'Inventaire', title: 'Catalogue Produits' },
-  categories: { section: 'Inventaire', title: 'Catégories' },
-  mouvements: { section: 'Inventaire', title: 'Mouvements de Stock' },
+  commandes: { section: 'Ventes', title: 'Commandes & Ventes' },
+  caisse: { section: 'Ventes', title: 'Caisse Tactile (POS)' },
+  achats: { section: 'Achats', title: 'Achats & Approvisionnements' },
+  produits: { section: 'Stock', title: 'Catalogue Produits' },
+  categories: { section: 'Stock', title: 'Catégories' },
+  mouvements: { section: 'Stock', title: 'Mouvements de Stock' },
+  inventaires: { section: 'Stock', title: 'Comptages de stock' },
+  scan: { section: 'Stock', title: 'Scan & Codes-barres' },
+  reappro: { section: 'Stock', title: 'Réapprovisionnement' },
+  lots: { section: 'Stock', title: 'Lots & Péremptions' },
   entrepots: { section: 'Multi-sites', title: 'Entrepôts & Boutiques' },
   transferts: { section: 'Multi-sites', title: 'Transferts inter-sites' },
-  inventaires: { section: 'Multi-sites', title: 'Inventaires physiques' },
-  scan: { section: 'Opérations', title: 'Scan & Codes-barres' },
-  reappro: { section: 'Opérations', title: 'Réapprovisionnement' },
-  fournisseurs: { section: 'Partenaires', title: 'Fournisseurs' },
-  clients: { section: 'Partenaires', title: 'Clients' },
-  commandes: { section: 'Commandes', title: 'Commandes d’achats & ventes' },
+  clients: { section: 'Tiers', title: 'Clients & Fidélité' },
+  fournisseurs: { section: 'Tiers', title: 'Fournisseurs' },
   paiements: { section: 'Finance', title: 'Paiements & Créances' },
-  caisse: { section: 'Finance', title: 'Caisse Tactile (POS)' },
   audit: { section: 'Administration', title: "Journal d'Audit" },
   parametres: { section: 'Administration', title: 'Paramètres du système' },
 };
@@ -104,6 +109,7 @@ function Shell() {
   const { session, profile, entrepriseId, setEntrepriseId, loading: authLoading, signOut } = useAuth();
   const { t, theme, setTheme } = usePrefs();
   const [page, setPage] = useState<Page>('dashboard');
+  const [achatsTab, setAchatsTab] = useState<AchatsTab>('bc');
   const [parametresTab, setParametresTab] = useState<'donnees' | 'preferences' | 'entreprise' | 'utilisateurs' | 'modules' | 'integrations'>('donnees');
   const [donneesSubTab, setDonneesSubTab] = useState<'all' | 'export' | 'import'>('all');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -127,7 +133,27 @@ function Shell() {
   const [paiements, setPaiements] = useState<PaiementWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [selectedSiteId, setSelectedSiteId] = useState<string>('all');
+
   const role = profile?.role ?? null;
+
+  // Calcul dynamique des compteurs réels (alertes rupture, commandes en attente, impayés)
+  const stockAlertsCount = useMemo(
+    () => produits.filter((p) => p.quantite <= p.seuil_alerte).length,
+    [produits]
+  );
+  const pendingVentesCount = useMemo(
+    () => commandes.filter((c) => c.type === 'vente' && c.statut === 'en_attente').length,
+    [commandes]
+  );
+  const pendingAchatsCount = useMemo(
+    () => commandes.filter((c) => c.type === 'achat' && c.statut === 'en_attente').length,
+    [commandes]
+  );
+  const impayesCount = useMemo(
+    () => commandes.filter((c) => c.numero_document?.startsWith('FAC-') && c.statut !== 'recue').length,
+    [commandes]
+  );
 
   const loadAll = useCallback(async () => {
     if (!entrepriseId) return;
@@ -204,16 +230,30 @@ function Shell() {
   }, [loadAll]);
 
   const navigate = (p: Page, subTab?: string) => {
-    // Garde-fou côté client: rôle sans droit de vue, ou module désactivé pour cette entreprise
-    if (!can(role, p as Module, 'view')) {
+    // Vérification souple de compatibilité pour achats / commandes
+    const canAccess = (target: Page) => {
+      if (target === 'achats') return can(role, 'achats', 'view') || can(role, 'commandes', 'view');
+      return can(role, target as Module, 'view');
+    };
+    const isModuleActive = (target: Page) => {
+      if (target === 'achats') return modulesActifs.includes('achats') || modulesActifs.includes('commandes');
+      return modulesActifs.includes(target as Module);
+    };
+
+    if (!canAccess(p)) {
       showToast('Vous n\'avez pas accès à cette section', 'error');
       return;
     }
-    if (!modulesActifs.includes(p as Module)) {
+    if (!isModuleActive(p)) {
       showToast('Module non activé pour cette entreprise', 'error');
       return;
     }
     setPage(p);
+    if (p === 'achats' && subTab) {
+      if (['bc', 'demandes', 'receptions', 'factures', 'retours'].includes(subTab)) {
+        setAchatsTab(subTab as AchatsTab);
+      }
+    }
     if (p === 'parametres' && subTab) {
       if (subTab === 'donnees') {
         setParametresTab('donnees');
@@ -272,7 +312,17 @@ function Shell() {
     );
   }
 
-  const visiblePage = !can(role, page as Module, 'view') || !modulesActifs.includes(page as Module) ? 'dashboard' : page;
+  const isModuleActive = (target: Page) => {
+    if (target === 'achats') return modulesActifs.includes('achats') || modulesActifs.includes('commandes');
+    if (target === 'commandes') return modulesActifs.includes('commandes') || modulesActifs.includes('ventes');
+    return modulesActifs.includes(target as Module);
+  };
+  const canAccess = (target: Page) => {
+    if (target === 'achats') return can(role, 'achats', 'view') || can(role, 'commandes', 'view');
+    return can(role, target as Module, 'view');
+  };
+
+  const visiblePage = !canAccess(page) || !isModuleActive(page) ? 'dashboard' : page;
 
   return (
     <div className="min-h-screen bg-slate-100/90 dark:bg-[#090d16] flex transition-colors font-sans text-slate-800 dark:text-slate-100">
@@ -288,6 +338,8 @@ function Shell() {
             ? (parametresTab === 'donnees'
                 ? (donneesSubTab === 'export' ? 'donnees-export' : (donneesSubTab === 'import' ? 'donnees-import' : 'donnees'))
                 : parametresTab)
+            : visiblePage === 'achats'
+            ? achatsTab
             : undefined
         }
         onNavigate={navigate}
@@ -296,6 +348,12 @@ function Shell() {
         modulesActifs={modulesActifs}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        dynamicCounts={{
+          stockAlerts: stockAlertsCount,
+          pendingVentes: pendingVentesCount,
+          pendingAchats: pendingAchatsCount,
+          impayes: impayesCount,
+        }}
       />
 
       {/* Main Content Area with Dynamic AdminLTE Margin */}
@@ -384,6 +442,23 @@ function Shell() {
                     👑 Super Admin
                   </span>
                 )}
+              </div>
+            )}
+            {/* Global Site Selector (Multi-sites header) */}
+            {entrepots.length > 0 && (
+              <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800 min-w-0">
+                <Warehouse className="w-3.5 h-3.5 text-slate-400 hidden sm:block flex-shrink-0" />
+                <select
+                  value={selectedSiteId}
+                  onChange={(e) => setSelectedSiteId(e.target.value)}
+                  className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 max-w-[150px] truncate"
+                  title="Sélecteur global de site opérationnel"
+                >
+                  <option value="all">Tous les sites</option>
+                  {entrepots.map((ent) => (
+                    <option key={ent.id} value={ent.id}>{ent.nom}</option>
+                  ))}
+                </select>
               </div>
             )}
           </div>
@@ -491,6 +566,31 @@ function Shell() {
           </div>
         </header>
 
+        {/* Bandeau d'Impersonation Super Admin Plateforme */}
+        {profile?.super_admin && (
+          <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-orange-600 text-white px-4 py-2 text-xs font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm border-b border-amber-400/40">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-black/20 text-[10px] font-extrabold uppercase tracking-wider">
+                👑 Super Admin
+              </span>
+              <span>
+                Vous opérez sur l'entreprise : <u>{entreprise?.nom || 'Entreprise active'}</u>. Toutes vos actions sont tracées dans l'audit.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setPage('parametres');
+                  setParametresTab('modules');
+                }}
+                className="px-2.5 py-1 rounded bg-black/20 hover:bg-black/30 transition-colors text-[11px] font-semibold"
+              >
+                Gouvernance Tenants
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* AdminLTE v4 Content Header (Breadcrumbs) */}
         <div className="bg-white/70 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 py-3">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
@@ -515,6 +615,20 @@ function Shell() {
                       : parametresTab === 'modules'
                       ? 'Modules (Gouvernance)'
                       : 'API & Intégrations'}
+                  </span>
+                </span>
+              ) : visiblePage === 'achats' ? (
+                <span>
+                  Achats Fournisseurs{' '}
+                  <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                    &rsaquo;{' '}
+                    {achatsTab === 'bc'
+                      ? 'Bons de commande'
+                      : achatsTab === 'demandes'
+                      ? "Demandes d'achat (DA)"
+                      : achatsTab === 'receptions'
+                      ? 'Rapprochement 3-Voies (CMUP)'
+                      : 'Retours fournisseurs'}
                   </span>
                 </span>
               ) : (
@@ -598,6 +712,20 @@ function Shell() {
           {visiblePage === 'commandes' && (
             <Commandes commandes={commandes} produits={produits} fournisseurs={fournisseurs} clients={clients} entreprise={entreprise} numerosFactures={commandes.filter((c) => c.numero_document?.startsWith('FAC-')).map((c) => c.numero_document!)} loading={loading} onRefresh={loadAll} role={role} />
           )}
+          {visiblePage === 'achats' && (
+            <Achats
+              commandes={commandes}
+              produits={produits}
+              fournisseurs={fournisseurs}
+              entrepots={entrepots}
+              entreprise={entreprise}
+              loading={loading}
+              onRefresh={loadAll}
+              role={role}
+              activeTab={achatsTab}
+              onTabChange={setAchatsTab}
+            />
+          )}
           {visiblePage === 'paiements' && (
             <Paiements paiements={paiements} clients={clients} fournisseurs={fournisseurs} commandes={commandes} entreprise={entreprise} loading={loading} onRefresh={loadAll} role={role} />
           )}
@@ -612,6 +740,7 @@ function Shell() {
             <Parametres
               entreprise={entreprise}
               entreprises={entreprisesDisponibles}
+              entrepots={entrepots}
               onEntrepriseSaved={(e) => setEntreprise(e)}
               onRefreshEntreprises={refreshEntreprises}
               activeTab={parametresTab}
