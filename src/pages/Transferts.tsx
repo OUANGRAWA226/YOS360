@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, Send, CheckCircle2, XCircle, ArrowRight, PackageCheck } from 'lucide-react';
+import { Plus, Search, Trash2, Send, CheckCircle2, XCircle, ArrowRight, PackageCheck, Repeat, Clock, Truck } from 'lucide-react';
 import type { TransfertWithRelations, ProduitWithCategorie, Entrepot, StockEntrepot } from '@/lib/supabase';
 import { writeRow } from '@/lib/dataLayer';
 import { can, type Role } from '@/lib/permissions';
@@ -7,6 +7,7 @@ import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 import { formatNumber, formatShortDate, generateReference, statutLabel, statutColor } from '@/lib/format';
+import { InfoBox, Card, Callout } from '@/components/adminlte';
 
 type Props = {
   transferts: TransfertWithRelations[];
@@ -102,107 +103,210 @@ export function Transferts({ transferts, produits, entrepots, stocksEntrepot, lo
     onRefresh();
   };
 
+  const totalTransferts = transferts.length;
+  const enPrep = transferts.filter((t) => t.statut === 'en_preparation').length;
+  const enTransit = transferts.filter((t) => t.statut === 'envoye').length;
+  const recus = transferts.filter((t) => t.statut === 'recu').length;
+
   return (
     <div className="space-y-6">
+      {/* Content Header (Page header) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Transferts inter-sites</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Bons de transfert : envoi puis réception</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+            <Repeat className="w-7 h-7 text-primary" />
+            Transferts inter-sites
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Bons de transfert multi-sites : expédition sécurisée puis accusé de réception
+          </p>
         </div>
         {canCreate && (
-          <button onClick={openCreate} disabled={entrepots.length < 2} className="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-xl font-medium hover:bg-sky-700 transition-colors shadow-sm shadow-sky-600/20 disabled:opacity-50 disabled:cursor-not-allowed">
-            <Plus className="w-5 h-5" /> Nouveau transfert
+          <button
+            onClick={openCreate}
+            disabled={entrepots.length < 2}
+            className="btn-lte btn-lte-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" /> Nouveau transfert
           </button>
         )}
       </div>
 
-      {entrepots.length < 2 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
-          Créez au moins deux sites dans « Entrepôts » pour pouvoir effectuer des transferts.
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher par référence, produit..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-        <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)} className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
-          <option value="all">Tous statuts</option>
-          <option value="en_preparation">En préparation</option>
-          <option value="envoye">Envoyé</option>
-          <option value="recu">Reçu</option>
-          <option value="annule">Annulé</option>
-        </select>
+      {/* Info Boxes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <InfoBox
+          title="Total Transferts"
+          value={totalTransferts}
+          icon={Repeat}
+          variant="info"
+          description="Tous mouvements inter-dépôts"
+        />
+        <InfoBox
+          title="En préparation"
+          value={enPrep}
+          icon={Clock}
+          variant="warning"
+          description="En attente de départ"
+        />
+        <InfoBox
+          title="En transit"
+          value={enTransit}
+          icon={Truck}
+          variant="primary"
+          description="Expédiés sur la route"
+        />
+        <InfoBox
+          title="Réceptionnés"
+          value={recus}
+          icon={CheckCircle2}
+          variant="success"
+          description="Entrés en stock destinataire"
+        />
       </div>
 
-      {loading ? (
-        <div className="p-8 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />)}</div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <PackageCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">Aucun transfert</p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {entrepots.length < 2 && (
+        <Callout title="Configuration multi-sites requise" variant="warning">
+          Vous devez créer au moins deux sites dans « Entrepôts & Boutiques » pour pouvoir émettre des bons de transfert.
+        </Callout>
+      )}
+
+      {/* Table Card */}
+      <Card
+        title={`Registre des transferts (${filtered.length})`}
+        icon={Repeat}
+        variant="info"
+        outline
+        tools={
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="relative w-48 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Référence, produit..."
+                className="form-control-lte pl-9 py-1 text-xs"
+              />
+            </div>
+            <select
+              value={filterStatut}
+              onChange={(e) => setFilterStatut(e.target.value)}
+              className="form-control-lte py-1 text-xs w-36"
+            >
+              <option value="all">Tous statuts</option>
+              <option value="en_preparation">En préparation</option>
+              <option value="envoye">Envoyé</option>
+              <option value="recu">Reçu</option>
+              <option value="annule">Annulé</option>
+            </select>
+          </div>
+        }
+        noPadding
+      >
+        {loading ? (
+          <div className="p-8 space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-12 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center">
+            <PackageCheck className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-slate-500">Aucun bon de transfert trouvé</p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-adminlte">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-6 py-3 font-semibold text-slate-600">Référence</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Produit</th>
-                  <th className="text-center px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Trajet</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-600">Qté</th>
-                  <th className="text-center px-4 py-3 font-semibold text-slate-600">Statut</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Dates</th>
-                  <th className="text-right px-6 py-3 font-semibold text-slate-600">Actions</th>
+                <tr>
+                  <th className="text-left px-4 py-3">Référence</th>
+                  <th className="text-left px-4 py-3">Produit</th>
+                  <th className="text-center px-4 py-3 hidden sm:table-cell">Trajet Inter-Sites</th>
+                  <th className="text-right px-4 py-3">Quantité</th>
+                  <th className="text-center px-4 py-3">Statut</th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell">Horodatage</th>
+                  <th className="text-right px-4 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filtered.map((t) => {
                   const sc = statutColor(t.statut);
                   const canEnvoyer = canEdit && t.statut === 'en_preparation';
                   const canRecevoir = canEdit && t.statut === 'envoye';
                   const canAnnuler = canEdit && t.statut === 'en_preparation';
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-3 font-mono text-xs text-slate-700">{t.reference}</td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">{t.produits?.nom || '—'}</p>
-                        {t.produits?.sku && <p className="text-xs font-mono text-slate-400">{t.produits.sku}</p>}
+                    <tr key={t.id}>
+                      <td className="px-4 py-3 font-mono font-semibold text-xs text-primary">
+                        {t.reference}
                       </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <div className="flex items-center justify-center gap-1.5 text-xs">
-                          <span className="font-medium text-slate-700">{t.entrepots_source?.nom || '—'}</span>
-                          <ArrowRight className="w-3.5 h-3.5 text-sky-500" />
-                          <span className="font-medium text-slate-700">{t.entrepots_dest?.nom || '—'}</span>
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{t.produits?.nom || '—'}</p>
+                        {t.produits?.sku && (
+                          <p className="text-[11px] font-mono text-slate-400">{t.produits.sku}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell text-center">
+                        <div className="inline-flex items-center gap-1.5 text-xs bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {t.entrepots_source?.nom || '—'}
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-primary" />
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {t.entrepots_dest?.nom || '—'}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatNumber(t.quantite)}</td>
+                      <td className="px-4 py-3 text-right font-bold text-xs text-slate-900 dark:text-slate-100">
+                        {formatNumber(t.quantite)}
+                      </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${sc.bg} ${sc.text}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />{statutLabel(t.statut)}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${sc.bg} ${sc.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                          {statutLabel(t.statut)}
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell text-xs text-slate-500">
-                        {t.envoye_at && <div>Envoyé: {formatShortDate(t.envoye_at)}</div>}
-                        {t.recu_at && <div>Reçu: {formatShortDate(t.recu_at)}</div>}
+                        {t.envoye_at && <div>Expédié : {formatShortDate(t.envoye_at)}</div>}
+                        {t.recu_at && <div>Reçu : {formatShortDate(t.recu_at)}</div>}
                         {!t.envoye_at && !t.recu_at && '—'}
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {canEnvoyer && (
-                            <button onClick={() => setStatus(t, 'envoye')} className="p-2 rounded-lg hover:bg-sky-50 text-slate-400 hover:text-sky-600 transition-colors" title="Marquer envoyé (le stock bascule)"><Send className="w-4 h-4" /></button>
+                            <button
+                              onClick={() => setStatus(t, 'envoye')}
+                              className="btn-lte btn-lte-primary btn-lte-sm"
+                              title="Expédier le transfert"
+                            >
+                              <Send className="w-3.5 h-3.5" /> Expédier
+                            </button>
                           )}
                           {canRecevoir && (
-                            <button onClick={() => setStatus(t, 'recu')} className="p-2 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors" title="Confirmer la réception"><CheckCircle2 className="w-4 h-4" /></button>
+                            <button
+                              onClick={() => setStatus(t, 'recu')}
+                              className="btn-lte btn-lte-success btn-lte-sm"
+                              title="Valider la réception"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Réceptionner
+                            </button>
                           )}
                           {canAnnuler && (
-                            <button onClick={() => setStatus(t, 'annule')} className="p-2 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors" title="Annuler"><XCircle className="w-4 h-4" /></button>
+                            <button
+                              onClick={() => setStatus(t, 'annule')}
+                              className="btn-lte btn-lte-warning btn-lte-sm"
+                              title="Annuler"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
                           )}
                           {canDelete && t.statut !== 'envoye' && (
-                            <button onClick={() => setDeleteTarget(t)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
+                            <button
+                              onClick={() => setDeleteTarget(t)}
+                              className="btn-lte btn-lte-danger btn-lte-sm"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -212,8 +316,8 @@ export function Transferts({ transferts, produits, entrepots, stocksEntrepot, lo
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </Card>
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Nouveau bon de transfert" size="lg">
         <div className="space-y-4">

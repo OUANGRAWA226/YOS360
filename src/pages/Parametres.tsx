@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Integrations } from '@/components/Integrations';
 import { ModulesParEntreprise } from '@/components/ModulesParEntreprise';
 import { usePrefs, type ThemeMode } from '@/lib/prefs';
+import { Card, Callout, InfoBox } from '@/components/adminlte';
 
 export function Parametres({
   entreprise,
@@ -300,43 +301,53 @@ export function Parametres({
         <p className="text-slate-500 dark:text-slate-400 mt-1">Import, export, sauvegarde et gestion des utilisateurs</p>
       </div>
 
-      {/* Import / Export */}
+      {/* Import / Export Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-4"><Download className="w-5 h-5 text-sky-600" /> Exports</h3>
+        <Card
+          title="Exports de Données & Sauvegardes"
+          variant="primary"
+          outline={true}
+          collapsible={true}
+          icon={<Download className="w-4 h-4 text-[#0d6efd]" />}
+        >
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-slate-500 mb-2">Produits</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Catalogue Produits</p>
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => doExportProduits('csv')} disabled={busy === 'export'} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors disabled:opacity-50"><FileText className="w-4 h-4" /> CSV</button>
-                <button onClick={() => doExportProduits('excel')} disabled={busy === 'export'} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors disabled:opacity-50"><FileSpreadsheet className="w-4 h-4" /> Excel</button>
-                <button onClick={() => doExportProduits('pdf')} disabled={busy === 'export'} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-700 transition-colors disabled:opacity-50"><Save className="w-4 h-4" /> PDF</button>
+                <button onClick={() => doExportProduits('csv')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-outline-secondary disabled:opacity-50"><FileText className="w-3.5 h-3.5" /> CSV</button>
+                <button onClick={() => doExportProduits('excel')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"><FileSpreadsheet className="w-3.5 h-3.5" /> Excel</button>
+                <button onClick={() => doExportProduits('pdf')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-danger disabled:opacity-50"><Save className="w-3.5 h-3.5" /> PDF</button>
               </div>
             </div>
             <div>
-              <p className="text-sm text-slate-500 mb-2">Mouvements de stock</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Mouvements de stock</p>
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => doExportStock('csv')} disabled={busy === 'export'} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors disabled:opacity-50"><FileText className="w-4 h-4" /> CSV</button>
-                <button onClick={() => doExportStock('excel')} disabled={busy === 'export'} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors disabled:opacity-50"><FileSpreadsheet className="w-4 h-4" /> Excel</button>
-                <button onClick={() => doExportStock('pdf')} disabled={busy === 'export'} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-700 transition-colors disabled:opacity-50"><Save className="w-4 h-4" /> PDF</button>
+                <button onClick={() => doExportStock('csv')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-outline-secondary disabled:opacity-50"><FileText className="w-3.5 h-3.5" /> CSV</button>
+                <button onClick={() => doExportStock('excel')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"><FileSpreadsheet className="w-3.5 h-3.5" /> Excel</button>
+                <button onClick={() => doExportStock('pdf')} disabled={busy === 'export'} className="btn-lte btn-lte-sm btn-lte-danger disabled:opacity-50"><Save className="w-3.5 h-3.5" /> PDF</button>
               </div>
             </div>
-            <div className="pt-3 border-t border-slate-100">
-              <p className="text-sm text-slate-500 mb-2">Sauvegarde complète (JSON)</p>
-              <button onClick={doBackup} disabled={busy === 'backup'} className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-slate-800 rounded-xl hover:bg-slate-900 transition-colors disabled:opacity-50">
-                {busy === 'backup' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <div className="pt-3 border-t border-gray-200 dark:border-slate-800">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Sauvegarde complète globale (JSON)</p>
+              <button onClick={doBackup} disabled={busy === 'backup'} className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50">
+                {busy === 'backup' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Télécharger la sauvegarde
               </button>
-              <p className="text-xs text-slate-400 mt-2">Produits, catégories, fournisseurs, clients, mouvements et commandes dans un seul fichier.</p>
+              <p className="text-xs text-gray-400 mt-1.5">Produits, catégories, tiers, mouvements et commandes dans un format unique importable.</p>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-4"><Upload className="w-5 h-5 text-emerald-600" /> Import de produits (CSV)</h3>
-          <p className="text-sm text-slate-500 mb-3">
-            Colonnes attendues : <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">nom; sku; categorie; quantite; seuil; prix_unitaire; prix_vente; unite; emplacement</code>.
-            Seule la colonne « nom » est obligatoire. Séparateur point-virgule ou virgule.
+        <Card
+          title="Import de Produits (CSV)"
+          variant="success"
+          outline={true}
+          collapsible={true}
+          icon={<Upload className="w-4 h-4 text-[#198754]" />}
+        >
+          <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+            Colonnes attendues : <code className="text-[11px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">nom; sku; categorie; quantite; seuil; prix_unitaire; prix_vente; unite; emplacement</code>.
+            Seule la colonne « nom » est obligatoire.
           </p>
           <input
             ref={fileRef}
@@ -352,44 +363,49 @@ export function Parametres({
           <button
             onClick={() => fileRef.current?.click()}
             disabled={busy === 'import'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"
           >
-            {busy === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {busy === 'import' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
             Choisir un fichier CSV
           </button>
 
           {importResult && (
-            <div className="mt-4 rounded-xl border border-slate-200 p-4 text-sm">
+            <div className="mt-4 rounded border border-gray-200 dark:border-slate-800 p-3 text-xs">
               <div className="flex items-center gap-4 mb-2">
-                <span className="inline-flex items-center gap-1.5 text-emerald-700 font-medium"><CheckCircle2 className="w-4 h-4" /> {importResult.ok} importé(s)</span>
-                {importResult.failed > 0 && <span className="text-red-600 font-medium">{importResult.failed} en échec</span>}
+                <span className="inline-flex items-center gap-1.5 text-[#198754] font-bold"><CheckCircle2 className="w-3.5 h-3.5" /> {importResult.ok} importé(s)</span>
+                {importResult.failed > 0 && <span className="text-[#dc3545] font-bold">{importResult.failed} en échec</span>}
               </div>
               {importResult.errors.length > 0 && (
-                <div className="max-h-32 overflow-y-auto text-xs text-red-600 space-y-1">
+                <div className="max-h-32 overflow-y-auto text-[11px] text-[#dc3545] space-y-1">
                   {importResult.errors.map((e, i) => <div key={i}>{e}</div>)}
                 </div>
               )}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Préférences: langue & thème */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-4"><Languages className="w-5 h-5 text-sky-600 dark:text-sky-400" /> {t('pref.title')}</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{t('pref.subtitle')}</p>
+      <Card
+        title={t('pref.title')}
+        variant="info"
+        outline={true}
+        collapsible={true}
+        icon={<Languages className="w-4 h-4 text-[#0dcaf0]" />}
+      >
+        <p className="text-xs text-gray-500 mb-4">{t('pref.subtitle')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('pref.language')}</label>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t('pref.language')}</label>
             <div className="flex gap-2">
               {(['fr', 'en'] as const).map((l) => (
                 <button
                   key={l}
                   onClick={() => setLang(l)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                  className={`btn-lte btn-lte-sm ${
                     lang === l
-                      ? 'bg-sky-600 text-white border-sky-600'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      ? 'btn-lte-primary'
+                      : 'btn-lte-outline-secondary'
                   }`}
                 >
                   {l === 'fr' ? 'Français' : 'English'}
@@ -398,7 +414,7 @@ export function Parametres({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('pref.theme')}</label>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t('pref.theme')}</label>
             <div className="flex gap-2">
               {(
                 [
@@ -410,162 +426,170 @@ export function Parametres({
                 <button
                   key={value}
                   onClick={() => setTheme(value)}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                  className={`btn-lte btn-lte-sm ${
                     theme === value
-                      ? 'bg-sky-600 text-white border-sky-600'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      ? 'btn-lte-primary'
+                      : 'btn-lte-outline-secondary'
                   }`}
                 >
-                  <Icon className="w-4 h-4" /> {label}
+                  <Icon className="w-3.5 h-3.5" /> {label}
                 </button>
               ))}
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Entreprise (facturation) — admin seulement */}
       {isAdmin && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-4"><Building2 className="w-5 h-5 text-sky-600" /> Entreprise & facturation</h3>
-          <p className="text-sm text-slate-500 mb-4">Ces informations apparaissent en en-tête de vos devis, factures, bons de livraison et avoirs imprimés.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card
+          title="Entreprise & Paramètres de Facturation"
+          variant="primary"
+          outline={true}
+          collapsible={true}
+          icon={<Building2 className="w-4 h-4 text-[#0d6efd]" />}
+          footer={
+            <div className="flex justify-end">
+              <button
+                onClick={saveEntreprise}
+                disabled={busy === 'entreprise'}
+                className="btn-lte btn-lte-primary font-semibold disabled:opacity-50"
+              >
+                {busy === 'entreprise' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Enregistrer les paramètres
+              </button>
+            </div>
+          }
+        >
+          <p className="text-xs text-gray-500 mb-4">Ces informations apparaissent en en-tête de vos devis, factures, tickets et bons commerciaux.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nom de l'entreprise *</label>
-              <input value={ent.nom ?? ''} onChange={(e) => setEnt({ ...ent, nom: e.target.value })} placeholder="Ex: StockMarket CI" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nom de l'entreprise *</label>
+              <input value={ent.nom ?? ''} onChange={(e) => setEnt({ ...ent, nom: e.target.value })} placeholder="Ex: YOS360 Business" className="form-control-lte text-xs" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Slogan</label>
-              <input value={ent.slogan ?? ''} onChange={(e) => setEnt({ ...ent, slogan: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Slogan</label>
+              <input value={ent.slogan ?? ''} onChange={(e) => setEnt({ ...ent, slogan: e.target.value })} className="form-control-lte text-xs" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Téléphone</label>
-              <input value={ent.telephone ?? ''} onChange={(e) => setEnt({ ...ent, telephone: e.target.value })} placeholder="+225 ..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Téléphone</label>
+              <input value={ent.telephone ?? ''} onChange={(e) => setEnt({ ...ent, telephone: e.target.value })} placeholder="+226 ..." className="form-control-lte text-xs" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Adresse</label>
-              <input value={ent.adresse ?? ''} onChange={(e) => setEnt({ ...ent, adresse: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
+              <input value={ent.adresse ?? ''} onChange={(e) => setEnt({ ...ent, adresse: e.target.value })} className="form-control-lte text-xs" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Ville</label>
-              <input value={ent.ville ?? ''} onChange={(e) => setEnt({ ...ent, ville: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Ville</label>
+              <input value={ent.ville ?? ''} onChange={(e) => setEnt({ ...ent, ville: e.target.value })} className="form-control-lte text-xs" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-              <input type="email" value={ent.email ?? ''} onChange={(e) => setEnt({ ...ent, email: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input type="email" value={ent.email ?? ''} onChange={(e) => setEnt({ ...ent, email: e.target.value })} className="form-control-lte text-xs" />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-3.5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Taux de TVA (%)</label>
-              <input type="number" min={0} max={100} step={0.5} value={ent.tva_taux ?? 18} onChange={(e) => setEnt({ ...ent, tva_taux: Number(e.target.value) })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Taux de TVA (%)</label>
+              <input type="number" min={0} max={100} step={0.5} value={ent.tva_taux ?? 18} onChange={(e) => setEnt({ ...ent, tva_taux: Number(e.target.value) })} className="form-control-lte text-xs" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">TVA</label>
-              <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-sm cursor-pointer hover:bg-slate-50">
-                <input type="checkbox" checked={ent.tva_active !== false} onChange={(e) => setEnt({ ...ent, tva_active: e.target.checked })} className="w-4 h-4 accent-sky-600" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">TVA</label>
+              <label className="flex items-center gap-2 p-2 rounded border border-gray-200 dark:border-slate-700 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800">
+                <input type="checkbox" checked={ent.tva_active !== false} onChange={(e) => setEnt({ ...ent, tva_active: e.target.checked })} className="w-3.5 h-3.5 accent-[#0d6efd]" />
                 Appliquer la TVA sur les documents
               </label>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Devise</label>
-              <select value={ent.devise ?? 'XOF'} onChange={(e) => setEnt({ ...ent, devise: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Devise principale</label>
+              <select value={ent.devise ?? 'XOF'} onChange={(e) => setEnt({ ...ent, devise: e.target.value })} className="form-control-lte text-xs">
                 <option value="XOF">FCFA (XOF)</option>
-                <option value="EUR">Euro (EUR)</option>
-                <option value="USD">Dollar (USD)</option>
+                <option value="EUR">Euro (€)</option>
+                <option value="USD">Dollar ($)</option>
                 <option value="GHS">Cedi (GHS)</option>
                 <option value="NGN">Naira (NGN)</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-3.5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Logo (pied d'en-tête des documents)</label>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Logo commercial</label>
               <div className="flex items-center gap-3">
                 {ent.logo_url ? (
-                  <img src={ent.logo_url} alt="Logo" className="h-12 w-12 rounded-lg object-contain border border-slate-200 bg-white" />
+                  <img src={ent.logo_url} alt="Logo" className="h-10 w-10 rounded object-contain border border-gray-200 bg-white" />
                 ) : (
-                  <span className="h-12 w-12 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-400"><ImageIcon className="w-5 h-5" /></span>
+                  <span className="h-10 w-10 rounded border border-dashed border-gray-300 flex items-center justify-center text-gray-400"><ImageIcon className="w-4 h-4" /></span>
                 )}
                 <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogo(f); e.target.value = ''; }} />
-                <button onClick={() => logoRef.current?.click()} className="px-3 py-2 text-sm font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">Choisir un logo</button>
-                {ent.logo_url && <button onClick={() => setEnt({ ...ent, logo_url: null })} className="text-xs text-red-600 hover:underline">Retirer</button>}
+                <button onClick={() => logoRef.current?.click()} className="btn-lte btn-lte-sm btn-lte-outline-secondary">Choisir un logo</button>
+                {ent.logo_url && <button onClick={() => setEnt({ ...ent, logo_url: null })} className="text-xs text-[#dc3545] hover:underline">Retirer</button>}
               </div>
-              <p className="text-xs text-slate-400 mt-1">PNG ou JPG, 500 Ko max.</p>
+              <p className="text-[11px] text-gray-400 mt-1">PNG ou JPG, 500 Ko max.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Mentions légales en pied de document</label>
-              <textarea value={ent.mention_bas ?? ''} onChange={(e) => setEnt({ ...ent, mention_bas: e.target.value })} rows={3} placeholder="Ex: TVA incluse le cas échéant. Pénalité de retard de 1% par mois..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Mentions légales en pied de document</label>
+              <textarea value={ent.mention_bas ?? ''} onChange={(e) => setEnt({ ...ent, mention_bas: e.target.value })} rows={2} placeholder="Ex: TVA incluse le cas échéant..." className="form-control-lte text-xs resize-none" />
             </div>
           </div>
-
-          <div className="mt-4 flex justify-end">
-            <button onClick={saveEntreprise} disabled={busy === 'entreprise'} className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-sky-600 rounded-xl hover:bg-sky-700 transition-colors disabled:opacity-50">
-              {busy === 'entreprise' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Enregistrer
-            </button>
-          </div>
-        </div>
+        </Card>
       )}
 
       {/* Gestion des utilisateurs (admin seulement) */}
       {isAdmin && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" /> Gestion des utilisateurs & permissions
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Attribuez les rôles métier et rattachez chaque utilisateur à son entreprise cliente en temps réel.
-              </p>
-            </div>
+        <Card
+          title="Gestion des Utilisateurs & Permissions"
+          variant="primary"
+          outline={true}
+          collapsible={true}
+          maximizable={true}
+          icon={<Users className="w-4 h-4 text-[#0d6efd]" />}
+          tools={
             <button
               onClick={() => setShowUserModal(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/20 transition-all flex-shrink-0"
+              className="btn-lte btn-lte-sm btn-lte-primary"
             >
-              <UserPlus className="w-4 h-4" /> Nouvel utilisateur
+              <UserPlus className="w-3.5 h-3.5" /> Nouvel utilisateur
             </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          }
+        >
+          <div className="overflow-x-auto -mx-4 sm:-mx-5 -mb-4 sm:-mb-5">
+            <table className="table-adminlte">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800">
-                  <th className="text-left py-2 font-semibold text-slate-600 dark:text-slate-400">Utilisateur</th>
-                  <th className="text-left py-2 font-semibold text-slate-600 dark:text-slate-400">Entreprise</th>
-                  <th className="text-left py-2 font-semibold text-slate-600 dark:text-slate-400">Rôle</th>
-                  <th className="text-center py-2 font-semibold text-slate-600 dark:text-slate-400">Statut</th>
-                  <th className="text-right py-2 font-semibold text-slate-600 dark:text-slate-400">Actions</th>
+                <tr>
+                  <th className="text-left">Utilisateur</th>
+                  <th className="text-left">Entreprise Rattachée</th>
+                  <th className="text-left">Rôle Métier</th>
+                  <th className="text-center">Statut</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody>
                 {users.map((u) => (
                   <tr key={u.id}>
-                    <td className="py-3">
+                    <td>
                       <div className="flex items-center gap-2">
-                        <UserCog className="w-4 h-4 text-slate-400" />
+                        <UserCog className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <p className="font-medium text-slate-900 dark:text-slate-100">{u.nom_complet || u.email}</p>
+                            <p className="font-semibold text-gray-900 dark:text-white leading-tight">{u.nom_complet || u.email}</p>
                             {u.super_admin && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                                 Super Admin
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-400">{u.email}</p>
+                          <p className="text-xs text-gray-400">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3">
+                    <td>
                       {profile?.super_admin ? (
                         <select
                           value={u.entreprise_id ?? ''}
                           onChange={(e) => changeUserEntreprise(u, e.target.value)}
-                          className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                          className="form-control-lte text-xs py-1"
                         >
                           <option value="">(Non rattaché)</option>
                           {entreprises.map((e) => (
@@ -573,52 +597,59 @@ export function Parametres({
                           ))}
                         </select>
                       ) : (
-                        <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                        <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">
                           {entreprises.find((e) => e.id === u.entreprise_id)?.nom ?? 'Entreprise active'}
                         </span>
                       )}
                     </td>
-                    <td className="py-3">
+                    <td>
                       <select
                         value={u.role}
                         onChange={(e) => changeRole(u, e.target.value as Role)}
                         disabled={u.id === profile?.id}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-50"
+                        className="form-control-lte text-xs py-1 disabled:opacity-50"
                       >
                         {(Object.keys(ROLE_LABELS) as Role[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                       </select>
                     </td>
-                    <td className="py-3 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${u.actif ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300'}`}>
+                    <td className="text-center">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
+                        u.actif
+                          ? 'bg-green-100 text-[#198754] dark:bg-green-900/40 dark:text-green-300'
+                          : 'bg-red-100 text-[#dc3545] dark:bg-red-900/40 dark:text-red-300'
+                      }`}>
                         <ShieldCheck className="w-3 h-3" /> {u.actif ? 'Actif' : 'Désactivé'}
                       </span>
                     </td>
-                    <td className="py-3 text-right">
-                      <button
-                        onClick={() => toggleActive(u)}
-                        disabled={u.id === profile?.id}
-                        className="text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 px-2"
-                      >
-                        {u.actif ? 'Désactiver' : 'Réactiver'}
-                      </button>
-                      {u.id !== profile?.id && (
-                        <button onClick={() => setDeleteUser(u)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-600 transition-colors" title="Désactiver ce compte">
-                          <Trash2 className="w-4 h-4" />
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => toggleActive(u)}
+                          disabled={u.id === profile?.id}
+                          className="btn-lte btn-lte-sm btn-lte-outline-secondary disabled:opacity-30"
+                        >
+                          {u.actif ? 'Désactiver' : 'Réactiver'}
                         </button>
-                      )}
+                        {u.id !== profile?.id && (
+                          <button
+                            onClick={() => setDeleteUser(u)}
+                            className="btn-lte btn-lte-sm btn-lte-danger"
+                            title="Désactiver ce compte"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
-                  <tr><td colSpan={5} className="py-6 text-center text-slate-400 text-sm">Aucun utilisateur</td></tr>
+                  <tr><td colSpan={5} className="py-6 text-center text-gray-400 text-xs">Aucun utilisateur</td></tr>
                 )}
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-slate-400 mt-3">
-            Les comptes désactivés conservent leur historique d'audit mais ne peuvent plus se connecter.
-          </p>
-        </div>
+        </Card>
       )}
 
       {/* Modules par entreprise (admin) */}

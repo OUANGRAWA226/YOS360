@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { ScanLine, Keyboard, Printer, Camera, CameraOff, PackageSearch } from 'lucide-react';
+import { ScanLine, Keyboard, Printer, Camera, CameraOff, PackageSearch, Tag, CheckCircle2 } from 'lucide-react';
 import type { ProduitWithCategorie, Lot } from '@/lib/supabase';
 import { Barcode39 } from '@/components/Barcode39';
 import { showToast } from '@/components/Toast';
 import { formatNumber, daysUntil, peremptionLabel } from '@/lib/format';
 import { can, type Role } from '@/lib/permissions';
 import { Modal } from '@/components/Modal';
+import { Card, Callout } from '@/components/adminlte';
 
 type Props = {
   produits: ProduitWithCategorie[];
@@ -112,110 +113,210 @@ export function Scan({ produits, lots, role }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Scan code-barres</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Scannez avec la caméra ou saisissez un code</p>
-      </div>
+      {/* Content Header (Page header) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+            <ScanLine className="w-7 h-7 text-primary" />
+            Scan & Codes-barres
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Reconnaissance instantanée par caméra ou douchette, entrées/sorties et étiquettes Code39
+          </p>
+        </div>
 
-      {/* Mode selector */}
-      <div className="grid grid-cols-3 gap-3">
-        {(['consultation', 'entrée', 'sortie'] as ScanMode[]).map((m) => (
-          <button
-            key={m}
-            onClick={() => { if (m !== 'consultation' && !canCreate) { showToast('Action non permise pour votre rôle', 'error'); return; } setMode(m); }}
-            className={`px-4 py-3 rounded-xl font-medium text-sm capitalize transition-all ${
-              mode === m ? 'bg-sky-600 text-white shadow-sm shadow-sky-600/30' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
-
-      {/* Camera + manual input */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-900 flex items-center gap-2"><Camera className="w-5 h-5 text-sky-600" /> Caméra</h3>
+        {/* Mode selector: AdminLTE Button Group */}
+        <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 shadow-xs">
+          {(['consultation', 'entrée', 'sortie'] as ScanMode[]).map((m) => (
             <button
-              onClick={() => { setCameraError(null); setCameraOn(!cameraOn); setQuery(''); setFound(null); lastScanned.current = ''; }}
-              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
-                cameraOn ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-sky-600 text-white hover:bg-sky-700'
+              key={m}
+              onClick={() => {
+                if (m !== 'consultation' && !canCreate) {
+                  showToast('Action non permise pour votre rôle', 'error');
+                  return;
+                }
+                setMode(m);
+              }}
+              className={`px-4 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all ${
+                mode === m
+                  ? m === 'entrée'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : m === 'sortie'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
-              {cameraOn ? <><CameraOff className="w-4 h-4" /> Arrêter</> : <><Camera className="w-4 h-4" /> Activer</>}
+              {m}
             </button>
-          </div>
-          <div className="relative aspect-video bg-slate-900 rounded-xl overflow-hidden">
+          ))}
+        </div>
+      </div>
+
+      {/* Camera + Manual input row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card
+          title="Détection Caméra"
+          icon={Camera}
+          variant="primary"
+          outline
+          tools={
+            <button
+              onClick={() => {
+                setCameraError(null);
+                setCameraOn(!cameraOn);
+                setQuery('');
+                setFound(null);
+                lastScanned.current = '';
+              }}
+              className={`btn-lte btn-lte-sm ${
+                cameraOn ? 'btn-lte-danger' : 'btn-lte-primary'
+              }`}
+            >
+              {cameraOn ? (
+                <>
+                  <CameraOff className="w-3.5 h-3.5" /> Éteindre
+                </>
+              ) : (
+                <>
+                  <Camera className="w-3.5 h-3.5" /> Démarrer la caméra
+                </>
+              )}
+            </button>
+          }
+        >
+          <div className="relative aspect-video bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
             {cameraOn ? (
               <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
-                <ScanLine className="w-10 h-10 mb-2" />
-                <p className="text-sm">Caméra désactivée</p>
+                <ScanLine className="w-12 h-12 mb-2 stroke-[1.5]" />
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                  Flux vidéo inactif
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Cliquez sur « Démarrer la caméra » ci-dessus
+                </p>
               </div>
             )}
             {cameraOn && (
-              <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-red-500/70 animate-pulse" />
+              <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-red-500/80 shadow-[0_0_8px_#ef4444] animate-pulse" />
             )}
           </div>
-          {cameraError && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2 mt-2">{cameraError}</p>}
-        </div>
+          {cameraError && (
+            <Callout title="Attention" variant="warning" className="mt-3">
+              {cameraError}
+            </Callout>
+          )}
+        </Card>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-          <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-4"><Keyboard className="w-5 h-5 text-slate-500" /> Saisie manuelle</h3>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleLookup(query); }}
-              placeholder="Code-barres, SKU, nom..."
-              className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500"
-              autoFocus
-            />
-            <button onClick={() => handleLookup(query)} className="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-900 transition-colors">
-              Chercher
-            </button>
-          </div>
-          <p className="text-xs text-slate-400 mt-2">Astuce : un douchette USB ou le clavier du téléphone saisit le code puis valide avec « Entrée ».</p>
-
-          {mode !== 'consultation' && found && (
-            <div className="mt-4 border-t border-slate-100 pt-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Quantité ({mode})</label>
+        <Card
+          title="Saisie Manuelle ou Douchette"
+          icon={Keyboard}
+          variant="info"
+          outline
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                Code-barres / SKU / Désignation
+              </label>
               <div className="flex gap-2">
-                <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
-                  className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                <button onClick={applyMovement} className={`px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-colors ${mode === 'entrée' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}>
-                  Valider
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleLookup(query);
+                  }}
+                  placeholder="Scannez ou tapez ici puis Entrée..."
+                  className="form-control-lte font-mono text-xs flex-1"
+                  autoFocus
+                />
+                <button
+                  onClick={() => handleLookup(query)}
+                  className="btn-lte btn-lte-dark"
+                >
+                  Chercher
                 </button>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Result card */}
-      {found && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400 mb-1 flex items-center gap-1"><PackageSearch className="w-4 h-4" /> Produit identifié</p>
-              <h3 className="text-lg font-bold text-slate-900">{found.nom}</h3>
-              <p className="text-sm text-slate-500 font-mono">{found.sku || '—'} · {found.code_barres || 'sans code-barres'}</p>
-              <p className="text-sm text-slate-600 mt-2">
-                Stock : <span className="font-bold text-slate-900">{formatNumber(found.quantite)} {found.unite}</span>
-                {' · '}Valeur unitaire : <span className="font-semibold">{found.prix_vente.toFixed(2)} €</span>
-                {' · '}CMUP : <span className="font-semibold">{Number(found.cmup).toFixed(2)} €</span>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
+                Compatible direct avec douchettes USB/Bluetooth (envoi automatique de la touche Entrée).
               </p>
             </div>
-            <button onClick={() => setLabelOpen(true)} className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-900 transition-colors">
-              <Printer className="w-4 h-4" /> Étiquette
-            </button>
+
+            {mode !== 'consultation' && found && (
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  Quantité à imputer ({mode})
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className="form-control-lte flex-1 font-bold"
+                  />
+                  <button
+                    onClick={applyMovement}
+                    className={`btn-lte ${
+                      mode === 'entrée' ? 'btn-lte-success' : 'btn-lte-danger'
+                    }`}
+                  >
+                    Valider le mouvement
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+        </Card>
+      </div>
+
+      {/* Result Card */}
+      {found && (
+        <Card
+          title="Fiche du Produit Identifié"
+          icon={PackageSearch}
+          variant="success"
+          outline
+          tools={
+            <button
+              onClick={() => setLabelOpen(true)}
+              className="btn-lte btn-lte-dark btn-lte-sm"
+            >
+              <Printer className="w-3.5 h-3.5" /> Imprimer étiquette
+            </button>
+          }
+        >
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div>
+              <span className="badge-adminlte bg-success-subtle text-success border border-success/20 mb-1.5">
+                Produit vérifié
+              </span>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{found.nom}</h3>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">
+                SKU : {found.sku || '—'} · Code-barres : {found.code_barres || 'sans code-barres'}
+              </p>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300 mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <p>
+                  Stock : <strong className="text-slate-900 dark:text-slate-100 font-bold">{formatNumber(found.quantite)} {found.unite}</strong>
+                </p>
+                <p>
+                  Prix de vente : <strong className="text-slate-900 dark:text-slate-100">{found.prix_vente.toFixed(2)} €</strong>
+                </p>
+                <p>
+                  CMUP : <strong className="text-slate-900 dark:text-slate-100">{Number(found.cmup).toFixed(2)} €</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+
           {produitLots.length > 0 && (
-            <div className="mt-4 border-t border-slate-100 pt-4">
-              <p className="text-sm font-medium text-slate-700 mb-2">Lots (ordre FEFO — premier expiré, premier sorti)</p>
+            <div className="mt-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                Traçabilité Lots (priorité FEFO)
+              </p>
               <div className="flex flex-wrap gap-2">
                 {produitLots
                   .slice()
@@ -224,18 +325,31 @@ export function Scan({ produits, lots, role }: Props) {
                     const d = l.date_peremption ? daysUntil(l.date_peremption) : null;
                     const pl = d !== null ? peremptionLabel(d) : null;
                     return (
-                      <span key={l.id} className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border ${idx === 0 && l.date_peremption ? 'border-sky-300 bg-sky-50 text-sky-900' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
-                        <span className="font-mono">{l.numero_lot}</span>
-                        {l.date_peremption && pl && <span className={`px-1.5 py-0.5 rounded-full ${pl.cls}`}>{pl.label}</span>}
-                        <span>· {l.quantite} en stock</span>
-                        {idx === 0 && l.date_peremption && <span className="text-sky-600 font-semibold">→ à sortir en premier</span>}
-                      </span>
+                      <div
+                        key={l.id}
+                        className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1 text-xs"
+                      >
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          Lot {l.numero_lot}
+                        </span>
+                        <span className="text-slate-500"> ({l.quantite} dispo)</span>
+                        {pl && (
+                          <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold ${pl.color}`}>
+                            {pl.label}
+                          </span>
+                        )}
+                        {idx === 0 && (
+                          <span className="ml-1.5 text-[10px] text-primary font-bold">
+                            · Prioritaire
+                          </span>
+                        )}
+                      </div>
                     );
                   })}
               </div>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Label modal */}

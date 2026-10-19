@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { TrendingUp, Package, DollarSign, ShoppingCart, AlertTriangle, CalendarClock, Filter, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { TrendingUp, Package, DollarSign, ShoppingCart, AlertTriangle, CalendarClock, Filter, Download, FileSpreadsheet, FileText, BarChart3 } from 'lucide-react';
 import type { ProduitWithCategorie, MouvementWithProduit, CommandeWithRelations, Categorie, LotWithProduit, Entrepot, StockEntrepot } from '@/lib/supabase';
 import { formatCurrency, formatNumber, daysUntil } from '@/lib/format';
 import { exportCSV, exportExcel, exportPDF } from '@/lib/io';
 import { usePrefs } from '@/lib/prefs';
 import { BarChart, LineChart, DonutChart } from '@/components/Charts';
+import { SmallBox, InfoBox, Card, Callout } from '@/components/adminlte';
 
 type Props = {
   produits: ProduitWithCategorie[];
@@ -240,203 +241,341 @@ export function Rapports({ produits, mouvements, commandes, categories, lots, en
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('rep.title')}</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">{t('rep.subtitle')}</p>
-      </div>
-
-      {/* Filtres */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 no-print">
-        <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('rep.filters')}</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('rep.period')}</label>
-            <select value={periode} onChange={(e) => setPeriode(e.target.value as Periode)} className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
-              {periodOptions.map((o) => <option key={o.value} value={o.value}>{t(o.key)}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('rep.category')}</label>
-            <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="all">{t('common.all')}</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('rep.site')}</label>
-            <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="all">{t('common.all')}</option>
-              {entrepots.map((e) => <option key={e.id} value={e.id}>{e.nom}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <Download className="w-4 h-4 text-slate-400" />
-          <span className="text-sm text-slate-500 dark:text-slate-400 mr-2">{t('rep.exportReport')}</span>
-          <button onClick={() => doExport('csv')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"><FileText className="w-4 h-4" /> CSV</button>
-          <button onClick={() => doExport('excel')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 transition-colors"><FileSpreadsheet className="w-4 h-4" /> Excel</button>
-          <button onClick={() => doExport('pdf')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-700 dark:text-red-400 transition-colors"><FileText className="w-4 h-4" /> PDF</button>
+      {/* Content Header (Page header) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+            <BarChart3 className="w-7 h-7 text-primary" />
+            {t('rep.title')}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('rep.subtitle')}</p>
         </div>
       </div>
 
-      {/* KPIs */}
+      {/* AdminLTE Small-Boxes Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <div key={kpi.label} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{kpi.label}</p>
-                  <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2">{kpi.value}</p>
-                </div>
-                <div className={`w-10 h-10 rounded-xl ${kpi.bg} flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${kpi.iconColor}`} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        <SmallBox
+          title={t('rep.stockValuePurchase')}
+          value={fmtCur(data.valeurStockAchat)}
+          icon={DollarSign}
+          variant="info"
+          footerText="Valorisation au coût d'achat"
+        />
+        <SmallBox
+          title={t('rep.stockValueSale')}
+          value={fmtCur(data.valeurStockVente)}
+          icon={TrendingUp}
+          variant="success"
+          footerText="Prix de vente théorique"
+        />
+        <SmallBox
+          title={t('rep.potentialMargin')}
+          value={fmtCur(data.margePotentielle)}
+          icon={Package}
+          variant="warning"
+          footerText="Marge brute prévisionnelle"
+        />
+        <SmallBox
+          title={t('rep.totalSales')}
+          value={fmtCur(data.totalVentes)}
+          icon={ShoppingCart}
+          variant="danger"
+          footerText="Volume de ventes encaissé"
+        />
       </div>
 
-      {/* Charts grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">{t('rep.movementsTrend')}</h3>
-          <LineChart data={data.months} formatValue={fmtNum} color="#0ea5e9" height={200} />
+      {/* Filtres & Outils d'exportation */}
+      <Card
+        title={t('rep.filters')}
+        icon={Filter}
+        variant="primary"
+        outline
+        tools={
+          <div className="flex items-center gap-1.5 no-print">
+            <button
+              onClick={() => doExport('csv')}
+              className="btn-lte btn-lte-secondary btn-lte-sm"
+              title="Exporter au format CSV"
+            >
+              <FileText className="w-3.5 h-3.5" /> CSV
+            </button>
+            <button
+              onClick={() => doExport('excel')}
+              className="btn-lte btn-lte-success btn-lte-sm"
+              title="Exporter au format Excel"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+            </button>
+            <button
+              onClick={() => doExport('pdf')}
+              className="btn-lte btn-lte-danger btn-lte-sm"
+              title="Exporter au format PDF"
+            >
+              <FileText className="w-3.5 h-3.5" /> PDF
+            </button>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              {t('rep.period')}
+            </label>
+            <select
+              value={periode}
+              onChange={(e) => setPeriode(e.target.value as Periode)}
+              className="form-control-lte"
+            >
+              {periodOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {t(o.key)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              {t('rep.category')}
+            </label>
+            <select
+              value={catFilter}
+              onChange={(e) => setCatFilter(e.target.value)}
+              className="form-control-lte"
+            >
+              <option value="all">{t('common.all')}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              {t('rep.site')}
+            </label>
+            <select
+              value={siteFilter}
+              onChange={(e) => setSiteFilter(e.target.value)}
+              className="form-control-lte"
+            >
+              <option value="all">{t('common.all')}</option>
+              {entrepots.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nom}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+      </Card>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">{t('rep.byCategory')}</h3>
+      {/* Graphiques Principaux */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card title={t('rep.movementsTrend')} variant="info" outline>
+          <LineChart data={data.months} formatValue={fmtNum} color="#0ea5e9" height={220} />
+        </Card>
+
+        <Card title={t('rep.byCategory')} variant="success" outline>
           {data.stockByCat.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">{t('common.none')}</p>
+            <p className="text-sm text-slate-400 py-12 text-center">{t('common.none')}</p>
           ) : (
-            <DonutChart data={data.stockByCat} size={160} />
+            <div className="py-2 flex justify-center">
+              <DonutChart data={data.stockByCat} size={180} />
+            </div>
           )}
-        </div>
+        </Card>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">{t('rep.topValue')}</h3>
-          <BarChart data={data.topBars} formatValue={(v) => fmtCur(v)} height={200} />
-        </div>
+        <Card title={t('rep.topValue')} variant="warning" outline>
+          <BarChart data={data.topBars} formatValue={(v) => fmtCur(v)} height={220} />
+        </Card>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">{t('rep.topMoved')}</h3>
-          <BarChart data={data.topMoved} formatValue={fmtNum} height={200} />
-        </div>
+        <Card title={t('rep.topMoved')} variant="danger" outline>
+          <BarChart data={data.topMoved} formatValue={fmtNum} height={220} />
+        </Card>
       </div>
 
       {/* Commandes achat vs vente */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">{t('nav.orders')}: {t('rep.purchases')} / {t('rep.sales')}</h3>
-        <div className="grid grid-cols-2 gap-6 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-4 h-4 rounded bg-sky-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-300">{t('rep.purchases')}: <strong className="text-slate-900 dark:text-slate-100">{fmtCur(data.totalAchats)}</strong></span>
+      <Card
+        title={`${t('nav.orders')} : ${t('rep.purchases')} / ${t('rep.sales')}`}
+        variant="primary"
+        outline
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60">
+            <div className="w-4 h-4 rounded bg-[#0ea5e9]" />
+            <span className="text-sm text-slate-700 dark:text-slate-300">
+              {t('rep.purchases')} :{' '}
+              <strong className="text-slate-900 dark:text-slate-100">{fmtCur(data.totalAchats)}</strong>
+            </span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-4 h-4 rounded bg-emerald-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-300">{t('rep.sales')}: <strong className="text-slate-900 dark:text-slate-100">{fmtCur(data.totalVentes)}</strong></span>
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
+            <div className="w-4 h-4 rounded bg-[#10b981]" />
+            <span className="text-sm text-slate-700 dark:text-slate-300">
+              {t('rep.sales')} :{' '}
+              <strong className="text-slate-900 dark:text-slate-100">{fmtCur(data.totalVentes)}</strong>
+            </span>
           </div>
         </div>
         <div className="space-y-3">
           {data.cmdByMonth.map((m, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className="w-16 text-xs text-slate-500 dark:text-slate-400 text-right">{m.label}</div>
-              <div className="flex-1 flex gap-1">
-                <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden h-7 flex items-center">
-                  <div className="bg-sky-500 h-full rounded-lg transition-all duration-700" style={{ width: `${Math.min(m.achats * 20, 100)}%` }} />
-                  <span className="px-2 text-xs text-slate-700 dark:text-slate-200 font-medium">{m.achats}</span>
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-20 text-xs font-semibold text-slate-500 dark:text-slate-400 text-right">
+                {m.label}
+              </div>
+              <div className="flex-1 flex gap-2">
+                <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden h-7 flex items-center border border-slate-200 dark:border-slate-700">
+                  <div
+                    className="bg-[#0ea5e9] h-full rounded-xs transition-all duration-700"
+                    style={{ width: `${Math.min(m.achats * 20, 100)}%` }}
+                  />
+                  <span className="px-2 text-xs text-slate-800 dark:text-slate-200 font-bold">
+                    {m.achats}
+                  </span>
                 </div>
-                <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden h-7 flex items-center">
-                  <div className="bg-emerald-500 h-full rounded-lg transition-all duration-700" style={{ width: `${Math.min(m.ventes * 20, 100)}%` }} />
-                  <span className="px-2 text-xs text-slate-700 dark:text-slate-200 font-medium">{m.ventes}</span>
+                <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden h-7 flex items-center border border-slate-200 dark:border-slate-700">
+                  <div
+                    className="bg-[#10b981] h-full rounded-xs transition-all duration-700"
+                    style={{ width: `${Math.min(m.ventes * 20, 100)}%` }}
+                  />
+                  <span className="px-2 text-xs text-slate-800 dark:text-slate-200 font-bold">
+                    {m.ventes}
+                  </span>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
-      {/* Alert summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" /> {t('rep.alertsSummary')}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-4">
-              <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">{t('rep.lowStockCount')}</p>
-              <p className="text-2xl font-bold text-amber-900 dark:text-amber-300 mt-1">{produitsFiltres.filter((p) => (qtyOf[p.id] ?? 0) <= p.seuil_alerte && (qtyOf[p.id] ?? 0) > 0).length}</p>
+      {/* Alert summary & Expiry watch */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card
+          title={t('rep.alertsSummary')}
+          icon={AlertTriangle}
+          variant="warning"
+          outline
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                {t('rep.lowStockCount')}
+              </p>
+              <p className="text-2xl font-extrabold text-amber-900 dark:text-amber-200 mt-1">
+                {produitsFiltres.filter((p) => (qtyOf[p.id] ?? 0) <= p.seuil_alerte && (qtyOf[p.id] ?? 0) > 0).length}
+              </p>
             </div>
-            <div className="bg-red-50 dark:bg-red-500/10 rounded-xl p-4">
-              <p className="text-sm text-red-700 dark:text-red-400 font-medium">{t('rep.outOfStockCount')}</p>
-              <p className="text-2xl font-bold text-red-900 dark:text-red-300 mt-1">{produitsFiltres.filter((p) => (qtyOf[p.id] ?? 0) === 0).length}</p>
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/60 rounded-xl p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400">
+                {t('rep.outOfStockCount')}
+              </p>
+              <p className="text-2xl font-extrabold text-red-900 dark:text-red-200 mt-1">
+                {produitsFiltres.filter((p) => (qtyOf[p.id] ?? 0) === 0).length}
+              </p>
             </div>
-            <div className="bg-sky-50 dark:bg-sky-500/10 rounded-xl p-4">
-              <p className="text-sm text-sky-700 dark:text-sky-400 font-medium">{t('rep.pendingOrders')}</p>
-              <p className="text-2xl font-bold text-sky-900 dark:text-sky-300 mt-1">{commandes.filter((c) => c.statut === 'en_attente').length}</p>
+            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/60 rounded-xl p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400">
+                {t('rep.pendingOrders')}
+              </p>
+              <p className="text-2xl font-extrabold text-sky-900 dark:text-sky-200 mt-1">
+                {commandes.filter((c) => c.statut === 'en_attente').length}
+              </p>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-            <CalendarClock className="w-5 h-5 text-amber-600 dark:text-amber-400" /> {t('rep.expiryWatch')}
-          </h3>
+        <Card
+          title={t('rep.expiryWatch')}
+          icon={CalendarClock}
+          variant="danger"
+          outline
+        >
           {lotsAlerte.length === 0 ? (
-            <p className="text-sm text-slate-400">{t('rep.noExpiry')}</p>
+            <p className="text-sm text-slate-400 py-6 text-center">{t('rep.noExpiry')}</p>
           ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
               {lotsAlerte.slice(0, 8).map(({ lot, jours }) => (
-                <div key={lot.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2 text-sm">
+                <div
+                  key={lot.id}
+                  className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 rounded-lg px-3.5 py-2 text-sm border border-slate-200 dark:border-slate-700"
+                >
                   <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">{lot.produits?.nom || '—'}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-mono">Lot {lot.numero_lot} · {lot.quantite}</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      {lot.produits?.nom || '—'}
+                    </p>
+                    <p className="text-xs text-slate-500 font-mono">
+                      Lot {lot.numero_lot} · {lot.quantite}
+                    </p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${jours < 0 ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400' : jours <= 7 ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}`}>
+                  <span
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
+                      jours < 0
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                        : jours <= 7
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                        : 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200'
+                    }`}
+                  >
                     {jours < 0 ? t('rep.expired') : t('rep.inDays', { n: jours })}
                   </span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Valorisation CMUP + marge réelle */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">{t('rep.valuation')}</h3>
+      <Card title={t('rep.valuation')} variant="success" outline>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-sky-50 dark:bg-sky-500/10 rounded-xl p-4">
-            <p className="text-sm text-sky-700 dark:text-sky-400 font-medium">{t('rep.cmupValue')}</p>
-            <p className="text-2xl font-bold text-sky-900 dark:text-sky-300 mt-1">{fmtCur(data.valeurCMUP)}</p>
+          <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/60 rounded-xl p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400">
+              {t('rep.cmupValue')}
+            </p>
+            <p className="text-2xl font-extrabold text-sky-900 dark:text-sky-200 mt-1">
+              {fmtCur(data.valeurCMUP)}
+            </p>
           </div>
-          <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-4">
-            <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">{t('rep.retailValue')}</p>
-            <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-300 mt-1">{fmtCur(data.valeurStockVente)}</p>
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              {t('rep.retailValue')}
+            </p>
+            <p className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200 mt-1">
+              {fmtCur(data.valeurStockVente)}
+            </p>
           </div>
-          <div className="bg-violet-50 dark:bg-violet-500/10 rounded-xl p-4">
-            <p className="text-sm text-violet-700 dark:text-violet-400 font-medium">{t('rep.latentMargin')}</p>
-            <p className="text-2xl font-bold text-violet-900 dark:text-violet-300 mt-1">{fmtCur(data.valeurStockVente - data.valeurCMUP)}</p>
+          <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/60 rounded-xl p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-violet-700 dark:text-violet-400">
+              {t('rep.latentMargin')}
+            </p>
+            <p className="text-2xl font-extrabold text-violet-900 dark:text-violet-200 mt-1">
+              {fmtCur(data.valeurStockVente - data.valeurCMUP)}
+            </p>
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {margeReelle.map((m) => (
             <div key={m.nom} className="flex items-center gap-3">
-              <span className="w-40 sm:w-56 truncate text-sm text-slate-700 dark:text-slate-300">{m.nom}</span>
-              <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg h-6 overflow-hidden">
-                <div className="bg-emerald-500 h-full rounded-lg transition-all duration-700" style={{ width: `${Math.min(Math.max(m.taux, 0), 100)}%` }} />
+              <span className="w-40 sm:w-56 truncate text-sm font-medium text-slate-700 dark:text-slate-300">
+                {m.nom}
+              </span>
+              <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-md h-6 overflow-hidden border border-slate-200 dark:border-slate-700">
+                <div
+                  className="bg-[#10b981] h-full rounded-xs transition-all duration-700"
+                  style={{ width: `${Math.min(Math.max(m.taux, 0), 100)}%` }}
+                />
               </div>
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 w-24 text-right">{fmtCur(m.marge)} <span className="text-xs text-slate-400">({m.taux.toFixed(0)}%)</span></span>
+              <span className="text-sm font-bold text-slate-900 dark:text-slate-100 w-28 text-right">
+                {fmtCur(m.marge)}{' '}
+                <span className="text-xs text-slate-400 font-normal">({m.taux.toFixed(0)}%)</span>
+              </span>
             </div>
           ))}
-          {margeReelle.length === 0 && <p className="text-sm text-slate-400">{t('rep.noMargin')}</p>}
+          {margeReelle.length === 0 && (
+            <p className="text-sm text-slate-400 text-center py-4">{t('rep.noMargin')}</p>
+          )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

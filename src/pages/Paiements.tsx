@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, HandCoins, Smartphone, AlertCircle, Phone, CalendarClock } from 'lucide-react';
+import { Plus, Search, Trash2, HandCoins, Smartphone, AlertCircle, Phone, CalendarClock, ArrowDownLeft, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { PaiementWithRelations, Client, Fournisseur, CommandeWithRelations, ModePaiement, SensPaiement, Entreprise } from '@/lib/supabase';
 import { writeRow } from '@/lib/dataLayer';
@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 import { modePaiementLabel, MODES_PAIEMENT } from '@/lib/format';
 import { formatCurrency, daysUntil } from '@/lib/format';
+import { InfoBox, Card, Callout } from '@/components/adminlte';
 
 type Props = {
   paiements: PaiementWithRelations[];
@@ -150,136 +151,213 @@ export function Paiements({ paiements, clients, fournisseurs, commandes, entrepr
 
   return (
     <div className="space-y-6">
+      {/* Content Header (Page header) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Paiements & Créances</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Encaissements, décaissements, soldes et relances</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+            <HandCoins className="w-7 h-7 text-primary" />
+            Paiements & Créances
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Encaissements clients, règlements fournisseurs, balance des créances et alertes de relances
+          </p>
         </div>
         {canCreate && (
-          <button onClick={() => openAdd('encaissement')} className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20">
-            <Plus className="w-5 h-5" /> Nouveau paiement
+          <button onClick={() => openAdd('encaissement')} className="btn-lte btn-lte-success">
+            <Plus className="w-4 h-4" /> Nouveau paiement
           </button>
         )}
       </div>
 
-      {/* KPIs */}
+      {/* AdminLTE Info-Boxes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center"><HandCoins className="w-5 h-5 text-emerald-600" /></div>
-          <div><p className="text-sm text-slate-500">Total encaissé</p><p className="text-xl font-bold text-slate-900">{formatCurrency(totalEncaisse, devise)}</p></div>
-        </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center"><HandCoins className="w-5 h-5 text-red-600" /></div>
-          <div><p className="text-sm text-slate-500">Total décaissé</p><p className="text-xl font-bold text-slate-900">{formatCurrency(totalDecaisse, devise)}</p></div>
-        </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center"><AlertCircle className="w-5 h-5 text-amber-600" /></div>
-          <div><p className="text-sm text-slate-500">Créances clients</p><p className="text-xl font-bold text-slate-900">{formatCurrency(totalCreances, devise)}</p></div>
-        </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center"><AlertCircle className="w-5 h-5 text-sky-600" /></div>
-          <div><p className="text-sm text-slate-500">Dettes fournisseurs</p><p className="text-xl font-bold text-slate-900">{formatCurrency(totalDettes, devise)}</p></div>
-        </div>
+        <InfoBox
+          title="Total Encaissé"
+          value={formatCurrency(totalEncaisse, devise)}
+          icon={ArrowDownLeft}
+          variant="success"
+          description="Flux entrants clients"
+        />
+        <InfoBox
+          title="Total Décaissé"
+          value={formatCurrency(totalDecaisse, devise)}
+          icon={ArrowUpRight}
+          variant="danger"
+          description="Règlements fournisseurs"
+        />
+        <InfoBox
+          title="Créances Clients"
+          value={formatCurrency(totalCreances, devise)}
+          icon={AlertCircle}
+          variant="warning"
+          description="Reste dû à encaisser"
+        />
+        <InfoBox
+          title="Dettes Fournisseurs"
+          value={formatCurrency(totalDettes, devise)}
+          icon={CalendarClock}
+          variant="info"
+          description="Reste dû à payer"
+        />
       </div>
 
-      {/* Relances */}
+      {/* Relances Card */}
       {relances.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-          <h3 className="font-semibold text-red-900 flex items-center gap-2 mb-3"><Phone className="w-5 h-5" /> Relances à faire ({relances.length})</h3>
+        <Card
+          title={`Relances Créances à Traiter (${relances.length})`}
+          icon={Phone}
+          variant="danger"
+          outline
+        >
           <div className="space-y-2">
             {relances.slice(0, 6).map(({ cmd, reste }) => {
               const echu = cmd.date_echeance ? daysUntil(cmd.date_echeance) : null;
               return (
-                <div key={cmd.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white rounded-xl px-4 py-3">
+                <div
+                  key={cmd.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5"
+                >
                   <div>
-                    <p className="font-medium text-slate-900 text-sm">{cmd.clients?.nom || cmd.client_walkin || 'Client comptoir'} — {formatCurrency(reste, devise)}</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                      {cmd.clients?.nom || cmd.client_walkin || 'Client comptoir'} —{' '}
+                      <span className="text-danger font-bold">{formatCurrency(reste, devise)}</span>
+                    </p>
                     <p className="text-xs text-slate-500">
-                      {cmd.numero_document || cmd.reference || '—'}
-                      {echu !== null && echu < 0 ? ` · échue depuis ${-echu} jour(s)` : ' · sans échéance depuis plus de 30 jours'}
+                      Doc : {cmd.numero_document || cmd.reference || '—'}
+                      {echu !== null && echu < 0
+                        ? ` · échue depuis ${-echu} jour(s)`
+                        : ' · sans échéance fixée depuis plus de 30 jours'}
                     </p>
                   </div>
                   {canCreate && (
-                    <button onClick={() => relancer({ cmd, reste })} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors">
-                      <Phone className="w-3.5 h-3.5" /> Relancer
+                    <button
+                      onClick={() => relancer({ cmd, reste })}
+                      className="btn-lte btn-lte-danger btn-lte-sm self-start sm:self-auto"
+                    >
+                      <Phone className="w-3.5 h-3.5" /> Enregistrer relance
                     </button>
                   )}
                 </div>
               );
             })}
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher par client, référence, n° document..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-        <div className="flex gap-2">
-          {(['all', 'encaissement', 'decaissement'] as const).map((s) => (
-            <button key={s} onClick={() => setFilterSens(s)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                filterSens === s ? (s === 'decaissement' ? 'bg-red-600 text-white' : s === 'encaissement' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white') : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}>
-              {s === 'all' ? 'Tous' : s === 'encaissement' ? 'Encaissements' : 'Décaissements'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Table paiements */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {/* Table Card */}
+      <Card
+        title={`Registre des flux financiers (${filtered.length})`}
+        icon={HandCoins}
+        variant="primary"
+        outline
+        tools={
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="relative w-48 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Client, réf, n° document..."
+                className="form-control-lte pl-9 py-1 text-xs"
+              />
+            </div>
+            <div className="inline-flex rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-0.5">
+              {(['all', 'encaissement', 'decaissement'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilterSens(s)}
+                  className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                    filterSens === s
+                      ? s === 'decaissement'
+                        ? 'bg-danger text-white'
+                        : s === 'encaissement'
+                        ? 'bg-success text-white'
+                        : 'bg-primary text-white'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+                >
+                  {s === 'all' ? 'Tous' : s === 'encaissement' ? 'Encaissements' : 'Décaissements'}
+                </button>
+              ))}
+            </div>
+          </div>
+        }
+        noPadding
+      >
         {loading ? (
-          <div className="p-8 space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />)}</div>
+          <div className="p-8 space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
-            <HandCoins className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">Aucun paiement enregistré</p>
+            <HandCoins className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-slate-500">Aucun paiement enregistré</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-adminlte">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-6 py-3 font-semibold text-slate-600">Sens</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Partenaire</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Document</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Mode</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-600">Montant</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Référence</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden lg:table-cell">Date</th>
-                  <th className="text-right px-6 py-3"></th>
+                <tr>
+                  <th className="text-left px-4 py-3">Sens</th>
+                  <th className="text-left px-4 py-3">Partenaire</th>
+                  <th className="text-left px-4 py-3 hidden sm:table-cell">Document</th>
+                  <th className="text-left px-4 py-3">Mode</th>
+                  <th className="text-right px-4 py-3">Montant</th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell">Référence</th>
+                  <th className="text-left px-4 py-3 hidden lg:table-cell">Date</th>
+                  <th className="text-right px-4 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filtered.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-3">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${p.sens === 'encaissement' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                        {p.sens === 'encaissement' ? 'Encaissement' : 'Décaissement'}
+                  <tr key={p.id}>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`badge-adminlte ${
+                          p.sens === 'encaissement'
+                            ? 'bg-success-subtle text-success border border-success/20'
+                            : 'bg-danger-subtle text-danger border border-danger/20'
+                        }`}
+                      >
+                        {p.sens === 'encaissement' ? '+ Encaissement' : '- Décaissement'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      {p.clients?.nom || p.fournisseurs?.nom || '—'}
+                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
+                      {p.clients?.nom || p.fournisseurs?.nom || 'Client Comptoir'}
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-slate-500">
+                    <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-primary">
                       {p.commandes?.numero_document || p.commandes?.reference || '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${MODES_PAIEMENT.find((m) => m.value === p.mode)?.mobile ? 'bg-orange-50 text-orange-700' : 'bg-slate-100 text-slate-700'}`}>
-                        {MODES_PAIEMENT.find((m) => m.value === p.mode)?.mobile && <Smartphone className="w-3.5 h-3.5" />}
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-700 dark:text-slate-300">
+                        {MODES_PAIEMENT.find((m) => m.value === p.mode)?.mobile && (
+                          <Smartphone className="w-3.5 h-3.5 text-warning" />
+                        )}
                         {modePaiementLabel(p.mode)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatCurrency(p.montant, devise)}</td>
-                    <td className="px-4 py-3 hidden md:table-cell font-mono text-xs text-slate-500">{p.reference || '—'}</td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-500">{new Date(p.date_paiement).toLocaleDateString('fr-FR')}</td>
-                    <td className="px-6 py-3 text-right">
+                    <td className="px-4 py-3 text-right font-extrabold text-xs">
+                      <span className={p.sens === 'encaissement' ? 'text-success' : 'text-danger'}>
+                        {formatCurrency(p.montant, devise)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell font-mono text-xs text-slate-500">
+                      {p.reference || '—'}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-500">
+                      {new Date(p.date_paiement).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td className="px-4 py-3 text-right">
                       {canDelete && (
-                        <button onClick={() => setDeleteTarget(p)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Supprimer">
-                          <Trash2 className="w-4 h-4" />
+                        <button
+                          onClick={() => setDeleteTarget(p)}
+                          className="btn-lte btn-lte-danger btn-lte-sm"
+                          title="Supprimer la transaction"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </td>
@@ -289,7 +367,7 @@ export function Paiements({ paiements, clients, fournisseurs, commandes, entrepr
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Add payment modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Nouveau paiement" size="lg">

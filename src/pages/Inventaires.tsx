@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, ClipboardCheck, CheckCircle2, XCircle, Eye, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Plus, Search, Trash2, ClipboardCheck, CheckCircle2, XCircle, Eye, TrendingUp, TrendingDown, Minus, Clock, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { InventaireWithRelations, ProduitWithCategorie, Entrepot, InventaireStatut } from '@/lib/supabase';
 import { writeRow } from '@/lib/dataLayer';
@@ -8,6 +8,7 @@ import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 import { formatNumber, formatShortDate, generateReference, statutLabel, statutColor } from '@/lib/format';
+import { SmallBox, InfoBox, Card } from '@/components/adminlte';
 
 type Props = {
   inventaires: InventaireWithRelations[];
@@ -193,84 +194,179 @@ export function Inventaires({ inventaires, produits, entrepots, loading, onRefre
     }, 0);
   };
 
+  const totalSessions = inventaires.length;
+  const sessionsEnCours = inventaires.filter((i) => i.statut === 'en_cours').length;
+  const sessionsValidees = inventaires.filter((i) => i.statut === 'valide').length;
+  const sessionsAnnulees = inventaires.filter((i) => i.statut === 'annule').length;
+
   return (
     <div className="space-y-6">
+      {/* Content Header (Page header) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Inventaires physiques</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Comptage, écarts, ajustement validé</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+            <ClipboardCheck className="w-7 h-7 text-primary" />
+            Inventaires physiques
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Comptage contradictoire, calcul d'écarts et validation des ajustements de stock
+          </p>
         </div>
         {canCreate && (
-          <button onClick={openCreate} className="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-xl font-medium hover:bg-sky-700 transition-colors shadow-sm shadow-sky-600/20">
-            <Plus className="w-5 h-5" /> Nouvelle session
+          <button onClick={openCreate} className="btn-lte btn-lte-primary">
+            <Plus className="w-4 h-4" /> Nouvelle session
           </button>
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher par référence..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
+      {/* Info Boxes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <InfoBox
+          title="Total Sessions"
+          value={totalSessions}
+          icon={ClipboardCheck}
+          variant="info"
+          description="Toutes campagnes confondues"
+        />
+        <InfoBox
+          title="En cours"
+          value={sessionsEnCours}
+          icon={Clock}
+          variant="warning"
+          description="Comptages à valider"
+        />
+        <InfoBox
+          title="Clôturées"
+          value={sessionsValidees}
+          icon={CheckCircle}
+          variant="success"
+          description="Ajustements appliqués"
+        />
+        <InfoBox
+          title="Annulées"
+          value={sessionsAnnulees}
+          icon={XCircle}
+          variant="danger"
+          description="Sessions abandonnées"
+        />
       </div>
 
-      {loading ? (
-        <div className="p-8 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />)}</div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <ClipboardCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">Aucune session d'inventaire</p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {/* Sessions Table Card */}
+      <Card
+        title={`Registre des sessions d'inventaire (${filtered.length})`}
+        icon={ClipboardCheck}
+        variant="primary"
+        outline
+        tools={
+          <div className="flex items-center gap-2">
+            <div className="relative w-64 sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filtrer par référence..."
+                className="form-control-lte pl-9 py-1 text-xs"
+              />
+            </div>
+          </div>
+        }
+        noPadding
+      >
+        {loading ? (
+          <div className="p-8 space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-12 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center">
+            <ClipboardCheck className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-slate-500">Aucune session d'inventaire trouvée</p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-adminlte">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-6 py-3 font-semibold text-slate-600">Référence</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Site</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Produits</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-600">Écart net</th>
-                  <th className="text-center px-4 py-3 font-semibold text-slate-600">Statut</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Date</th>
-                  <th className="text-right px-6 py-3 font-semibold text-slate-600">Actions</th>
+                <tr>
+                  <th className="text-left px-4 py-3">Référence</th>
+                  <th className="text-left px-4 py-3 hidden sm:table-cell">Site</th>
+                  <th className="text-right px-4 py-3 hidden sm:table-cell">Lignes</th>
+                  <th className="text-right px-4 py-3">Écart net</th>
+                  <th className="text-center px-4 py-3">Statut</th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell">Date début</th>
+                  <th className="text-right px-4 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filtered.map((inv) => {
                   const sc = statutColor(inv.statut);
                   const ecart = ecartTotal(inv);
                   const comptes = (inv.inventaire_lignes || []).filter((l) => l.stock_compte !== null).length;
                   return (
-                    <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-3 font-mono text-xs text-slate-700">{inv.reference}</td>
-                      <td className="px-4 py-3 hidden sm:table-cell text-slate-700">{inv.entrepots?.nom || 'Tous sites'}</td>
-                      <td className="px-4 py-3 hidden sm:table-cell text-right text-slate-700">
-                        {comptes}/{inv.inventaire_lignes?.length || 0}
+                    <tr key={inv.id}>
+                      <td className="px-4 py-3 font-mono font-semibold text-xs text-primary">
+                        {inv.reference}
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold">
-                        {ecart > 0 ? <span className="text-emerald-600">+{formatNumber(ecart)}</span>
-                          : ecart < 0 ? <span className="text-red-600">−{formatNumber(-ecart)}</span>
-                          : <span className="text-slate-400">0</span>}
+                      <td className="px-4 py-3 hidden sm:table-cell font-medium text-slate-700 dark:text-slate-300">
+                        {inv.entrepots?.nom || 'Tous sites (global)'}
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell text-right font-mono text-xs">
+                        {comptes} / {inv.inventaire_lignes?.length || 0}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-xs">
+                        {ecart > 0 ? (
+                          <span className="text-emerald-600 dark:text-emerald-400">+{formatNumber(ecart)}</span>
+                        ) : ecart < 0 ? (
+                          <span className="text-red-600 dark:text-red-400">−{formatNumber(-ecart)}</span>
+                        ) : (
+                          <span className="text-slate-400">0</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${sc.bg} ${sc.text}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />{statutLabel(inv.statut)}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${sc.bg} ${sc.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                          {statutLabel(inv.statut)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-xs text-slate-500">{formatShortDate(inv.date_debut)}</td>
-                      <td className="px-6 py-3">
+                      <td className="px-4 py-3 hidden md:table-cell text-xs text-slate-500">
+                        {formatShortDate(inv.date_debut)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => setViewTarget(inv)} className="p-2 rounded-lg hover:bg-sky-50 text-slate-400 hover:text-sky-600 transition-colors" title="Détails"><Eye className="w-4 h-4" /></button>
+                          <button
+                            onClick={() => setViewTarget(inv)}
+                            className="btn-lte btn-lte-secondary btn-lte-sm"
+                            title="Voir les détails"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
                           {canEdit && inv.statut === 'en_cours' && (
-                            <button onClick={() => openCount(inv)} className="p-2 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors" title="Compter"><ClipboardCheck className="w-4 h-4" /></button>
+                            <button
+                              onClick={() => openCount(inv)}
+                              className="btn-lte btn-lte-success btn-lte-sm"
+                              title="Saisir les comptages"
+                            >
+                              <ClipboardCheck className="w-3.5 h-3.5" /> Compter
+                            </button>
                           )}
                           {canEdit && inv.statut === 'en_cours' && (
-                            <button onClick={() => cancelInventory(inv)} className="p-2 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors" title="Annuler"><XCircle className="w-4 h-4" /></button>
+                            <button
+                              onClick={() => cancelInventory(inv)}
+                              className="btn-lte btn-lte-warning btn-lte-sm"
+                              title="Annuler la session"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
                           )}
                           {canDelete && (
-                            <button onClick={() => setDeleteTarget(inv)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
+                            <button
+                              onClick={() => setDeleteTarget(inv)}
+                              className="btn-lte btn-lte-danger btn-lte-sm"
+                              title="Supprimer définitivement"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -280,8 +376,8 @@ export function Inventaires({ inventaires, produits, entrepots, loading, onRefre
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </Card>
 
       {/* Create modal */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Nouvelle session d'inventaire" size="lg">

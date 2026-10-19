@@ -5,6 +5,7 @@ import type { ProduitWithCategorie, Client, Paiement, ModePaiement, Entreprise }
 import { can, type Role } from '@/lib/permissions';
 import { showToast } from '@/components/Toast';
 import { formatCurrency, MODES_PAIEMENT, nextNumeroDocument } from '@/lib/format';
+import { Card } from '@/components/adminlte';
 
 type Props = {
   produits: ProduitWithCategorie[];
@@ -217,118 +218,220 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Caisse</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Vente au comptoir — ticket thermique 58 mm</p>
-      </div>
-
+    <div className="space-y-5">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Catalogue */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher (nom, SKU, code-barres)..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" autoFocus />
+        {/* Catalogue Card */}
+        <div className="lg:col-span-3">
+          <Card
+            title="Catalogue Point de Vente (POS)"
+            variant="primary"
+            outline={true}
+            collapsible={true}
+            maximizable={true}
+            tools={
+              <span className="text-xs text-gray-500">
+                {resultats.length} article(s) affiché(s)
+              </span>
+            }
+          >
+            <div className="mb-3.5">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher un produit (nom, SKU, code-barres)..."
+                  className="form-control-lte pl-9"
+                  autoFocus
+                />
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {resultats.map((p) => (
-              <button key={p.id} onClick={() => ajouter(p)} disabled={p.quantite < 1}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 text-left hover:border-sky-300 hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                <p className="font-medium text-slate-900 text-sm line-clamp-2">{p.nom}</p>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">{p.sku || '—'}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="font-bold text-sky-700 text-sm">{formatCurrency(p.prix_vente, devise)}</span>
-                  <span className={`text-xs ${p.quantite <= p.seuil_alerte ? 'text-amber-600' : 'text-slate-400'}`}>{p.quantite} dispo</span>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {resultats.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => ajouter(p)}
+                  disabled={p.quantite < 1}
+                  className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 p-3 text-left hover:border-[#0d6efd] hover:shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed group"
+                >
+                  <p className="font-semibold text-gray-900 dark:text-white text-xs line-clamp-2 leading-tight group-hover:text-[#0d6efd] transition-colors">
+                    {p.nom}
+                  </p>
+                  <p className="text-[11px] text-gray-400 font-mono mt-0.5">{p.sku || '—'}</p>
+                  <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-gray-100 dark:border-slate-800">
+                    <span className="font-bold text-[#0d6efd] text-xs">
+                      {formatCurrency(p.prix_vente, devise)}
+                    </span>
+                    <span className={`text-[11px] font-semibold ${p.quantite <= p.seuil_alerte ? 'text-[#ffc107]' : 'text-gray-400'}`}>
+                      {p.quantite} dispo
+                    </span>
+                  </div>
+                </button>
+              ))}
+              {resultats.length === 0 && (
+                <div className="col-span-full p-8 text-center text-gray-400 text-sm">
+                  Aucun produit ne correspond à la recherche
                 </div>
-              </button>
-            ))}
-            {resultats.length === 0 && (
-              <div className="col-span-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-400 text-sm">Aucun produit</div>
-            )}
-          </div>
+              )}
+            </div>
+          </Card>
         </div>
 
-        {/* Panier + paiement */}
+        {/* Panier + Encaissement Card */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 lg:sticky lg:top-20 space-y-4">
-            <h3 className="font-semibold text-slate-900 flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-sky-600" /> Panier ({panier.length})</h3>
-
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+          <Card
+            title={`Panier de Vente (${panier.length})`}
+            variant="success"
+            outline={true}
+            collapsible={true}
+            className="lg:sticky lg:top-20"
+          >
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {panier.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-6">Touchez un produit pour l'ajouter</p>
-              ) : panier.map((l) => (
-                <div key={l.produit.id} className="flex items-center gap-2 bg-slate-50 rounded-xl p-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{l.produit.nom}</p>
-                    <p className="text-xs text-slate-500">{formatCurrency(l.produit.prix_vente, devise)} × {l.quantite}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => changerQte(l.produit.id, -1)} className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 transition-colors"><Minus className="w-3.5 h-3.5" /></button>
-                    <span className="w-8 text-center text-sm font-bold">{l.quantite}</span>
-                    <button onClick={() => changerQte(l.produit.id, 1)} className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 transition-colors"><Plus className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setPanier((prev) => prev.filter((x) => x.produit.id !== l.produit.id))} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
+                <div className="p-6 text-center text-gray-400 text-xs">
+                  <ShoppingCart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                  <p>Touchez un produit à gauche pour l'ajouter</p>
                 </div>
-              ))}
+              ) : (
+                panier.map((l) => (
+                  <div
+                    key={l.produit.id}
+                    className="flex items-center gap-2 p-2 rounded bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-800 text-xs"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 dark:text-white truncate">{l.produit.nom}</p>
+                      <p className="text-gray-400">{formatCurrency(l.produit.prix_vente, devise)} × {l.quantite}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => changerQte(l.produit.id, -1)}
+                        className="btn-lte btn-lte-sm btn-lte-outline-secondary p-1"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="w-6 text-center font-bold">{l.quantite}</span>
+                      <button
+                        onClick={() => changerQte(l.produit.id, 1)}
+                        className="btn-lte btn-lte-sm btn-lte-outline-secondary p-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => setPanier((prev) => prev.filter((x) => x.produit.id !== l.produit.id))}
+                        className="btn-lte btn-lte-sm btn-lte-danger p-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Totaux */}
-            <div className="border-t border-slate-100 pt-3 space-y-1 text-sm">
+            <div className="border-t border-gray-200 dark:border-slate-800 pt-3 mt-3 space-y-1 text-xs">
               {tvaActive && (
                 <>
-                  <div className="flex justify-between text-slate-500"><span>Total HT</span><span>{formatCurrency(ht, devise)}</span></div>
-                  <div className="flex justify-between text-slate-500"><span>TVA ({tvaTaux}%)</span><span>{formatCurrency(tva, devise)}</span></div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>Total HT</span>
+                    <span>{formatCurrency(ht, devise)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500">
+                    <span>TVA ({tvaTaux}%)</span>
+                    <span>{formatCurrency(tva, devise)}</span>
+                  </div>
                 </>
               )}
-              <div className="flex justify-between text-lg font-bold text-slate-900"><span>Total TTC</span><span>{formatCurrency(total, devise)}</span></div>
+              <div className="flex justify-between text-base font-bold text-gray-900 dark:text-white pt-1">
+                <span>Total Net</span>
+                <span className="text-[#198754]">{formatCurrency(total, devise)}</span>
+              </div>
             </div>
 
-            {/* Client + paiement */}
-            <div className="border-t border-slate-100 pt-3 space-y-3">
-              <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
-                <option value="">Client comptoir</option>
-                {clients.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
+            {/* Client & Règlement */}
+            <div className="border-t border-gray-200 dark:border-slate-800 pt-3 mt-3 space-y-2.5">
+              <select
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="form-control-lte text-xs"
+              >
+                <option value="">Client comptoir anonyme</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nom}</option>
+                ))}
               </select>
               {!clientId && (
-                <input type="text" value={walkinNom} onChange={(e) => setWalkinNom(e.target.value)} placeholder="Nom du client (optionnel)"
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <input
+                  type="text"
+                  value={walkinNom}
+                  onChange={(e) => setWalkinNom(e.target.value)}
+                  placeholder="Nom du client (optionnel)"
+                  className="form-control-lte text-xs"
+                />
               )}
-              <div className="grid grid-cols-2 gap-2">
+
+              <div className="grid grid-cols-2 gap-1.5">
                 {MODES_PAIEMENT.filter((m) => m.value !== 'cheque' && m.value !== 'virement').map((m) => (
-                  <button key={m.value} onClick={() => setMode(m.value as ModePaiement)}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium transition-all border ${
-                      mode === m.value ? 'bg-sky-600 text-white border-sky-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}>
+                  <button
+                    key={m.value}
+                    onClick={() => setMode(m.value as ModePaiement)}
+                    className={`btn-lte btn-lte-sm ${
+                      mode === m.value
+                        ? 'btn-lte-primary'
+                        : 'btn-lte-outline-secondary'
+                    }`}
+                  >
                     {m.label}
                   </button>
                 ))}
               </div>
+
               {MODES_PAIEMENT.find((m) => m.value === mode)?.mobile && (
-                <input type="text" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="ID transaction Mobile Money"
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="ID transaction Mobile Money"
+                  className="form-control-lte text-xs font-mono"
+                />
               )}
+
               {mode === 'especes' && (
                 <div>
-                  <input type="number" step="1" value={montantRecu} onChange={(e) => { setMontantRecu(e.target.value); setEncaisse(true); }} placeholder="Montant reçu"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  <input
+                    type="number"
+                    step="1"
+                    value={montantRecu}
+                    onChange={(e) => { setMontantRecu(e.target.value); setEncaisse(true); }}
+                    placeholder="Montant remis en espèces"
+                    className="form-control-lte text-xs"
+                  />
                   {encaisse && recu >= total && total > 0 && (
-                    <p className="text-sm font-bold text-emerald-700 mt-1">À rendre : {formatCurrency(rendu, devise)}</p>
+                    <p className="text-xs font-bold text-[#198754] mt-1">
+                      Monnaie à rendre : {formatCurrency(rendu, devise)}
+                    </p>
                   )}
                   {encaisse && recu > 0 && recu < total && (
-                    <p className="text-sm text-amber-700 mt-1">Il manque {formatCurrency(total - recu, devise)}</p>
+                    <p className="text-xs text-[#dc3545] font-semibold mt-1">
+                      Reliquat dû : {formatCurrency(total - recu, devise)}
+                    </p>
                   )}
                 </div>
               )}
             </div>
 
-            <button onClick={encaisser} disabled={saving || panier.length === 0}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 disabled:opacity-50">
-              <Printer className="w-5 h-5" /> {saving ? 'Encaissement...' : `Encaisser ${formatCurrency(total, devise)}`}
-            </button>
-          </div>
+            <div className="mt-4">
+              <button
+                onClick={encaisser}
+                disabled={saving || panier.length === 0}
+                className="w-full btn-lte btn-lte-success py-2.5 font-bold shadow-sm disabled:opacity-50"
+              >
+                <Printer className="w-4 h-4" /> {saving ? 'Encaissement...' : `Encaisser ${formatCurrency(total, devise)}`}
+              </button>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

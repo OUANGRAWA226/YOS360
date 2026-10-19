@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Pencil, Trash2, Warehouse, MapPin, User } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Warehouse, MapPin, User, Package, DollarSign } from 'lucide-react';
 import type { Entrepot, StockEntrepot, ProduitWithCategorie } from '@/lib/supabase';
 import { writeRow, applyLocalCache } from '@/lib/dataLayer';
 import { can, type Role } from '@/lib/permissions';
@@ -7,6 +7,7 @@ import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 import { formatNumber } from '@/lib/format';
+import { InfoBox, Card } from '@/components/adminlte';
 
 type Props = {
   entrepots: Entrepot[];
@@ -97,68 +98,161 @@ export function Entrepots({ entrepots, stocksEntrepot, produits, loading, onRefr
     onRefresh();
   };
 
+  const totalSites = entrepots.length;
+  const totalUnitesGlobal = Object.values(stockByEntrepot).reduce((sum, s) => sum + s.unites, 0);
+  const totalValeurGlobal = Object.values(stockByEntrepot).reduce((sum, s) => sum + s.valeur, 0);
+
   return (
     <div className="space-y-6">
+      {/* Content Header (Page header) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Entrepôts & Boutiques</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Gérez vos sites et leur stock</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+            <Warehouse className="w-7 h-7 text-primary" />
+            Entrepôts & Boutiques
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Gérez vos dépôts, boutiques physiques et stocks multi-sites en temps réel
+          </p>
         </div>
         {canCreate && (
-          <button onClick={openCreate} className="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-xl font-medium hover:bg-sky-700 transition-colors shadow-sm shadow-sky-600/20">
-            <Plus className="w-5 h-5" /> Nouveau site
+          <button onClick={openCreate} className="btn-lte btn-lte-primary">
+            <Plus className="w-4 h-4" /> Nouveau site
           </button>
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un site..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+      {/* AdminLTE Info-Boxes */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <InfoBox
+          title="Sites Répertoriés"
+          value={totalSites}
+          icon={Warehouse}
+          variant="info"
+          description="Entrepôts & points de vente"
+        />
+        <InfoBox
+          title="Stock Total (Unités)"
+          value={formatNumber(totalUnitesGlobal)}
+          icon={Package}
+          variant="success"
+          description="Total physique disponible"
+        />
+        <InfoBox
+          title="Valeur Globale (CMUP)"
+          value={formatNumber(Math.round(totalValeurGlobal))}
+          icon={DollarSign}
+          variant="warning"
+          description="Valorisation comptable"
+        />
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher par nom, code ou ville..."
+            className="form-control-lte pl-9"
+          />
         </div>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-40 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-44 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <Warehouse className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">Aucun site</p>
+        <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+          <Warehouse className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-slate-500">Aucun site ne correspond à votre recherche</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((e) => {
             const st = stockByEntrepot[e.id] || { refs: 0, unites: 0, valeur: 0 };
             return (
-              <div key={e.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center">
-                      <Warehouse className="w-5 h-5 text-sky-600" />
+              <Card
+                key={e.id}
+                title={e.nom}
+                icon={Warehouse}
+                variant="primary"
+                outline
+                tools={
+                  <div className="flex items-center gap-1">
+                    {e.code && (
+                      <span className="badge-adminlte bg-primary-subtle text-primary border border-primary/20 mr-1.5 font-mono text-[11px]">
+                        {e.code}
+                      </span>
+                    )}
+                    {canEdit && (
+                      <button
+                        onClick={() => openEdit(e)}
+                        className="btn-lte btn-lte-secondary btn-lte-sm"
+                        title="Modifier le site"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => setDeleteTarget(e)}
+                        className="btn-lte btn-lte-danger btn-lte-sm"
+                        title="Supprimer le site"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                }
+                footer={
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Références</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                        {formatNumber(st.refs)}
+                      </p>
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">{e.nom}</p>
-                      {e.code && <p className="text-xs font-mono text-slate-400">{e.code}</p>}
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Unités</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                        {formatNumber(st.unites)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Valeur (CMUP)</p>
+                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {formatNumber(Math.round(st.valeur))}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    {canEdit && <button onClick={() => openEdit(e)} className="p-2 rounded-lg hover:bg-sky-50 text-slate-400 hover:text-sky-600 transition-colors" title="Modifier"><Pencil className="w-4 h-4" /></button>}
-                    {canDelete && <button onClick={() => setDeleteTarget(e)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Supprimer"><Trash2 className="w-4 h-4" /></button>}
-                  </div>
+                }
+              >
+                <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                  {(e.adresse || e.ville) ? (
+                    <p className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{[e.adresse, e.ville].filter(Boolean).join(', ')}</span>
+                    </p>
+                  ) : (
+                    <p className="flex items-center gap-2 text-slate-400 italic">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>Aucune adresse renseignée</span>
+                    </p>
+                  )}
+                  {e.responsable && (
+                    <p className="flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>Responsable : <strong className="text-slate-700 dark:text-slate-300">{e.responsable}</strong></span>
+                    </p>
+                  )}
                 </div>
-                <div className="mt-4 space-y-1.5 text-sm text-slate-600">
-                  {(e.adresse || e.ville) && <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-400" />{[e.adresse, e.ville].filter(Boolean).join(', ')}</p>}
-                  {e.responsable && <p className="flex items-center gap-2"><User className="w-4 h-4 text-slate-400" />{e.responsable}</p>}
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4">
-                  <div><p className="text-xs text-slate-400">Références</p><p className="font-bold text-slate-900">{formatNumber(st.refs)}</p></div>
-                  <div><p className="text-xs text-slate-400">Unités</p><p className="font-bold text-slate-900">{formatNumber(st.unites)}</p></div>
-                  <div><p className="text-xs text-slate-400">Valeur (CMUP)</p><p className="font-bold text-slate-900">{formatNumber(Math.round(st.valeur))}</p></div>
-                </div>
-              </div>
+              </Card>
             );
           })}
         </div>

@@ -9,6 +9,7 @@ import { writeRow, applyLocalCache } from '@/lib/dataLayer';
 import { canEditPrixAchat, can, type Role } from '@/lib/permissions';
 import { LotManager } from '@/components/LotManager';
 import { Barcode39 } from '@/components/Barcode39';
+import { Card, InfoBox } from '@/components/adminlte';
 
 type Props = {
   produits: ProduitWithCategorie[];
@@ -188,104 +189,139 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
     onRefresh();
   };
 
+  const totalValeurVente = useMemo(() => {
+    return produits.reduce((sum, p) => sum + p.prix_vente * p.quantite, 0);
+  }, [produits]);
+
+  const totalAlerteCount = useMemo(() => {
+    return produits.filter((p) => p.quantite <= p.seuil_alerte).length;
+  }, [produits]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Produits</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">{produits.length} produit{produits.length > 1 ? 's' : ''} en inventaire</p>
-        </div>
-        {canCreate && (
-        <button
-          onClick={openAdd}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-xl font-medium hover:bg-sky-700 transition-colors shadow-sm shadow-sky-600/20"
-        >
-          <Plus className="w-5 h-5" />
-          Ajouter un produit
-        </button>
-        )}
+    <div className="space-y-5">
+      {/* AdminLTE v4 Metric Info-Boxes */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <InfoBox
+          title="Articles au Catalogue"
+          value={formatNumber(produits.length)}
+          variant="primary"
+          icon={Package}
+          description="Total références actives"
+        />
+        <InfoBox
+          title="Valeur de Vente Totale"
+          value={formatCurrency(totalValeurVente)}
+          variant="success"
+          icon={Package}
+          description="Potentiel commercial en stock"
+        />
+        <InfoBox
+          title="Articles en Alerte / Rupture"
+          value={formatNumber(totalAlerteCount)}
+          variant="warning"
+          icon={AlertTriangle}
+          description="Stocks à réapprovisionner"
+        />
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par nom ou SKU..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-          />
+      {/* AdminLTE v4 Card Outline for Products Table */}
+      <Card
+        title="Catalogue des Articles & Stocks"
+        variant="primary"
+        outline={true}
+        collapsible={true}
+        maximizable={true}
+        tools={
+          canCreate ? (
+            <button
+              onClick={openAdd}
+              className="btn-lte btn-lte-sm btn-lte-primary"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nouveau produit</span>
+            </button>
+          ) : undefined
+        }
+      >
+        {/* Filters Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher par nom ou SKU..."
+              className="form-control-lte pl-9"
+            />
+          </div>
+          <select
+            value={filterCat}
+            onChange={(e) => setFilterCat(e.target.value)}
+            className="form-control-lte sm:w-52"
+          >
+            <option value="all">Toutes catégories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.nom}</option>
+            ))}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="form-control-lte sm:w-44"
+          >
+            <option value="all">Tous statuts</option>
+            <option value="ok">En stock</option>
+            <option value="alert">Stock faible</option>
+            <option value="out">Rupture</option>
+          </select>
         </div>
-        <select
-          value={filterCat}
-          onChange={(e) => setFilterCat(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
-        >
-          <option value="all">Toutes catégories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.nom}</option>
-          ))}
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
-        >
-          <option value="all">Tous statuts</option>
-          <option value="ok">En stock</option>
-          <option value="alert">Stock faible</option>
-          <option value="out">Rupture</option>
-        </select>
-      </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        {/* Table Content */}
         {loading ? (
           <div className="p-8 space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
+              <div key={i} className="h-10 bg-gray-100 dark:bg-slate-800 rounded animate-pulse" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">Aucun produit trouvé</p>
+          <div className="p-12 text-center text-gray-400">
+            <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p>Aucun produit ne correspond aux critères</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:-mx-5 -mb-4 sm:-mb-5">
+            <table className="table-adminlte">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-6 py-3 font-semibold text-slate-600">Produit</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Catégorie</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden lg:table-cell">SKU</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden xl:table-cell">Code-barres</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-600">Stock</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Prix vente</th>
-                  <th className="text-center px-4 py-3 font-semibold text-slate-600">Statut</th>
-                  <th className="text-right px-6 py-3 font-semibold text-slate-600">Actions</th>
+                <tr>
+                  <th className="text-left">Produit</th>
+                  <th className="text-left hidden md:table-cell">Catégorie</th>
+                  <th className="text-left hidden lg:table-cell">SKU</th>
+                  <th className="text-left hidden xl:table-cell">Code-barres</th>
+                  <th className="text-right">Stock</th>
+                  <th className="text-right hidden sm:table-cell">Prix vente</th>
+                  <th className="text-center">Statut</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filtered.map((p) => {
                   const isAlert = p.quantite <= p.seuil_alerte;
                   const isOut = p.quantite === 0;
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-3">
+                    <tr key={p.id}>
+                      <td>
                         <div>
-                          <p className="font-medium text-slate-900">{p.nom}</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{p.nom}</p>
                           {p.emplacement && (
-                            <p className="text-xs text-slate-400">Emplacement: {p.emplacement}</p>
+                            <p className="text-xs text-gray-400">Empl: {p.emplacement}</p>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
+                      <td className="hidden md:table-cell">
                         {p.categories ? (
                           <span
-                            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                            className="inline-block px-2 py-0.5 rounded text-xs font-semibold"
                             style={{
                               backgroundColor: p.categories.couleur + '20',
                               color: p.categories.couleur,
@@ -294,79 +330,79 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
                             {p.categories.nom}
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-xs">—</span>
+                          <span className="text-gray-400 text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell text-slate-500 font-mono text-xs">
+                      <td className="hidden lg:table-cell text-gray-500 font-mono text-xs">
                         {p.sku || '—'}
                       </td>
-                      <td className="px-4 py-3 hidden xl:table-cell text-slate-400 font-mono text-xs">
+                      <td className="hidden xl:table-cell text-gray-400 font-mono text-xs">
                         {p.code_barres || '—'}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={`font-semibold ${isOut ? 'text-red-600' : isAlert ? 'text-amber-600' : 'text-slate-900'}`}>
+                      <td className="text-right">
+                        <span className={`font-bold ${isOut ? 'text-[#dc3545]' : isAlert ? 'text-[#ffc107]' : 'text-gray-900 dark:text-white'}`}>
                           {formatNumber(p.quantite)}
                         </span>
-                        <span className="text-xs text-slate-400 ml-1">{p.unite}</span>
+                        <span className="text-xs text-gray-400 ml-1">{p.unite}</span>
                       </td>
-                      <td className="px-4 py-3 text-right hidden sm:table-cell text-slate-700">
+                      <td className="text-right hidden sm:table-cell font-semibold text-gray-800 dark:text-gray-200">
                         {formatCurrency(p.prix_vente)}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         {isOut ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
                             <AlertTriangle className="w-3 h-3" /> Rupture
                           </span>
                         ) : isAlert ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                             <AlertTriangle className="w-3 h-3" /> Faible
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
                             En stock
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setMoveTarget(p)}
-                            className="p-2 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
+                            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
                             title="Mouvement de stock"
                           >
-                            <ArrowLeftRight className="w-4 h-4" />
+                            <ArrowLeftRight className="w-3.5 h-3.5" />
                           </button>
                           {canEdit && (
-                          <button
-                            onClick={() => openEdit(p)}
-                            className="p-2 rounded-lg hover:bg-sky-50 text-slate-400 hover:text-sky-600 transition-colors"
-                            title="Modifier"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                            <button
+                              onClick={() => openEdit(p)}
+                              className="btn-lte btn-lte-sm btn-lte-outline-primary"
+                              title="Modifier"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
                           <button
                             onClick={() => setLotsTarget(p)}
-                            className="p-2 rounded-lg hover:bg-violet-50 text-slate-400 hover:text-violet-600 transition-colors"
-                            title="Lots / série / péremption"
+                            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+                            title="Lots & péremptions"
                           >
-                            <Layers className="w-4 h-4" />
+                            <Layers className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setLabelTarget(p)}
-                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
                             title="Étiquette code-barres"
                           >
-                            <Barcode className="w-4 h-4" />
+                            <Barcode className="w-3.5 h-3.5" />
                           </button>
                           {canDelete && (
-                          <button
-                            onClick={() => setDeleteTarget(p)}
-                            className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            <button
+                              onClick={() => setDeleteTarget(p)}
+                              className="btn-lte btn-lte-sm btn-lte-danger"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -377,7 +413,7 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Add/Edit modal */}
       <Modal

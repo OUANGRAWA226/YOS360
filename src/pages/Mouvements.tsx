@@ -7,6 +7,7 @@ import { showToast } from '@/components/Toast';
 import { formatNumber, formatDate, daysUntil } from '@/lib/format';
 import { writeRow } from '@/lib/dataLayer';
 import { can, type Role } from '@/lib/permissions';
+import { Card, InfoBox } from '@/components/adminlte';
 
 type Props = {
   mouvements: MouvementWithProduit[];
@@ -135,178 +136,181 @@ export function Mouvements({ mouvements, produits, entrepots, lots, stocksEntrep
     onRefresh();
   };
 
+  const totalEntrees = useMemo(() => {
+    return mouvements.filter((m) => m.type === 'entree').reduce((s, m) => s + m.quantite, 0);
+  }, [mouvements]);
+
+  const totalSorties = useMemo(() => {
+    return mouvements.filter((m) => m.type === 'sortie').reduce((s, m) => s + m.quantite, 0);
+  }, [mouvements]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Mouvements de stock</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Historique des entrées et sorties</p>
-        </div>
-        {canCreate && (
-        <button
-          onClick={openAdd}
-          disabled={produits.length === 0}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Plus className="w-5 h-5" />
-          Nouveau mouvement
-        </button>
-        )}
-      </div>
-
-      {/* Summary cards */}
+    <div className="space-y-5">
+      {/* Metric Info-Boxes */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-              <ArrowDownCircle className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Total entrées</p>
-              <p className="text-xl font-bold text-slate-900">
-                {formatNumber(mouvements.filter((m) => m.type === 'entree').reduce((s, m) => s + m.quantite, 0))}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-              <ArrowUpCircle className="w-5 h-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Total sorties</p>
-              <p className="text-xl font-bold text-slate-900">
-                {formatNumber(mouvements.filter((m) => m.type === 'sortie').reduce((s, m) => s + m.quantite, 0))}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center">
-              <ArrowLeftRight className="w-5 h-5 text-sky-600" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Total mouvements</p>
-              <p className="text-xl font-bold text-slate-900">{formatNumber(mouvements.length)}</p>
-            </div>
-          </div>
-        </div>
+        <InfoBox
+          title="Total Entrées de Stock"
+          value={`+${formatNumber(totalEntrees)}`}
+          variant="success"
+          icon={ArrowDownCircle}
+          description="Approvisionnements & retours"
+        />
+        <InfoBox
+          title="Total Sorties de Stock"
+          value={`-${formatNumber(totalSorties)}`}
+          variant="danger"
+          icon={ArrowUpCircle}
+          description="Ventes & transferts déstockés"
+        />
+        <InfoBox
+          title="Total Flux Journalisés"
+          value={formatNumber(mouvements.length)}
+          variant="info"
+          icon={ArrowLeftRight}
+          description="Traçabilité complète des mouvements"
+        />
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par produit, motif, référence..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-          />
+      {/* AdminLTE Card for Movements */}
+      <Card
+        title="Journal des Mouvements de Stock"
+        variant="primary"
+        outline={true}
+        collapsible={true}
+        maximizable={true}
+        tools={
+          canCreate ? (
+            <button
+              onClick={openAdd}
+              disabled={produits.length === 0}
+              className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
+            >
+              <Plus className="w-3.5 h-3.5" /> Nouveau mouvement
+            </button>
+          ) : undefined
+        }
+      >
+        {/* Filters Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher par produit, motif, référence..."
+              className="form-control-lte pl-9"
+            />
+          </div>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => setFilterType('all')}
+              className={`btn-lte btn-lte-sm ${
+                filterType === 'all'
+                  ? 'btn-lte-primary'
+                  : 'btn-lte-outline-secondary'
+              }`}
+            >
+              Tous
+            </button>
+            <button
+              onClick={() => setFilterType('entree')}
+              className={`btn-lte btn-lte-sm ${
+                filterType === 'entree'
+                  ? 'btn-lte-success'
+                  : 'btn-lte-outline-secondary'
+              }`}
+            >
+              Entrées (+)
+            </button>
+            <button
+              onClick={() => setFilterType('sortie')}
+              className={`btn-lte btn-lte-sm ${
+                filterType === 'sortie'
+                  ? 'btn-lte-danger'
+                  : 'btn-lte-outline-secondary'
+              }`}
+            >
+              Sorties (−)
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilterType('all')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-              filterType === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Tous
-          </button>
-          <button
-            onClick={() => setFilterType('entree')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-              filterType === 'entree' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Entrées
-          </button>
-          <button
-            onClick={() => setFilterType('sortie')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-              filterType === 'sortie' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Sorties
-          </button>
-        </div>
-      </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        {/* Table Content */}
         {loading ? (
           <div className="p-8 space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
+              <div key={i} className="h-10 bg-gray-100 dark:bg-slate-800 rounded animate-pulse" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <ArrowLeftRight className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">Aucun mouvement trouvé</p>
+          <div className="p-12 text-center text-gray-400">
+            <ArrowLeftRight className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p>Aucun mouvement trouvé</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:-mx-5 -mb-4 sm:-mb-5">
+            <table className="table-adminlte">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-6 py-3 font-semibold text-slate-600">Type</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Produit</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-600">Quantité</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Motif</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden lg:table-cell">Détails</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Date</th>
-                  <th className="text-right px-6 py-3 font-semibold text-slate-600">Actions</th>
+                <tr>
+                  <th className="text-left">Type</th>
+                  <th className="text-left">Produit</th>
+                  <th className="text-right">Quantité</th>
+                  <th className="text-left hidden md:table-cell">Motif</th>
+                  <th className="text-left hidden lg:table-cell">Détails</th>
+                  <th className="text-left hidden sm:table-cell">Date</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filtered.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-3">
+                  <tr key={m.id}>
+                    <td>
                       {m.type === 'entree' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-[#198754] dark:bg-green-900/40 dark:text-green-300">
                           <ArrowDownCircle className="w-3.5 h-3.5" /> Entrée
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-[#dc3545] dark:bg-red-900/40 dark:text-red-300">
                           <ArrowUpCircle className="w-3.5 h-3.5" /> Sortie
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{m.produits?.nom || 'Produit supprimé'}</p>
+                    <td>
+                      <p className="font-semibold text-gray-900 dark:text-white leading-tight">
+                        {m.produits?.nom || 'Produit supprimé'}
+                      </p>
                       {m.produits?.sku && (
-                        <p className="text-xs text-slate-400 font-mono">{m.produits.sku}</p>
+                        <p className="text-xs text-gray-400 font-mono">{m.produits.sku}</p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={`font-semibold ${m.type === 'entree' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <td className="text-right">
+                      <span className={`font-bold ${m.type === 'entree' ? 'text-[#198754]' : 'text-[#dc3545]'}`}>
                         {m.type === 'entree' ? '+' : '−'}{formatNumber(m.quantite)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-slate-600">
+                    <td className="hidden md:table-cell text-gray-600 dark:text-gray-300 text-xs">
                       {m.motif || '—'}
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-slate-500 text-xs">
+                    <td className="hidden lg:table-cell text-gray-500 text-xs">
                       {m.type === 'entree' && m.fournisseur && `Fournisseur: ${m.fournisseur}`}
                       {m.type === 'sortie' && m.destinataire && `Destinataire: ${m.destinataire}`}
-                      {m.reference && <div className="text-slate-400">Réf: {m.reference}</div>}
+                      {m.reference && <div className="text-gray-400">Réf: {m.reference}</div>}
                       {!m.fournisseur && !m.destinataire && !m.reference && '—'}
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell text-slate-500 text-xs whitespace-nowrap">
+                    <td className="hidden sm:table-cell text-gray-500 text-xs whitespace-nowrap">
                       {formatDate(m.created_at)}
                     </td>
-                    <td className="px-6 py-3 text-right">
-                      {canDelete && <button
-                        onClick={() => setDeleteTarget(m)}
-                        className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors ml-auto"
-                        title="Supprimer (le stock sera ajusté)"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>}
+                    <td className="text-right">
+                      {canDelete && (
+                        <button
+                          onClick={() => setDeleteTarget(m)}
+                          className="btn-lte btn-lte-sm btn-lte-danger ml-auto"
+                          title="Supprimer (le stock sera ajusté)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -314,7 +318,7 @@ export function Mouvements({ mouvements, produits, entrepots, lots, stocksEntrep
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Add modal */}
       <Modal

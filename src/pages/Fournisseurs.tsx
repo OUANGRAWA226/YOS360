@@ -7,6 +7,7 @@ import { showToast } from '@/components/Toast';
 import { getInitials } from '@/lib/format';
 import { writeRow, applyLocalCache } from '@/lib/dataLayer';
 import { can, type Role } from '@/lib/permissions';
+import { Card } from '@/components/adminlte';
 
 type Props = {
   fournisseurs: Fournisseur[];
@@ -106,65 +107,122 @@ export function Fournisseurs({ fournisseurs, loading, onRefresh, role }: Props) 
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Fournisseurs</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">{fournisseurs.length} fournisseur{fournisseurs.length > 1 ? 's' : ''}</p>
+    <div className="space-y-5">
+      {/* AdminLTE Card for Suppliers */}
+      <Card
+        title="Répertoire des Fournisseurs"
+        variant="primary"
+        outline={true}
+        collapsible={true}
+        maximizable={true}
+        tools={
+          canCreate ? (
+            <button onClick={openAdd} className="btn-lte btn-lte-sm btn-lte-primary">
+              <Plus className="w-3.5 h-3.5" /> Nouveau fournisseur
+            </button>
+          ) : undefined
+        }
+      >
+        {/* Search Toolbar */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher par nom, contact, ville, email..."
+              className="form-control-lte pl-9"
+            />
+          </div>
         </div>
-        {canCreate && <button onClick={openAdd} className="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-xl font-medium hover:bg-sky-700 transition-colors shadow-sm shadow-sky-600/20">
-          <Plus className="w-5 h-5" /> Ajouter
-        </button>}
-      </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher par nom, ville, email..." className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-48 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 animate-pulse" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">Aucun fournisseur trouvé</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((f) => (
-            <div key={f.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 hover:shadow-md transition-shadow group">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 rounded-xl ${colorForName(f.nom)} flex items-center justify-center text-white font-semibold text-sm`}>
-                    {getInitials(f.nom)}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900">{f.nom}</h3>
-                    {f.contact && <p className="text-xs text-slate-500">{f.contact}</p>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {canEdit && <button onClick={() => openEdit(f)} className="p-2 rounded-lg hover:bg-sky-50 text-slate-400 hover:text-sky-600 transition-colors"><Edit2 className="w-4 h-4" /></button>}
-                  {canDelete && <button onClick={() => setDeleteTarget(f)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>}
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                {f.email && <div className="flex items-center gap-2 text-slate-600"><Mail className="w-4 h-4 text-slate-400" /> {f.email}</div>}
-                {f.telephone && <div className="flex items-center gap-2 text-slate-600"><Phone className="w-4 h-4 text-slate-400" /> {f.telephone}</div>}
-                {(f.ville || f.adresse) && (
-                  <div className="flex items-center gap-2 text-slate-600"><MapPin className="w-4 h-4 text-slate-400" />
-                    {[f.adresse, f.code_postal, f.ville, f.pays].filter(Boolean).join(', ')}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        {/* Content */}
+        {loading ? (
+          <div className="p-8 space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-10 bg-gray-100 dark:bg-slate-800 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center text-gray-400">
+            <Truck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p>Aucun fournisseur trouvé</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto -mx-4 sm:-mx-5 -mb-4 sm:-mb-5">
+            <table className="table-adminlte">
+              <thead>
+                <tr>
+                  <th className="text-left">Fournisseur</th>
+                  <th className="text-left hidden sm:table-cell">Contact</th>
+                  <th className="text-left">Coordonnées</th>
+                  <th className="text-left hidden md:table-cell">Ville & Pays</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((f) => (
+                  <tr key={f.id}>
+                    <td>
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-full ${colorForName(f.nom)} flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0`}>
+                          {getInitials(f.nom)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white leading-tight">{f.nom}</p>
+                          {f.note && <p className="text-[11px] text-gray-400 truncate max-w-xs">{f.note}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden sm:table-cell text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {f.contact || '—'}
+                    </td>
+                    <td className="text-xs">
+                      {f.email && (
+                        <p className="text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                          <Mail className="w-3 h-3 text-gray-400" /> {f.email}
+                        </p>
+                      )}
+                      {f.telephone && (
+                        <p className="text-gray-500 flex items-center gap-1.5 mt-0.5">
+                          <Phone className="w-3 h-3 text-gray-400" /> {f.telephone}
+                        </p>
+                      )}
+                      {!f.email && !f.telephone && <span className="text-gray-400">—</span>}
+                    </td>
+                    <td className="hidden md:table-cell text-xs text-gray-600 dark:text-gray-300">
+                      {[f.ville, f.pays].filter(Boolean).join(', ') || '—'}
+                    </td>
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {canEdit && (
+                          <button
+                            onClick={() => openEdit(f)}
+                            className="btn-lte btn-lte-sm btn-lte-outline-primary"
+                            title="Modifier"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => setDeleteTarget(f)}
+                            className="btn-lte btn-lte-sm btn-lte-danger"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Modifier le fournisseur' : 'Nouveau fournisseur'} size="lg">
         <div className="space-y-4">
