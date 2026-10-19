@@ -14,6 +14,7 @@ import type {
   LotWithProduit,
   Entreprise,
   PaiementWithRelations,
+  ValidationWorkflow,
 } from '@/lib/supabase';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { PrefsProvider, usePrefs } from '@/lib/prefs';
@@ -21,6 +22,7 @@ import { can, type Module } from '@/lib/permissions';
 import { fetchTable } from '@/lib/dataLayer';
 import { supabase } from '@/lib/supabase';
 import { syncNow, initConnectivityWatcher } from '@/lib/offline';
+import { getDluoStatut } from '@/lib/stockAdvanced';
 import { Sidebar } from '@/components/Sidebar';
 import { Notifications } from '@/components/Notifications';
 import { OfflineBadge } from '@/components/OfflineBadge';
@@ -42,6 +44,9 @@ import { Audit } from '@/pages/Audit';
 import { Parametres } from '@/pages/Parametres';
 import { Paiements } from '@/pages/Paiements';
 import { Caisse } from '@/pages/Caisse';
+import { Lots } from '@/pages/Lots';
+import { TarifsPromos } from '@/pages/TarifsPromos';
+import { Validations } from '@/pages/Validations';
 import { LoginScreen } from '@/pages/Login';
 import { ToastContainer, showToast } from '@/components/Toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -71,6 +76,8 @@ export type Page =
   | 'transferts'
   | 'inventaires'
   | 'lots'
+  | 'tarifs'
+  | 'validations'
   | 'scan'
   | 'reappro'
   | 'fournisseurs'
@@ -88,19 +95,21 @@ const BREADCRUMBS: Record<Page, { section: string; title: string }> = {
   rapports: { section: "Vue d'ensemble", title: 'Rapports & Analyses' },
   commandes: { section: 'Ventes', title: 'Commandes & Ventes' },
   caisse: { section: 'Ventes', title: 'Caisse Tactile (POS)' },
+  tarifs: { section: 'Ventes', title: 'Grilles & Promotions' },
   achats: { section: 'Achats', title: 'Achats & Approvisionnements' },
   produits: { section: 'Stock', title: 'Catalogue Produits' },
   categories: { section: 'Stock', title: 'Catégories' },
-  mouvements: { section: 'Stock', title: 'Mouvements de Stock' },
+  mouvements: { section: 'Stock', title: 'Mouvements & Pertes' },
   inventaires: { section: 'Stock', title: 'Comptages de stock' },
   scan: { section: 'Stock', title: 'Scan & Codes-barres' },
   reappro: { section: 'Stock', title: 'Réapprovisionnement' },
-  lots: { section: 'Stock', title: 'Lots & Péremptions' },
+  lots: { section: 'Stock', title: 'Lots & Péremptions (FEFO)' },
   entrepots: { section: 'Multi-sites', title: 'Entrepôts & Boutiques' },
   transferts: { section: 'Multi-sites', title: 'Transferts inter-sites' },
   clients: { section: 'Tiers', title: 'Clients & Fidélité' },
   fournisseurs: { section: 'Tiers', title: 'Fournisseurs' },
-  paiements: { section: 'Finance', title: 'Paiements & Créances' },
+  paiements: { section: 'Finance', title: 'Encaissements & Créances' },
+  validations: { section: 'Administration', title: 'Validations en attente' },
   audit: { section: 'Administration', title: "Journal d'Audit" },
   parametres: { section: 'Administration', title: 'Paramètres du système' },
 };
@@ -131,16 +140,21 @@ function Shell() {
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [entreprisesDisponibles, setEntreprisesDisponibles] = useState<Entreprise[]>([]);
   const [paiements, setPaiements] = useState<PaiementWithRelations[]>([]);
+  const [validations, setValidations] = useState<ValidationWorkflow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedSiteId, setSelectedSiteId] = useState<string>('all');
 
   const role = profile?.role ?? null;
 
-  // Calcul dynamique des compteurs réels (alertes rupture, commandes en attente, impayés)
+  // Calcul dynamique des compteurs réels (alertes rupture, commandes en attente, impayés, péremptions, validations)
   const stockAlertsCount = useMemo(
     () => produits.filter((p) => p.quantite <= p.seuil_alerte).length,
     [produits]
+  );
+  const lotsAlertCount = useMemo(
+    () => lots.filter((l) => ['perime', 'critique_j7', 'alerte_j30'].includes(getDluoStatut(l.date_peremption))).length,
+    [lots]
   );
   const pendingVentesCount = useMemo(
     () => commandes.filter((c) => c.type === 'vente' && c.statut === 'en_attente').length,
@@ -154,11 +168,15 @@ function Shell() {
     () => commandes.filter((c) => c.numero_document?.startsWith('FAC-') && c.statut !== 'recue').length,
     [commandes]
   );
+  const pendingValidationsCount = useMemo(
+    () => validations.filter((v) => v.statut === 'en_attente').length,
+    [validations]
+  );
 
   const loadAll = useCallback(async () => {
     if (!entrepriseId) return;
     setLoading(true);
-    const [cats, prods, mvts, fours, cls, cmds, ents, stocks, trfs, invs, lts, entRes, pays] = await Promise.all([
+    const [cats, prods, mvts, fours, cls, cmds, ents, stocks, trfs, invs, lts, entRes, pays, valids] = await Promise.all([
       fetchTable<Categorie>('categories', '*', { column: 'nom', ascending: true }),
       fetchTable<ProduitWithCategorie>('produits', '*, categories(*)', { column: 'nom', ascending: true }),
       fetchTable<MouvementWithProduit>('mouvements', '*, produits(nom, sku)', { column: 'created_at', ascending: false }, 200),
@@ -172,6 +190,7 @@ function Shell() {
       fetchTable<LotWithProduit>('lots', '*, produits(nom, sku, unite, perissable, alerte_peremption_jours)', { column: 'created_at', ascending: false }),
       supabase.from('entreprises').select('*').eq('id', entrepriseId).maybeSingle(),
       fetchTable<PaiementWithRelations>('paiements', '*, clients(nom), fournisseurs(nom), commandes(reference, numero_document)', { column: 'date_paiement', ascending: false }),
+      fetchTable<ValidationWorkflow>('validations_workflow', '*', { column: 'created_at', ascending: false }),
     ]);
     setCategories(cats);
     setProduits(prods);
@@ -186,6 +205,7 @@ function Shell() {
     setLots(lts);
     setEntreprise((entRes.data as Entreprise) ?? null);
     setPaiements(pays);
+    setValidations(valids);
     setLoading(false);
   }, [entrepriseId]);
 
@@ -233,10 +253,14 @@ function Shell() {
     // Vérification souple de compatibilité pour achats / commandes
     const canAccess = (target: Page) => {
       if (target === 'achats') return can(role, 'achats', 'view') || can(role, 'commandes', 'view');
+      if (target === 'tarifs') return can(role, 'commandes', 'view') || can(role, 'tarifs', 'view');
+      if (target === 'validations') return can(role, 'audit', 'view') || can(role, 'validations', 'view');
       return can(role, target as Module, 'view');
     };
     const isModuleActive = (target: Page) => {
       if (target === 'achats') return modulesActifs.includes('achats') || modulesActifs.includes('commandes');
+      if (target === 'tarifs') return modulesActifs.includes('commandes') || modulesActifs.includes('tarifs');
+      if (target === 'validations') return modulesActifs.includes('audit') || modulesActifs.includes('validations');
       return modulesActifs.includes(target as Module);
     };
 
@@ -353,6 +377,8 @@ function Shell() {
           pendingVentes: pendingVentesCount,
           pendingAchats: pendingAchatsCount,
           impayes: impayesCount,
+          lotsAlert: lotsAlertCount,
+          pendingValidations: pendingValidationsCount,
         }}
       />
 
@@ -697,6 +723,9 @@ function Shell() {
           {visiblePage === 'inventaires' && (
             <Inventaires inventaires={inventaires} produits={produits} entrepots={entrepots} loading={loading} onRefresh={loadAll} role={role} />
           )}
+          {visiblePage === 'lots' && (
+            <Lots lots={lots} produits={produits} entrepots={entrepots} loading={loading} onRefresh={loadAll} role={role} selectedSiteId={selectedSiteId} />
+          )}
           {visiblePage === 'scan' && (
             <Scan produits={produits} lots={lots} role={role} />
           )}
@@ -711,6 +740,12 @@ function Shell() {
           )}
           {visiblePage === 'commandes' && (
             <Commandes commandes={commandes} produits={produits} fournisseurs={fournisseurs} clients={clients} entreprise={entreprise} numerosFactures={commandes.filter((c) => c.numero_document?.startsWith('FAC-')).map((c) => c.numero_document!)} loading={loading} onRefresh={loadAll} role={role} />
+          )}
+          {visiblePage === 'caisse' && (
+            <Caisse produits={produits} clients={clients} entreprise={entreprise} numerosFactures={commandes.filter((c) => c.numero_document?.startsWith('FAC-')).map((c) => c.numero_document!)} role={role} onRefresh={loadAll} />
+          )}
+          {visiblePage === 'tarifs' && (
+            <TarifsPromos produits={produits} clients={clients} role={role} loading={loading} />
           )}
           {visiblePage === 'achats' && (
             <Achats
@@ -729,11 +764,11 @@ function Shell() {
           {visiblePage === 'paiements' && (
             <Paiements paiements={paiements} clients={clients} fournisseurs={fournisseurs} commandes={commandes} entreprise={entreprise} loading={loading} onRefresh={loadAll} role={role} />
           )}
-          {visiblePage === 'caisse' && (
-            <Caisse produits={produits} clients={clients} entreprise={entreprise} numerosFactures={commandes.filter((c) => c.numero_document?.startsWith('FAC-')).map((c) => c.numero_document!)} role={role} onRefresh={loadAll} />
-          )}
           {visiblePage === 'rapports' && (
             <Rapports produits={produits} mouvements={mouvements} commandes={commandes} categories={categories} lots={lots} entrepots={entrepots} stocksEntrepot={stocksEntrepot} loading={loading} />
+          )}
+          {visiblePage === 'validations' && (
+            <Validations role={role} entrepots={entrepots} loading={loading} />
           )}
           {visiblePage === 'audit' && role && <Audit />}
           {visiblePage === 'parametres' && (

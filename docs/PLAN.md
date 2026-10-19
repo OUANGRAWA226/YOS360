@@ -92,30 +92,36 @@ flowchart TD
 
 ---
 
-### PHASE 2 — STOCK AVANCÉ, TARIFS & AUTOMATISATION
+### PHASE 2 — STOCK AVANCÉ, TARIFS & AUTOMATISATION (LIVRÉE)
 
-- **2.1 Traçabilité fine & FEFO** :
-  - Lots, numéros de série, dates de péremption (DLUO).
-  - Algorithme de déstockage automatique FEFO (First Expired, First Out).
-  - Alertes visuelles et notifications automatiques à J-30 et J-7.
-- **2.2 Valorisation du Stock** :
+- [x] **2.1 Traçabilité fine & FEFO** :
+  - Lots, numéros de série, dates de péremption (DLUO), statut quarantaine/rejeté/actif.
+  - Algorithme de déstockage automatique FEFO (`calculerSortieFEFO`, RPC `rpc_fefo_proposer_lots`).
+  - Alertes visuelles et notifications automatiques à J-30 et J-7 (`getDluoStatut`).
+  - Écran complet AdminLTE `Lots & Péremptions` avec simulateur interactif FEFO.
+- [x] **2.2 Valorisation du Stock** :
   - Méthodes configurables par tenant : CMUP (Coût Moyen Unitaire Pondéré) ou FIFO.
-- **2.3 Nomenclatures, Variantes & Unités** :
-  - Unités de mesure avec table de conversion (ex. 1 Carton = 10 Paquets = 100 Pièces).
-  - Variantes de produits (taille, couleur, conditionnement).
-  - Kits et produits composés avec décrémentation automatique des composants.
-- **2.4 Ajustements de Stock Réglementés** :
-  - Formulaire d'ajustement avec motif obligatoire (casse, vol, échantillon, péremption, écart inventaire).
-  - Seuil de valeur déclenchant une validation par le gérant.
-- **2.5 Grilles Tarifaires & Promotions** :
-  - Listes de prix par catégorie de clients (Détail, Demi-gros, Grossiste).
-  - Remises quantitatives, promotions datées, coupons et codes promo.
-- **2.6 Workflows de Validation & Notifications** :
-  - Écran « Validations en attente » pour bons de commande, remises exceptionnelles, transferts inter-sites.
-  - Système de notification in-app + e-mail + passerelle SMS/WhatsApp (format adapter).
-- **2.7 Webhooks Sortants & API Développeur** :
-  - Émission d'événements signés par HMAC (`vente.creee`, `stock.alerte`, `facture.payee`).
-  - Clés d'API avec scopes fins (`ventes:read`, `stock:write`).
+  - RPC SQL `rpc_calcul_valorisation_stock` + InfoBox de valorisation dans le catalogue.
+- [x] **2.3 Nomenclatures, Variantes & Unités** :
+  - Unités de mesure avec table de conversion (ex. 1 Carton = 10 Paquets = 100 Pièces, table `produit_unites`).
+  - Variantes matricielles de produits (taille, couleur, conditionnement, table `produit_variantes`).
+  - Kits et produits composés avec décrémentation automatique des composants (table `produit_composants`).
+  - Modals dédiés AdminLTE intégrés dans le catalogue Produits.
+- [x] **2.4 Ajustements de Stock Réglementés** :
+  - Formulaire d'ajustement avec motif obligatoire (`casse`, `vol`, `echantillon`, `peremption`, `ecart_inventaire`, `revalorisation`).
+  - Seuil de valeur paramétrable (défaut 50 000 FCFA) déclenchant une redirection vers le workflow de validation.
+  - Tables `stock_ajustements` et `stock_ajustement_lignes` + RPC `rpc_approuver_ajustement_stock`.
+- [x] **2.5 Grilles Tarifaires & Promotions** :
+  - Listes de prix par catégorie de clients (`detail`, `demi_gros`, `grossiste`, `vip`, tables `grilles_tarifaires` & `grille_tarifaire_lignes`).
+  - Remises quantitatives par palier de volume, promotions datées, coupons et codes promo (table `promotions`).
+  - Écran complet AdminLTE `Grilles & Promotions` avec simulateur de calcul en temps réel.
+- [x] **2.6 Workflows de Validation & Notifications** :
+  - Écran « Validations en attente » pour ajustements de stock, remises exceptionnelles, transferts inter-sites.
+  - Table universelle `validations_workflow` avec approbation/rejet motivé et traçabilité de décision.
+  - Table `notifications_queue` multi-canaux (in-app, email, SMS, WhatsApp).
+- [x] **2.7 Webhooks Sortants & Observabilité** :
+  - Émission d'événements signés par HMAC-SHA256 (`vente.creee`, `stock.alerte`, `facture.payee`, `ajustement.valide`).
+  - Table `webhook_deliveries` pour la traçabilité et simulateur de test de livraison avec signature `X-YOS360-Signature`.
 
 ---
 

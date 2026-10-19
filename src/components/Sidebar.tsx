@@ -40,6 +40,8 @@ import {
   Landmark,
   Smartphone,
   ShieldAlert,
+  Percent,
+  CheckSquare,
 } from 'lucide-react';
 import type { Page } from '@/App';
 import type { Role } from '@/lib/supabase';
@@ -82,6 +84,8 @@ type Props = {
     pendingVentes?: number;
     pendingAchats?: number;
     impayes?: number;
+    lotsAlert?: number;
+    pendingValidations?: number;
   };
 };
 
@@ -134,6 +138,7 @@ export function Sidebar({
           ],
         },
         { id: 'caisse', label: 'Caisse (POS)', icon: Store, module: 'caisse' },
+        { id: 'tarifs', label: 'Grilles & Promotions', icon: Percent, module: 'commandes' },
       ],
     },
     {
@@ -164,11 +169,18 @@ export function Sidebar({
           module: 'produits',
           dynamicBadge: dynamicCounts.stockAlerts,
         },
+        {
+          id: 'lots',
+          label: 'Lots & DLUO (FEFO)',
+          icon: Boxes,
+          module: 'lots',
+          dynamicBadge: dynamicCounts.lotsAlert,
+        },
         { id: 'categories', label: 'Catégories', icon: Tags, module: 'categories' },
-        { id: 'mouvements', label: 'Mouvements', icon: ArrowLeftRight, module: 'mouvements' },
+        { id: 'mouvements', label: 'Mouvements & Pertes', icon: ArrowLeftRight, module: 'mouvements' },
         {
           id: 'inventaires',
-          label: 'Comptages de stock', // Renommé selon les spécifications
+          label: 'Comptages de stock',
           icon: ClipboardCheck,
           module: 'inventaires',
         },
@@ -211,6 +223,13 @@ export function Sidebar({
     {
       title: 'Administration',
       items: [
+        {
+          id: 'validations',
+          label: 'Validations en attente',
+          icon: CheckSquare,
+          module: 'audit',
+          dynamicBadge: dynamicCounts.pendingValidations,
+        },
         { id: 'audit', label: "Journal d'audit", icon: ShieldCheck, module: 'audit' },
         {
           id: 'parametres',

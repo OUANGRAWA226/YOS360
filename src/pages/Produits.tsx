@@ -1,5 +1,20 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, ArrowLeftRight, Barcode, Layers, Printer } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Package,
+  AlertTriangle,
+  ArrowLeftRight,
+  Barcode,
+  Layers,
+  Printer,
+  Scale,
+  Tag as TagIcon,
+  Boxes as BoxesIcon,
+  DollarSign,
+} from 'lucide-react';
 import type { ProduitWithCategorie, Categorie, Lot } from '@/lib/supabase';
 import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -10,6 +25,8 @@ import { canEditPrixAchat, can, type Role } from '@/lib/permissions';
 import { LotManager } from '@/components/LotManager';
 import { Barcode39 } from '@/components/Barcode39';
 import { Card, InfoBox } from '@/components/adminlte';
+import { PackagingUnitsModal, VariantsModal, BOMKitModal } from '@/components/ProductAdvancedModules';
+import { calculerValorisationStock } from '@/lib/stockAdvanced';
 
 type Props = {
   produits: ProduitWithCategorie[];
@@ -36,6 +53,7 @@ type FormState = {
   alerte_peremption_jours: string;
   methode_valorisation: 'cmup' | 'fifo';
   quantite_economique: string;
+  type_produit: 'simple' | 'compose' | 'service' | 'variante_parent';
 };
 
 const emptyForm: FormState = {
@@ -43,6 +61,7 @@ const emptyForm: FormState = {
   seuil_alerte: '10', prix_unitaire: '0', prix_vente: '0', unite: 'pièce',
   emplacement: '', code_barres: '', perissable: false, alerte_peremption_jours: '30',
   methode_valorisation: 'cmup', quantite_economique: '0',
+  type_produit: 'simple',
 };
 
 export function Produits({ produits, categories, lots, loading, onRefresh, role }: Props) {
@@ -61,6 +80,9 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
   const [moveTarget, setMoveTarget] = useState<ProduitWithCategorie | null>(null);
   const [lotsTarget, setLotsTarget] = useState<ProduitWithCategorie | null>(null);
   const [labelTarget, setLabelTarget] = useState<ProduitWithCategorie | null>(null);
+  const [unitsTarget, setUnitsTarget] = useState<ProduitWithCategorie | null>(null);
+  const [variantsTarget, setVariantsTarget] = useState<ProduitWithCategorie | null>(null);
+  const [bomTarget, setBomTarget] = useState<ProduitWithCategorie | null>(null);
 
   const filtered = useMemo(() => {
     return produits.filter((p) => {
@@ -101,6 +123,7 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
       alerte_peremption_jours: String(p.alerte_peremption_jours),
       methode_valorisation: p.methode_valorisation,
       quantite_economique: String(p.quantite_economique),
+      type_produit: p.type_produit || 'simple',
     });
     setModalOpen(true);
   };
@@ -126,6 +149,7 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
       alerte_peremption_jours: parseInt(form.alerte_peremption_jours) || 30,
       methode_valorisation: form.methode_valorisation,
       quantite_economique: parseInt(form.quantite_economique) || 0,
+      type_produit: form.type_produit,
     } as Record<string, unknown>;
     // Prix d'achat: champ sensible, réservé aux rôles autorisés
     if (editPrixAchat) {
@@ -197,10 +221,14 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
     return produits.filter((p) => p.quantite <= p.seuil_alerte).length;
   }, [produits]);
 
+  const valorisationStock = useMemo(() => {
+    return calculerValorisationStock(produits, lots, 'cmup');
+  }, [produits, lots]);
+
   return (
     <div className="space-y-5">
       {/* AdminLTE v4 Metric Info-Boxes */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <InfoBox
           title="Articles au Catalogue"
           value={formatNumber(produits.length)}
@@ -209,11 +237,18 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
           description="Total références actives"
         />
         <InfoBox
-          title="Valeur de Vente Totale"
+          title="Valorisation Stock (CMUP)"
+          value={formatCurrency(valorisationStock.valeurTotale)}
+          variant="info"
+          icon={DollarSign}
+          description={`${formatNumber(valorisationStock.totalArticles)} unités valorisées`}
+        />
+        <InfoBox
+          title="Potentiel Vente Public"
           value={formatCurrency(totalValeurVente)}
           variant="success"
           icon={Package}
-          description="Potentiel commercial en stock"
+          description="Chiffre d'affaires potentiel"
         />
         <InfoBox
           title="Articles en Alerte / Rupture"
@@ -312,7 +347,24 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
                     <tr key={p.id}>
                       <td>
                         <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">{p.nom}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-gray-900 dark:text-white">{p.nom}</p>
+                            {p.type_produit === 'compose' && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                                KIT / BOM
+                              </span>
+                            )}
+                            {p.type_produit === 'variante_parent' && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                VARIANTES
+                              </span>
+                            )}
+                            {p.type_produit === 'service' && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                                SERVICE
+                              </span>
+                            )}
+                          </div>
                           {p.emplacement && (
                             <p className="text-xs text-gray-400">Empl: {p.emplacement}</p>
                           )}
@@ -365,6 +417,27 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
                       </td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setUnitsTarget(p)}
+                            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+                            title="Conditionnements & Unités multiples"
+                          >
+                            <Scale className="w-3.5 h-3.5 text-sky-500" />
+                          </button>
+                          <button
+                            onClick={() => setVariantsTarget(p)}
+                            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+                            title="Déclinaisons & Variantes"
+                          >
+                            <TagIcon className="w-3.5 h-3.5 text-purple-500" />
+                          </button>
+                          <button
+                            onClick={() => setBomTarget(p)}
+                            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+                            title="Composants Kit / Nomenclature (BOM)"
+                          >
+                            <BoxesIcon className="w-3.5 h-3.5 text-amber-500" />
+                          </button>
                           <button
                             onClick={() => setMoveTarget(p)}
                             className="btn-lte btn-lte-sm btn-lte-outline-secondary"
@@ -433,6 +506,19 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 placeholder="Nom du produit"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Type d'article</label>
+              <select
+                value={form.type_produit}
+                onChange={(e) => setForm({ ...form, type_produit: e.target.value as any })}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+              >
+                <option value="simple">Article Standard (Stock simple)</option>
+                <option value="compose">Kit / Produit composé (BOM)</option>
+                <option value="variante_parent">Article Parent de Variantes</option>
+                <option value="service">Prestation de Service (Sans stock)</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">SKU / Référence</label>
@@ -638,6 +724,21 @@ export function Produits({ produits, categories, lots, loading, onRefresh, role 
       {/* Label modal */}
       {labelTarget && (
         <LabelModal produit={labelTarget} onClose={() => setLabelTarget(null)} />
+      )}
+
+      {/* Unités de conditionnement */}
+      {unitsTarget && (
+        <PackagingUnitsModal produit={unitsTarget} onClose={() => setUnitsTarget(null)} />
+      )}
+
+      {/* Variantes matricielles */}
+      {variantsTarget && (
+        <VariantsModal produit={variantsTarget} onClose={() => setVariantsTarget(null)} />
+      )}
+
+      {/* Nomenclature & Kits */}
+      {bomTarget && (
+        <BOMKitModal produit={bomTarget} catalogueProduits={produits} onClose={() => setBomTarget(null)} />
       )}
 
       {/* Delete confirm */}

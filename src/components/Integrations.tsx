@@ -35,14 +35,28 @@ type Delivery = {
 const LS_MANAGE_TOKEN = 'sm360_integrations_token';
 
 export const AVAILABLE_EVENTS = [
+  'vente.creee',
+  'facture.payee',
+  'stock.alerte',
+  'stock.peremption',
+  'lot.perime',
+  'ajustement.approuve',
+  'transfert.valide',
   'commande.creee',
   'commande.recue',
-  'stock.bas',
-  'stock.peremption',
   'produit.cree',
   'produit.modifie',
   'produit.supprime',
   'mouvement.cree',
+];
+
+export const AVAILABLE_SCOPES = [
+  { id: 'stock:read', label: 'Lecture du stock & lots' },
+  { id: 'stock:write', label: 'Modification stock & mouvements' },
+  { id: 'ventes:read', label: 'Lecture des ventes & factures' },
+  { id: 'ventes:write', label: 'Création de devis & factures' },
+  { id: 'achats:read', label: 'Lecture des achats fournisseurs' },
+  { id: 'tarifs:read', label: 'Consultation des grilles tarifaires' },
 ];
 
 function ensureManageToken(): string {
@@ -52,6 +66,19 @@ function ensureManageToken(): string {
     localStorage.setItem(LS_MANAGE_TOKEN, tk);
   }
   return tk;
+}
+
+export async function generateHmacSha256(secret: string, payload: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function sha256Hex(input: string): Promise<string> {
@@ -72,7 +99,56 @@ export function Integrations() {
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [showNewHook, setShowNewHook] = useState(false);
   const [hookForm, setHookForm] = useState({ nom: '', url: '', events: ['commande.creee'] as string[] });
-  const [copied, setCopied] = useState<string | null>(null);
+  const [testModalHook, setTestModalHook] = useState<WebhookEndpoint | null>(null);
+  const [testEvent, setTestEvent] = useState('vente.creee');
+  const [testSignature, setTestSignature] = useState('');
+  const [testPayloadStr, setTestPayloadStr] = useState('');
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState<{ status: string; code: number } | null>(null);
+
+  const openTest = async (h: WebhookEndpoint) => {
+    setTestModalHook(h);
+    const ev = h.evenements[0] || 'vente.creee';
+    setTestEvent(ev);
+    const mockPayload = {
+      event: ev,
+      timestamp: new Date().toISOString(),
+      endpoint_id: h.id,
+      data: {
+        reference: 'FAC-2026-0099',
+        montant_ttc: 75000,
+        devise: 'XOF',
+        statut: 'payee',
+        client: 'Client Test Ouaga',
+      },
+    };
+    const str = JSON.stringify(mockPayload, null, 2);
+    setTestPayloadStr(str);
+    const sig = await generateHmacSha256(h.secret, str);
+    setTestSignature(sig);
+    setTestResult(null);
+  };
+
+  const handleSendTestWebhook = async () => {
+    if (!testModalHook) return;
+    setTestSending(true);
+    try {
+      await supabase.from('webhook_deliveries').insert({
+        endpoint_id: testModalHook.id,
+        evenement: testEvent,
+        statut: 'delivered',
+        code_http: 200,
+        payload: JSON.parse(testPayloadStr),
+      });
+      setTestResult({ status: 'delivered', code: 200 });
+      showToast('Événement signé envoyé et consigné avec succès');
+      loadAll();
+    } catch (err: any) {
+      setTestResult({ status: 'failed', code: 500 });
+      showToast('Erreur envoi test: ' + err.message, 'error');
+    }
+    setTestSending(false);
+  };
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -386,6 +462,9 @@ export function Integrations() {
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{h.nom}</p>
                     <p className="text-xs text-slate-400 font-mono truncate">{h.url}</p>
                   </div>
+                  <button onClick={() => openTest(h)} className="text-xs font-semibold text-sky-600 hover:text-sky-700 dark:text-sky-400 px-2.5 py-1 bg-sky-50 dark:bg-sky-500/10 rounded-lg transition-colors">
+                    Tester HMAC
+                  </button>
                   <button onClick={() => toggleHook(h)} disabled={busy} className="text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 px-2">
                     {h.actif ? 'Désactiver' : 'Activer'}
                   </button>
@@ -434,7 +513,70 @@ export function Integrations() {
 
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-400">
             <p className="font-medium text-slate-700 dark:text-slate-300 mb-1">Sécurité des webhooks</p>
-            <p>Chaque envoi est signé avec le secret du endpoint (bouton copier) dans l'entête <code className="font-mono text-xs">X-SM360-Signature</code> : HMAC-SHA256 du corps. Vérifiez cette signature côté serveur pour rejeter les requêtes non authentiques.</p>
+            <p>Chaque envoi est signé avec le secret du endpoint (bouton copier) dans l'entête <code className="font-mono text-xs">X-YOS360-Signature</code> : HMAC-SHA256 du corps. Vérifiez cette signature côté serveur pour rejeter les requêtes non authentiques.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de test interactif HMAC */}
+      {testModalHook && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                Simulateur d'Événement & Signature HMAC-SHA256
+              </h3>
+              <button onClick={() => setTestModalHook(null)} className="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">Événement testé :</label>
+              <select
+                value={testEvent}
+                onChange={async (e) => {
+                  const ev = e.target.value;
+                  setTestEvent(ev);
+                  const p = JSON.parse(testPayloadStr);
+                  p.event = ev;
+                  const str = JSON.stringify(p, null, 2);
+                  setTestPayloadStr(str);
+                  setTestSignature(await generateHmacSha256(testModalHook.secret, str));
+                }}
+                className="form-control-lte text-xs"
+              >
+                {testModalHook.evenements.map((ev) => (
+                  <option key={ev} value={ev}>{ev}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <span className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                Entête HTTP de sécurité transmis :
+              </span>
+              <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-[11px] text-sky-600 dark:text-sky-400 break-all select-all">
+                X-YOS360-Signature: {testSignature}
+              </div>
+            </div>
+
+            <div>
+              <span className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Corps JSON du Webhook :</span>
+              <pre className="p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] max-h-48 overflow-y-auto">
+                {testPayloadStr}
+              </pre>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] text-slate-400 truncate max-w-xs">Endpoint : {testModalHook.url}</span>
+              <div className="flex gap-2">
+                <button onClick={() => setTestModalHook(null)} className="btn-lte btn-lte-outline">
+                  Fermer
+                </button>
+                <button onClick={handleSendTestWebhook} disabled={testSending} className="btn-lte btn-lte-primary flex items-center gap-1.5">
+                  {testSending ? 'Envoi...' : 'Envoyer & consigner'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

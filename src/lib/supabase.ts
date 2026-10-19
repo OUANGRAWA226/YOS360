@@ -45,6 +45,7 @@ export type Produit = {
   methode_valorisation: 'cmup' | 'fifo';
   cmup: number;
   quantite_economique: number;
+  type_produit?: 'simple' | 'compose' | 'service' | 'variante_parent';
   created_at: string;
   updated_at: string;
 };
@@ -121,8 +122,11 @@ export type InventaireLigne = {
   created_at: string;
 };
 
+export type LotStatut = 'actif' | 'quarantaine' | 'rejete' | 'epuise';
+
 export type Lot = {
   id: string;
+  entreprise_id?: string;
   produit_id: string;
   numero_lot: string;
   numero_serie: string | null;
@@ -130,6 +134,10 @@ export type Lot = {
   quantite: number;
   prix_unitaire: number;
   entrepot_id: string | null;
+  statut?: LotStatut;
+  fabricant?: string | null;
+  date_fabrication?: string | null;
+  notes?: string | null;
   created_at: string;
 };
 
@@ -603,4 +611,162 @@ export type Payment = {
   metadata: Record<string, unknown>;
   created_at: string;
 };
+
+// ============================================================================
+// PHASE 2 : UNITÉS, VARIANTES, COMPOSANTS, AJUSTEMENTS, TARIFS & WORKFLOWS
+// ============================================================================
+
+export type ProduitUnite = {
+  id: string;
+  entreprise_id: string;
+  produit_id: string;
+  nom_unite: string;
+  code_court: string | null;
+  coefficient: number;
+  est_unite_base: boolean;
+  code_barres: string | null;
+  prix_vente_suggere: number | null;
+  created_at: string;
+};
+
+export type ProduitVariante = {
+  id: string;
+  entreprise_id: string;
+  produit_id: string;
+  sku: string;
+  nom_variante: string;
+  attributs: Record<string, string>;
+  code_barres: string | null;
+  prix_vente: number;
+  prix_achat: number;
+  quantite: number;
+  actif: boolean;
+  created_at: string;
+};
+
+export type ProduitComposant = {
+  id: string;
+  entreprise_id: string;
+  produit_parent_id: string;
+  composant_produit_id: string;
+  quantite_composant: number;
+  perte_pourcentage: number;
+  instructions: string | null;
+  created_at: string;
+  composant?: Produit;
+};
+
+export type MotifAjustement = 'casse' | 'vol' | 'echantillon' | 'peremption' | 'ecart_inventaire' | 'revalorisation' | 'autre';
+export type StatutAjustement = 'brouillon' | 'en_attente' | 'approuve' | 'rejete';
+
+export type StockAjustement = {
+  id: string;
+  entreprise_id: string;
+  site_id: string | null;
+  numero_document: string;
+  motif: MotifAjustement;
+  description: string | null;
+  statut: StatutAjustement;
+  valeur_totale: number;
+  exige_approbation: boolean;
+  created_by: string | null;
+  approuve_par: string | null;
+  approuve_at: string | null;
+  motif_rejet: string | null;
+  created_at: string;
+  updated_at: string;
+  site?: Entrepot;
+  lignes?: StockAjustementLigne[];
+};
+
+export type StockAjustementLigne = {
+  id: string;
+  ajustement_id: string;
+  produit_id: string;
+  lot_id: string | null;
+  type_ajustement: 'positif' | 'negatif';
+  quantite: number;
+  cout_unitaire: number;
+  valeur_ligne: number;
+  created_at: string;
+  produit?: Produit;
+  lot?: Lot;
+};
+
+export type CategorieClient = 'detail' | 'demi_gros' | 'grossiste' | 'vip' | 'partenaire';
+
+export type GrilleTarifaire = {
+  id: string;
+  entreprise_id: string;
+  nom: string;
+  categorie_client: CategorieClient;
+  remise_globale_pourcentage: number;
+  description: string | null;
+  actif: boolean;
+  created_at: string;
+  lignes?: GrilleTarifaireLigne[];
+};
+
+export type GrilleTarifaireLigne = {
+  id: string;
+  grille_id: string;
+  produit_id: string;
+  prix_specifique: number | null;
+  remise_pourcentage: number | null;
+  quantite_min: number;
+  created_at: string;
+  produit?: Produit;
+};
+
+export type Promotion = {
+  id: string;
+  entreprise_id: string;
+  code: string | null;
+  nom: string;
+  type_remise: 'pourcentage' | 'montant_fixe';
+  valeur_remise: number;
+  montant_minimum_achat: number;
+  date_debut: string;
+  date_fin: string;
+  nb_utilisations_max: number | null;
+  nb_utilisations_actuel: number;
+  site_id: string | null;
+  actif: boolean;
+  created_at: string;
+};
+
+export type TypeDemandeWorkflow = 'ajustement_stock' | 'bon_commande' | 'remise_exceptionnelle' | 'transfert_stock';
+
+export type ValidationWorkflow = {
+  id: string;
+  entreprise_id: string;
+  site_id: string | null;
+  type_demande: TypeDemandeWorkflow;
+  reference_id: string;
+  reference_numero: string;
+  demandeur_id: string | null;
+  statut: 'en_attente' | 'approuve' | 'rejete';
+  valeur_estimee: number;
+  details: Record<string, unknown>;
+  valide_par: string | null;
+  valide_at: string | null;
+  motif_rejet: string | null;
+  created_at: string;
+};
+
+export type NotificationQueue = {
+  id: string;
+  entreprise_id: string;
+  canal: 'in_app' | 'email' | 'sms' | 'whatsapp';
+  destinataire: string;
+  titre: string;
+  message: string;
+  statut: 'en_attente' | 'envoye' | 'echec';
+  tentatives: number;
+  erreur_dernier_envoi?: string | null;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  envoye_at?: string | null;
+};
+
 

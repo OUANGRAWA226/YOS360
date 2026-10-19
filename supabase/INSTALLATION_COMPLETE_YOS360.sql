@@ -838,3 +838,184 @@ INSERT INTO public.categories (entreprise_id, nom, couleur)
 SELECT id, 'Général', '#0ea5e9'
 FROM public.entreprises
 WHERE NOT EXISTS (SELECT 1 FROM public.categories WHERE categories.entreprise_id = entreprises.id);
+
+-- =============================================================================
+-- PHASE 2 EXTENSIONS : FEFO, VARIANTES, COMPOSANTS, AJUSTEMENTS, TARIFS, WORKFLOW
+-- =============================================================================
+
+ALTER TABLE public.lots ADD COLUMN IF NOT EXISTS statut text NOT NULL DEFAULT 'actif' 
+  CHECK (statut IN ('actif', 'quarantaine', 'rejete', 'epuise'));
+ALTER TABLE public.lots ADD COLUMN IF NOT EXISTS fabricant text;
+ALTER TABLE public.lots ADD COLUMN IF NOT EXISTS date_fabrication date;
+ALTER TABLE public.lots ADD COLUMN IF NOT EXISTS notes text;
+ALTER TABLE public.lots ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+
+ALTER TABLE public.entreprises ADD COLUMN IF NOT EXISTS methode_valorisation text NOT NULL DEFAULT 'cmup'
+  CHECK (methode_valorisation IN ('cmup', 'fifo'));
+ALTER TABLE public.entreprises ADD COLUMN IF NOT EXISTS seuil_validation_ajustement numeric(12,2) NOT NULL DEFAULT 50000;
+
+ALTER TABLE public.produits ADD COLUMN IF NOT EXISTS type_produit text NOT NULL DEFAULT 'simple'
+  CHECK (type_produit IN ('simple', 'compose', 'service', 'variante_parent'));
+
+CREATE TABLE IF NOT EXISTS public.produit_unites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  produit_id uuid NOT NULL REFERENCES public.produits(id) ON DELETE CASCADE,
+  nom_unite text NOT NULL,
+  code_court text,
+  coefficient numeric(10,4) NOT NULL CHECK (coefficient > 0),
+  est_unite_base boolean NOT NULL DEFAULT false,
+  code_barres text,
+  prix_vente_suggere numeric(12,2),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (produit_id, nom_unite)
+);
+
+CREATE TABLE IF NOT EXISTS public.produit_variantes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  produit_id uuid NOT NULL REFERENCES public.produits(id) ON DELETE CASCADE,
+  sku text NOT NULL,
+  nom_variante text NOT NULL,
+  attributs jsonb NOT NULL DEFAULT '{}'::jsonb,
+  code_barres text,
+  prix_vente numeric(12,2) NOT NULL DEFAULT 0,
+  prix_achat numeric(12,2) NOT NULL DEFAULT 0,
+  quantite integer NOT NULL DEFAULT 0,
+  actif boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (entreprise_id, sku)
+);
+
+CREATE TABLE IF NOT EXISTS public.produit_composants (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  produit_parent_id uuid NOT NULL REFERENCES public.produits(id) ON DELETE CASCADE,
+  composant_produit_id uuid NOT NULL REFERENCES public.produits(id) ON DELETE RESTRICT,
+  quantite_composant numeric(10,3) NOT NULL CHECK (quantite_composant > 0),
+  perte_pourcentage numeric(5,2) NOT NULL DEFAULT 0,
+  instructions text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (produit_parent_id, composant_produit_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.stock_ajustements (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  site_id uuid REFERENCES public.entrepots(id) ON DELETE SET NULL,
+  numero_document text NOT NULL,
+  motif text NOT NULL CHECK (motif IN ('casse', 'vol', 'echantillon', 'peremption', 'ecart_inventaire', 'revalorisation', 'autre')),
+  description text,
+  statut text NOT NULL DEFAULT 'brouillon' CHECK (statut IN ('brouillon', 'en_attente', 'approuve', 'rejete')),
+  valeur_totale numeric(12,2) NOT NULL DEFAULT 0,
+  exige_approbation boolean NOT NULL DEFAULT false,
+  created_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  approuve_par uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  approuve_at timestamptz,
+  motif_rejet text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  UNIQUE (entreprise_id, numero_document)
+);
+
+CREATE TABLE IF NOT EXISTS public.stock_ajustement_lignes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ajustement_id uuid NOT NULL REFERENCES public.stock_ajustements(id) ON DELETE CASCADE,
+  produit_id uuid NOT NULL REFERENCES public.produits(id) ON DELETE RESTRICT,
+  lot_id uuid REFERENCES public.lots(id) ON DELETE SET NULL,
+  type_ajustement text NOT NULL CHECK (type_ajustement IN ('positif', 'negatif')),
+  quantite integer NOT NULL CHECK (quantite > 0),
+  cout_unitaire numeric(12,2) NOT NULL DEFAULT 0,
+  valeur_ligne numeric(12,2) NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.grilles_tarifaires (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  nom text NOT NULL,
+  categorie_client text NOT NULL CHECK (categorie_client IN ('detail', 'demi_gros', 'grossiste', 'vip', 'partenaire')),
+  remise_globale_pourcentage numeric(5,2) NOT NULL DEFAULT 0,
+  description text,
+  actif boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  UNIQUE (entreprise_id, nom)
+);
+
+CREATE TABLE IF NOT EXISTS public.grille_tarifaire_lignes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  grille_id uuid NOT NULL REFERENCES public.grilles_tarifaires(id) ON DELETE CASCADE,
+  produit_id uuid NOT NULL REFERENCES public.produits(id) ON DELETE CASCADE,
+  prix_specifique numeric(12,2),
+  remise_pourcentage numeric(5,2),
+  quantite_min integer NOT NULL DEFAULT 1 CHECK (quantite_min >= 1),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (grille_id, produit_id, quantite_min)
+);
+
+CREATE TABLE IF NOT EXISTS public.promotions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  code text,
+  nom text NOT NULL,
+  type_remise text NOT NULL CHECK (type_remise IN ('pourcentage', 'montant_fixe')),
+  valeur_remise numeric(12,2) NOT NULL CHECK (valeur_remise > 0),
+  montant_minimum_achat numeric(12,2) NOT NULL DEFAULT 0,
+  date_debut timestamptz NOT NULL,
+  date_fin timestamptz NOT NULL,
+  nb_utilisations_max integer,
+  nb_utilisations_actuel integer NOT NULL DEFAULT 0,
+  site_id uuid REFERENCES public.entrepots(id) ON DELETE SET NULL,
+  actif boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  UNIQUE (entreprise_id, code)
+);
+
+CREATE TABLE IF NOT EXISTS public.validations_workflow (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  site_id uuid REFERENCES public.entrepots(id) ON DELETE SET NULL,
+  type_demande text NOT NULL CHECK (type_demande IN ('ajustement_stock', 'bon_commande', 'remise_exceptionnelle', 'transfert_stock')),
+  reference_id uuid NOT NULL,
+  reference_numero text NOT NULL,
+  demandeur_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  statut text NOT NULL DEFAULT 'en_attente' CHECK (statut IN ('en_attente', 'approuve', 'rejete')),
+  valeur_estimee numeric(12,2) NOT NULL DEFAULT 0,
+  details jsonb NOT NULL DEFAULT '{}'::jsonb,
+  valide_par uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  valide_at timestamptz,
+  motif_rejet text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications_queue (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entreprise_id uuid NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+  canal text NOT NULL CHECK (canal IN ('in_app', 'email', 'sms', 'whatsapp')),
+  destinataire text NOT NULL,
+  titre text NOT NULL,
+  message text NOT NULL,
+  statut text NOT NULL DEFAULT 'en_attente' CHECK (statut IN ('en_attente', 'envoye', 'echec')),
+  tentatives integer NOT NULL DEFAULT 0,
+  erreur_dernier_envoi text,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  envoye_at timestamptz
+);
+
+ALTER TABLE public.produit_unites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.produit_variantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.produit_composants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_ajustements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_ajustement_lignes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.grilles_tarifaires ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.grille_tarifaire_lignes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.validations_workflow ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications_queue ENABLE ROW LEVEL SECURITY;
+
