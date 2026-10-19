@@ -7,7 +7,7 @@ import { can, type Role } from '@/lib/permissions';
 import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { showToast } from '@/components/Toast';
-import { formatCurrency, formatDate, formatShortDate, generateReference, statutLabel, statutColor, TYPE_DOCUMENT_LABELS, nextNumeroDocument } from '@/lib/format';
+import { formatCurrency, formatNumber, formatDate, formatShortDate, generateReference, statutLabel, statutColor, TYPE_DOCUMENT_LABELS, nextNumeroDocument } from '@/lib/format';
 import { printDocumentCommercial } from '@/lib/documents';
 import { Card, InfoBox } from '@/components/adminlte';
 
