@@ -1,0 +1,7 @@
+# Supabase configuration
+
+[functions.rest-api]
+verify_jwt = false
+
+[functions.webhooks-dispatch]
+verify_jwt = false
