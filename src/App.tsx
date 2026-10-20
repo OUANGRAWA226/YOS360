@@ -315,8 +315,17 @@ function Shell() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
+        <div className="relative mb-4 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 p-2 shadow-2xl flex items-center justify-center">
+            <img src="/icon-yos360.png" alt="YOS360" className="w-12 h-12 object-contain animate-pulse" />
+          </div>
+          <div className="absolute inset-0 rounded-2xl border-2 border-emerald-500/40 animate-ping opacity-25 pointer-events-none" />
+        </div>
+        <div className="flex items-center gap-2.5 text-slate-300 text-sm font-semibold">
+          <div className="w-4 h-4 border-2 border-sky-400/30 border-t-sky-400 rounded-full animate-spin" />
+          <span>Chargement de YOS360...</span>
+        </div>
       </div>
     );
   }
@@ -329,8 +338,8 @@ function Shell() {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-slate-800 rounded-2xl border border-red-500/40 p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-red-500/15 flex items-center justify-center mx-auto mb-4">
-            <ShieldAlert className="w-7 h-7 text-red-400" />
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 p-2 flex items-center justify-center mx-auto mb-4">
+            <img src="/icon-yos360.png" alt="YOS360" className="w-12 h-12 object-contain grayscale opacity-80" />
           </div>
           <h1 className="text-xl font-bold text-slate-100 mb-2">Accès suspendu</h1>
           <p className="text-sm text-slate-400 leading-relaxed mb-6">
@@ -414,6 +423,15 @@ function Shell() {
             >
               <Menu className="w-5 h-5" />
             </button>
+
+            {/* Mobile Brand Indicator */}
+            <div className="flex lg:hidden items-center gap-1.5 flex-shrink-0">
+              <img src="/icon-yos360.png" alt="YOS360" className="w-6 h-6 object-contain" />
+              <span className="font-extrabold text-sm tracking-tight font-sans">
+                <span className="text-sky-600 dark:text-sky-400">YOS</span>
+                <span className="text-emerald-600 dark:text-emerald-400">360</span>
+              </span>
+            </div>
 
             {/* Quick Navigation Links (AdminLTE signature) */}
             <div className="hidden md:flex items-center gap-1 text-xs font-medium">

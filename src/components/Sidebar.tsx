@@ -299,15 +299,15 @@ export function Sidebar({
       {/* 1. AdminLTE Brand Logo */}
       <div className="h-16 px-4 border-b border-slate-800/80 flex items-center justify-between bg-[#0f172a]/70 backdrop-blur flex-shrink-0">
         <div className={`flex items-center gap-3 overflow-hidden ${collapsed ? 'justify-center w-full' : ''}`}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-sky-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 flex-shrink-0">
-            <Boxes className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-slate-900/90 border border-slate-700/60 p-1 flex items-center justify-center shadow-lg shadow-emerald-500/10 flex-shrink-0">
+            <img src="/icon-yos360.png" alt="YOS360" className="w-8 h-8 object-contain" />
           </div>
           {!collapsed && (
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-base font-extrabold tracking-tight text-white font-sans truncate">
-                YOS360
+              <span className="text-lg font-black tracking-tight text-white font-sans truncate">
+                <span className="text-sky-400">YOS</span><span className="text-emerald-400">360</span>
               </span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                 ERP UEMOA
               </span>
             </div>

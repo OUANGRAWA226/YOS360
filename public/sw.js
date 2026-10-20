@@ -1,11 +1,12 @@
-const CACHE_NAME = 'yos360-v1';
+const CACHE_NAME = 'yos360-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/icon-yos360.png',
+  '/icon.png',
+  '/logo-yos360.png',
+  '/logo.png',
 ];
 
 self.addEventListener('install', (event) => {

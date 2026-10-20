@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Boxes, Mail, Lock, User as UserIcon, LogIn, UserPlus, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, LogIn, UserPlus, Loader2, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { showToast } from '@/components/Toast';
 
@@ -40,14 +40,15 @@ export function LoginScreen() {
       <div className="w-full max-w-[400px]">
         {/* AdminLTE v4 Login Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-white shadow-md mb-2">
-            <Boxes className="w-6 h-6" />
+          <div className="inline-flex items-center justify-center p-3.5 rounded-2xl bg-white dark:bg-slate-800 shadow-md border border-slate-200/80 dark:border-slate-700/60 mb-2.5">
+            <img
+              src="/logo-yos360.png"
+              alt="YOS360 by YOPOE"
+              className="h-14 sm:h-16 w-auto object-contain"
+            />
           </div>
-          <h1 className="text-3xl font-light text-slate-800 dark:text-slate-100">
-            <span className="font-bold text-primary">YOS</span>360
-          </h1>
-          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-            Plateforme ERP & Caisse POS
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold">
+            Plateforme ERP & Caisse POS • UEMOA
           </p>
         </div>
 
