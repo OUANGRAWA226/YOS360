@@ -13,6 +13,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "admin-lte": "^4.10.0",
+    "baseline-browser-mapping": "^2.11.30",
+    "caniuse-lite": "^1.0.30001817",
     "lucide-react": "^0.446.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
