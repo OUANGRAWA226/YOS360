@@ -48,6 +48,7 @@ import type { Page } from '@/App';
 import type { Role } from '@/lib/supabase';
 import { can, type Module } from '@/lib/permissions';
 import { usePrefs } from '@/lib/prefs';
+import { useAuth } from '@/lib/auth';
 
 export type NavSubItem = {
   id: string;
@@ -101,6 +102,7 @@ export function Sidebar({
   dynamicCounts = {},
 }: Props) {
   const { t } = usePrefs();
+  const { profile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTrees, setExpandedTrees] = useState<Record<string, boolean>>({
     ventes: false,
