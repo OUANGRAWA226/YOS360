@@ -403,7 +403,7 @@ function Shell() {
   const visiblePage = !canAccess(page) || !isModuleActive(page) ? 'dashboard' : page;
 
   return (
-    <div className="min-h-screen bg-slate-100/90 dark:bg-[#090d16] flex transition-colors font-sans text-slate-800 dark:text-slate-100">
+    <div className="min-h-screen bg-[#f4f7f6] dark:bg-[#070e0a] flex transition-colors font-sans text-slate-800 dark:text-slate-100">
       {sidebarOpen && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -439,7 +439,7 @@ function Shell() {
       {/* Main Content Area with Dynamic AdminLTE Margin */}
       <div className={`flex-1 min-h-screen flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'}`}>
         {/* AdminLTE v4 App Header / Top Navbar */}
-        <header className="sticky top-0 z-20 h-16 bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between shadow-xs">
+        <header className="sticky top-0 z-20 h-16 bg-white/95 dark:bg-[#0c1612]/95 backdrop-blur border-b border-slate-200/80 dark:border-[#192b22] px-4 sm:px-6 flex items-center justify-between shadow-xs">
           {/* Left Navbar Links */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
@@ -450,7 +450,7 @@ function Shell() {
                   setSidebarOpen(!sidebarOpen);
                 }
               }}
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-sky-600 transition-colors flex-shrink-0"
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[#48B068] transition-colors flex-shrink-0"
               aria-label="Basculer la barre latérale"
               title="Basculer le menu"
             >
@@ -461,8 +461,8 @@ function Shell() {
             <div className="flex lg:hidden items-center gap-1.5 flex-shrink-0">
               <img src="/icon-yos360.png" alt="YOS360" className="w-6 h-6 object-contain" />
               <span className="font-extrabold text-sm tracking-tight font-sans">
-                <span className="text-sky-600 dark:text-sky-400">YOS</span>
-                <span className="text-emerald-600 dark:text-emerald-400">360</span>
+                <span className="text-[#0270B8] dark:text-[#4FAEEB]">YOS</span>
+                <span className="text-[#48B068] dark:text-[#5CC47D]">360</span>
               </span>
             </div>
 
@@ -472,8 +472,8 @@ function Shell() {
                 onClick={() => navigate('dashboard')}
                 className={`px-3 py-1.5 rounded-lg transition-colors ${
                   visiblePage === 'dashboard'
-                    ? 'text-sky-600 font-bold bg-sky-50 dark:bg-sky-500/10'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-sky-600 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'text-[#0270B8] dark:text-[#4FAEEB] font-bold bg-[#0270B8]/10 dark:bg-[#0270B8]/20'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-[#0270B8] hover:bg-slate-50 dark:hover:bg-white/5'
                 }`}
               >
                 Accueil
@@ -483,8 +483,8 @@ function Shell() {
                   onClick={() => navigate('caisse')}
                   className={`px-3 py-1.5 rounded-lg transition-colors ${
                     visiblePage === 'caisse'
-                      ? 'text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-500/10'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      ? 'text-[#117A35] dark:text-[#5CC47D] font-bold bg-[#48B068]/15 dark:bg-[#48B068]/20'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-[#48B068] hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
                 >
                   Caisse POS
@@ -494,12 +494,12 @@ function Shell() {
 
             {/* Enterprise Switcher */}
             {entreprisesDisponibles.length > 1 && (
-              <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800 min-w-0">
+              <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-[#192b22] min-w-0">
                 <Building2 className="w-4 h-4 text-slate-400 hidden sm:block flex-shrink-0" />
                 <select
                   value={entrepriseId ?? ''}
                   onChange={(e) => setEntrepriseId(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 max-w-[190px] truncate"
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#1f372c] bg-slate-50 dark:bg-[#0f1c16] text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#48B068] max-w-[190px] truncate"
                   title="Changer d'entreprise active"
                 >
                   {entreprisesDisponibles.map((e) => (
@@ -509,7 +509,7 @@ function Shell() {
               </div>
             )}
             {entreprisesDisponibles.length === 1 && (
-              <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800 truncate">
+              <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-[#192b22] truncate">
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[190px]">
                   {entreprisesDisponibles[0].nom}
                 </span>
@@ -517,12 +517,12 @@ function Shell() {
             )}
             {/* Global Site Selector (Multi-sites header) */}
             {entrepots.length > 0 && (
-              <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800 min-w-0">
+              <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-slate-200 dark:border-[#192b22] min-w-0">
                 <Warehouse className="w-3.5 h-3.5 text-slate-400 hidden sm:block flex-shrink-0" />
                 <select
                   value={selectedSiteId}
                   onChange={(e) => setSelectedSiteId(e.target.value)}
-                  className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 max-w-[150px] truncate"
+                  className="px-2 py-1 rounded-lg border border-slate-200 dark:border-[#1f372c] bg-slate-50 dark:bg-[#0f1c16] text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#48B068] max-w-[150px] truncate"
                   title="Sélecteur global de site opérationnel"
                 >
                   <option value="all">Tous les sites</option>
@@ -544,7 +544,7 @@ function Shell() {
             {/* Theme Toggle (AdminLTE Dark/Light) */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
               title={theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'}
             >
               {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
@@ -561,19 +561,19 @@ function Shell() {
                   setIsFullscreen(false);
                 }
               }}
-              className="hidden sm:inline-flex p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="hidden sm:inline-flex p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
               title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
             >
               {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             </button>
 
-            {/* User Profile Pill & Dropdown (Signature AdminLTE) */}
-            <div className="relative pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800">
+            {/* User Profile Pill & Dropdown (Signature AdminLTE with Brand Gradient) */}
+            <div className="relative pl-2 sm:pl-3 border-l border-slate-200 dark:border-[#192b22]">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0270B8] via-[#025E9A] to-[#117A35] text-white flex items-center justify-center font-bold text-xs shadow-2xs ring-1 ring-white/10">
                   {(profile?.nom_complet || profile?.email || 'U').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="hidden md:block text-left">
@@ -590,14 +590,14 @@ function Shell() {
               {userMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-4 pb-3 border-b border-slate-100 dark:border-slate-800 text-center">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-bold text-base flex items-center justify-center mx-auto mb-2 shadow-md">
+                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#0c1612] rounded-2xl border border-slate-200 dark:border-[#192b22] shadow-2xl py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-4 pb-3 border-b border-slate-100 dark:border-[#192b22] text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0270B8] via-[#025E9A] to-[#117A35] text-white font-bold text-base flex items-center justify-center mx-auto mb-2 shadow-md ring-2 ring-[#48B068]/30">
                         {(profile?.nom_complet || profile?.email || 'U').slice(0, 2).toUpperCase()}
                       </div>
                       <p className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{profile?.nom_complet || profile?.email}</p>
                       <p className="text-xs text-slate-400 truncate">{profile?.email}</p>
-                      <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
+                      <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#48B068]/15 text-[#117A35] dark:text-[#5CC47D] border border-[#48B068]/30">
                         {profile?.super_admin ? '👑 Super Administrateur' : (role ? ROLE_LABELS[role] : 'Collaborateur')}
                       </div>
                     </div>

@@ -15,23 +15,23 @@ interface InfoBoxProps {
 }
 
 const iconVariantBg: Record<InfoBoxVariant, string> = {
-  primary: 'bg-[#0d6efd] text-white',
-  success: 'bg-[#198754] text-white',
-  warning: 'bg-[#ffc107] text-gray-900',
-  danger: 'bg-[#dc3545] text-white',
-  info: 'bg-[#0dcaf0] text-gray-900',
-  secondary: 'bg-[#6c757d] text-white',
-  dark: 'bg-[#212529] text-white',
+  primary: 'bg-[#0270B8] text-white', // YOS Azure Blue
+  success: 'bg-[#48B068] text-white', // YOS Emerald Green
+  warning: 'bg-[#f59e0b] text-gray-900',
+  danger: 'bg-[#dc2626] text-white',
+  info: 'bg-[#0284c7] text-white',
+  secondary: 'bg-[#64748b] text-white',
+  dark: 'bg-[#1e293b] text-white',
 };
 
 const progressVariantBg: Record<InfoBoxVariant, string> = {
-  primary: 'bg-[#0d6efd]',
-  success: 'bg-[#198754]',
-  warning: 'bg-[#ffc107]',
-  danger: 'bg-[#dc3545]',
-  info: 'bg-[#0dcaf0]',
-  secondary: 'bg-[#6c757d]',
-  dark: 'bg-[#212529]',
+  primary: 'bg-[#0270B8]',
+  success: 'bg-[#48B068]',
+  warning: 'bg-[#f59e0b]',
+  danger: 'bg-[#dc2626]',
+  info: 'bg-[#0284c7]',
+  secondary: 'bg-[#64748b]',
+  dark: 'bg-[#1e293b]',
 };
 
 export const InfoBox: React.FC<InfoBoxProps> = ({

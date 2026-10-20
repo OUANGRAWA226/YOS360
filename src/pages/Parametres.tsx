@@ -422,7 +422,7 @@ export function Parametres({
       outline={true}
       collapsible={true}
       maximizable={true}
-      icon={<Download className="w-4 h-4 text-[#0d6efd]" />}
+      icon={<Download className="w-4 h-4 text-[#0270B8] dark:text-[#4FAEEB]" />}
     >
       <div className="space-y-4">
         <div>
@@ -460,7 +460,7 @@ export function Parametres({
       outline={true}
       collapsible={true}
       maximizable={true}
-      icon={<Upload className="w-4 h-4 text-[#198754]" />}
+      icon={<Upload className="w-4 h-4 text-[#48B068]" />}
     >
       <p className="text-xs text-gray-500 mb-3 leading-relaxed">
         Colonnes attendues : <code className="text-[11px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">nom; sku; categorie; quantite; seuil; prix_unitaire; prix_vente; unite; emplacement</code>.
@@ -499,7 +499,7 @@ export function Parametres({
       {importResult && (
         <div className="mt-4 rounded border border-gray-200 dark:border-slate-800 p-3 text-xs">
           <div className="flex items-center gap-4 mb-2">
-            <span className="inline-flex items-center gap-1.5 text-[#198754] font-bold"><CheckCircle2 className="w-3.5 h-3.5" /> {importResult.ok} importé(s)</span>
+            <span className="inline-flex items-center gap-1.5 text-[#48B068] font-bold"><CheckCircle2 className="w-3.5 h-3.5" /> {importResult.ok} importé(s)</span>
             {importResult.failed > 0 && <span className="text-[#dc3545] font-bold">{importResult.failed} en échec</span>}
           </div>
           {importResult.errors.length > 0 && (
@@ -734,7 +734,7 @@ export function Parametres({
           variant="primary"
           outline={true}
           collapsible={true}
-          icon={<Building2 className="w-4 h-4 text-[#0d6efd]" />}
+          icon={<Building2 className="w-4 h-4 text-[#0270B8] dark:text-[#4FAEEB]" />}
           footer={
             <div className="flex justify-end">
               <button
@@ -799,7 +799,7 @@ export function Parametres({
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">TVA</label>
               <label className="flex items-center gap-2 p-2 rounded border border-gray-200 dark:border-slate-700 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800">
-                <input type="checkbox" checked={ent.tva_active !== false} onChange={(e) => setEnt({ ...ent, tva_active: e.target.checked })} className="w-3.5 h-3.5 accent-[#0d6efd]" />
+                <input type="checkbox" checked={ent.tva_active !== false} onChange={(e) => setEnt({ ...ent, tva_active: e.target.checked })} className="w-3.5 h-3.5 accent-[#48B068]" />
                 Appliquer la TVA sur les documents
               </label>
             </div>
@@ -854,7 +854,7 @@ export function Parametres({
             outline={true}
             collapsible={true}
             maximizable={true}
-            icon={<Users className="w-4 h-4 text-[#0d6efd]" />}
+            icon={<Users className="w-4 h-4 text-[#0270B8] dark:text-[#4FAEEB]" />}
             tools={
               <button
                 onClick={() => setShowUserModal(true)}
@@ -925,7 +925,7 @@ export function Parametres({
                     <td className="text-center">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
                         u.actif
-                          ? 'bg-green-100 text-[#198754] dark:bg-green-900/40 dark:text-green-300'
+                          ? 'bg-[#48B068]/15 text-[#117A35] dark:bg-[#48B068]/20 dark:text-[#5CC47D]'
                           : 'bg-red-100 text-[#dc3545] dark:bg-red-900/40 dark:text-red-300'
                       }`}>
                         <ShieldCheck className="w-3 h-3" /> {u.actif ? 'Actif' : 'Désactivé'}

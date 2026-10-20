@@ -252,14 +252,14 @@ export function Sidebar({
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-40 h-screen bg-[#111827] dark:bg-[#0b0f19] border-r border-slate-800/80 text-slate-200 flex flex-col transition-all duration-300 shadow-2xl ${
+      className={`fixed top-0 left-0 z-40 h-screen bg-[#0c1612] dark:bg-[#070e0a] border-r border-[#192b22] text-slate-200 flex flex-col transition-all duration-300 shadow-2xl ${
         open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${collapsed ? 'w-20' : 'w-72'}`}
     >
       {/* 1. AdminLTE Brand Logo */}
-      <div className="relative h-16 px-4 border-b border-slate-800/80 flex items-center justify-between bg-[#0f172a]/70 backdrop-blur flex-shrink-0 overflow-hidden">
+      <div className="relative h-16 px-4 border-b border-[#192b22] flex items-center justify-between bg-[#0c1612]/90 backdrop-blur flex-shrink-0 overflow-hidden">
         {/* Halo vert discret derrière le cube */}
-        <div aria-hidden="true" className={`absolute top-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-[#48B068]/20 blur-2xl pointer-events-none ${collapsed ? 'left-1/2 -translate-x-1/2' : 'left-1'}`} />
+        <div aria-hidden="true" className={`absolute top-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-[#48B068]/25 blur-2xl pointer-events-none ${collapsed ? 'left-1/2 -translate-x-1/2' : 'left-1'}`} />
         {collapsed ? (
           <button
             type="button"
@@ -285,7 +285,7 @@ export function Sidebar({
         {!collapsed && onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
             title="Réduire la barre latérale"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -303,7 +303,7 @@ export function Sidebar({
               placeholder="Rechercher module..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#1f293d]/80 border border-slate-700/60 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#13231c]/90 border border-[#1f372c] text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#48B068] focus:border-[#48B068] transition-all"
             />
             {searchQuery && (
               <button
@@ -329,7 +329,7 @@ export function Sidebar({
           return (
             <div key={section.title}>
               {!collapsed && (
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5 px-3">
+                <p className="text-[10px] uppercase tracking-wider text-emerald-400/70 font-bold mb-1.5 px-3">
                   {section.title}
                 </p>
               )}
@@ -354,8 +354,8 @@ export function Sidebar({
                           title={collapsed ? item.label : undefined}
                           className={`flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                             active
-                              ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30 font-semibold'
-                              : 'text-slate-300 hover:bg-[#1e293b] hover:text-white'
+                              ? 'bg-gradient-to-r from-[#117A35] via-[#1a8a43] to-[#48B068] text-white shadow-lg shadow-[#48B068]/30 font-bold ring-1 ring-white/15'
+                              : 'text-slate-300 hover:bg-white/5 hover:text-white'
                           } ${collapsed ? 'justify-center px-0' : ''}`}
                         >
                           <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-slate-400'}`} />
@@ -379,7 +379,7 @@ export function Sidebar({
                               e.stopPropagation();
                               setExpandedTrees((prev) => ({ ...prev, [item.id]: !isTreeOpen }));
                             }}
-                            className="p-1.5 ml-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#1e293b] transition-colors"
+                            className="p-1.5 ml-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
                             title={isTreeOpen ? 'Réduire' : 'Déplier'}
                           >
                             <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isTreeOpen ? '' : '-rotate-90'}`} />
@@ -389,7 +389,7 @@ export function Sidebar({
 
                       {/* Sub-menu treeview */}
                       {!collapsed && hasChildren && isTreeOpen && (
-                        <div className="ml-4 pl-3 py-1 space-y-1 border-l-2 border-slate-700/60 my-1">
+                        <div className="ml-4 pl-3 py-1 space-y-1 border-l-2 border-[#1f372c] my-1">
                           {item.children?.map((sub) => {
                             const isSubActive = active && currentSubPage === sub.id;
                             return (
@@ -398,8 +398,8 @@ export function Sidebar({
                                 onClick={() => onNavigate(item.id, sub.id)}
                                 className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors flex items-center justify-between ${
                                   isSubActive
-                                    ? 'bg-sky-500/20 text-sky-400 font-semibold'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                                    ? 'bg-[#48B068]/20 text-[#5CC47D] font-bold border-l-2 border-[#5CC47D]'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}
                               >
                                 <span className="truncate">{sub.label}</span>
@@ -424,7 +424,7 @@ export function Sidebar({
 
       {/* 5. Espace Super Admin switch si super_admin = true */}
       {profile?.super_admin && (
-        <div className="p-3 border-t border-slate-800/80 bg-[#0f172a]/90 flex-shrink-0">
+        <div className="p-3 border-t border-[#192b22] bg-[#0c1612]/95 flex-shrink-0">
           <button
             onClick={() => onNavigate('parametres', 'modules')}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all justify-center"

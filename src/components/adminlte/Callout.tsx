@@ -18,31 +18,31 @@ const calloutStyles: Record<CalloutVariant, {
   icon: typeof Info;
 }> = {
   info: {
-    border: 'border-l-4 border-l-[#0dcaf0]',
-    bg: 'bg-cyan-50 dark:bg-cyan-950/20',
-    text: 'text-cyan-900 dark:text-cyan-200',
-    titleColor: 'text-cyan-800 dark:text-cyan-300',
+    border: 'border-l-4 border-l-[#0270B8]',
+    bg: 'bg-sky-50 dark:bg-sky-950/20',
+    text: 'text-sky-950 dark:text-sky-200',
+    titleColor: 'text-[#0270B8] dark:text-[#4FAEEB]',
     icon: Info,
   },
   warning: {
-    border: 'border-l-4 border-l-[#ffc107]',
+    border: 'border-l-4 border-l-[#f59e0b]',
     bg: 'bg-amber-50 dark:bg-amber-950/20',
-    text: 'text-amber-900 dark:text-amber-200',
+    text: 'text-amber-950 dark:text-amber-200',
     titleColor: 'text-amber-800 dark:text-amber-300',
     icon: AlertTriangle,
   },
   danger: {
-    border: 'border-l-4 border-l-[#dc3545]',
+    border: 'border-l-4 border-l-[#dc2626]',
     bg: 'bg-rose-50 dark:bg-rose-950/20',
-    text: 'text-rose-900 dark:text-rose-200',
+    text: 'text-rose-950 dark:text-rose-200',
     titleColor: 'text-rose-800 dark:text-rose-300',
     icon: AlertCircle,
   },
   success: {
-    border: 'border-l-4 border-l-[#198754]',
+    border: 'border-l-4 border-l-[#48B068]',
     bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-    text: 'text-emerald-900 dark:text-emerald-200',
-    titleColor: 'text-emerald-800 dark:text-emerald-300',
+    text: 'text-emerald-950 dark:text-emerald-200',
+    titleColor: 'text-[#117A35] dark:text-[#5CC47D]',
     icon: CheckCircle2,
   },
 };

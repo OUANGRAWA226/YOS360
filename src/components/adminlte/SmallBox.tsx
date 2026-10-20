@@ -24,14 +24,14 @@ const variantStyles: Record<SmallBoxVariant, {
   iconColor: string;
 }> = {
   primary: {
-    bg: 'bg-[#0d6efd]',
+    bg: 'bg-[#0270B8]', // YOS Brand Azure Blue
     text: 'text-white',
     footerBg: 'bg-black/15',
     footerHover: 'hover:bg-black/25',
     iconColor: 'text-black/15 group-hover:text-black/25',
   },
   success: {
-    bg: 'bg-[#198754]',
+    bg: 'bg-[#48B068]', // YOS Brand Emerald Green
     text: 'text-white',
     footerBg: 'bg-black/15',
     footerHover: 'hover:bg-black/25',

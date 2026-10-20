@@ -29,7 +29,7 @@ export function BarChart({ data, formatValue, height = 200 }: BarChartProps) {
               className="w-full rounded-t-lg transition-all duration-700 ease-out relative group cursor-pointer"
               style={{
                 height: `${h}%`,
-                backgroundColor: d.color || (isMax ? '#0ea5e9' : '#cbd5e1'),
+                backgroundColor: d.color || (isMax ? '#0270B8' : '#cbd5e1'),
                 minHeight: d.value > 0 ? '4px' : '0',
                 transitionDelay: `${i * 60}ms`,
               }}
@@ -55,7 +55,7 @@ type LineChartProps = {
   color?: string;
 };
 
-export function LineChart({ data, formatValue, height = 200, color = '#0ea5e9' }: LineChartProps) {
+export function LineChart({ data, formatValue, height = 200, color = '#0270B8' }: LineChartProps) {
   const [animated, setAnimated] = useState(false);
   void formatValue;
 
@@ -218,7 +218,7 @@ type SparklineProps = {
   height?: number;
 };
 
-export function Sparkline({ data, color = '#0ea5e9', width = 120, height = 36 }: SparklineProps) {
+export function Sparkline({ data, color = '#0270B8', width = 120, height = 36 }: SparklineProps) {
   if (data.length === 0) return null;
   const max = Math.max(...data, 1);
   const min = Math.min(...data, 0);

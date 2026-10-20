@@ -143,10 +143,10 @@ export function Dashboard({
     <div className="space-y-5">
       {/* Super Admin Top Control Banner */}
       {isSuperAdmin && (
-        <div className="bg-[#1e293b] text-white rounded-md border-t-[3px] border-t-[#0dcaf0] shadow-sm p-4 sm:p-5">
+        <div className="bg-[#0c1612] text-white rounded-md border-t-[3px] border-t-[#48B068] shadow-sm p-4 sm:p-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#0dcaf0]/20 text-[#0dcaf0] mb-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#48B068]/20 text-[#5CC47D] mb-1">
                 <Sparkles className="w-3.5 h-3.5" /> GOUVERNANCE SUPER ADMINISTRATEUR
               </div>
               <h2 className="text-xl font-bold tracking-tight text-white">
@@ -263,7 +263,7 @@ export function Dashboard({
                     <tr key={e.id}>
                       <td>
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded bg-[#0d6efd]/10 text-[#0d6efd] font-bold text-xs flex items-center justify-center">
+                          <div className="w-8 h-8 rounded bg-[#0270B8]/10 text-[#0270B8] dark:bg-[#0270B8]/20 dark:text-[#4FAEEB] font-bold text-xs flex items-center justify-center">
                             {e.nom.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
@@ -432,7 +432,7 @@ export function Dashboard({
                   </span>
                 }
               >
-                <LineChart data={monthData} formatValue={formatNumber} color="#0d6efd" height={220} />
+                <LineChart data={monthData} formatValue={formatNumber} color="#0270B8" height={220} />
               </Card>
             </div>
 
@@ -475,7 +475,7 @@ export function Dashboard({
                 produitsAlerte.length > 5 ? (
                   <button
                     onClick={() => onNavigate('produits')}
-                    className="w-full text-center text-xs font-semibold text-[#0d6efd] hover:underline flex items-center justify-center gap-1"
+                    className="w-full text-center text-xs font-semibold text-[#0270B8] dark:text-[#4FAEEB] hover:underline flex items-center justify-center gap-1"
                   >
                     Voir tous les produits en alerte <ArrowRight className="w-3.5 h-3.5" />
                   </button>
@@ -626,7 +626,7 @@ export function Dashboard({
                         <span
                           className={`font-bold flex-shrink-0 px-2 py-0.5 rounded text-xs ${
                             m.type === 'entree'
-                              ? 'bg-green-100 text-[#198754] dark:bg-green-950/40 dark:text-green-300'
+                              ? 'bg-[#48B068]/15 text-[#117A35] dark:bg-[#48B068]/20 dark:text-[#5CC47D]'
                               : 'bg-red-100 text-[#dc3545] dark:bg-red-950/40 dark:text-red-300'
                           }`}
                         >
@@ -644,17 +644,17 @@ export function Dashboard({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               onClick={() => onNavigate('produits')}
-              className="p-3 bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 text-left hover:border-[#0d6efd] hover:shadow-sm transition-all group"
+              className="p-3 bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 text-left hover:border-[#48B068] hover:shadow-sm transition-all group"
             >
-              <Package className="w-6 h-6 text-[#0d6efd] mb-1.5 group-hover:scale-110 transition-transform" />
+              <Package className="w-6 h-6 text-[#48B068] mb-1.5 group-hover:scale-110 transition-transform" />
               <h4 className="font-bold text-gray-900 dark:text-white text-xs">Catalogue Produits</h4>
               <p className="text-[11px] text-gray-400">Gérer stocks & tarifs</p>
             </button>
             <button
               onClick={() => onNavigate('commandes')}
-              className="p-3 bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 text-left hover:border-[#198754] hover:shadow-sm transition-all group"
+              className="p-3 bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 text-left hover:border-[#0270B8] hover:shadow-sm transition-all group"
             >
-              <ShoppingCart className="w-6 h-6 text-[#198754] mb-1.5 group-hover:scale-110 transition-transform" />
+              <ShoppingCart className="w-6 h-6 text-[#0270B8] mb-1.5 group-hover:scale-110 transition-transform" />
               <h4 className="font-bold text-gray-900 dark:text-white text-xs">Commandes</h4>
               <p className="text-[11px] text-gray-400">Ventes & achats</p>
             </button>

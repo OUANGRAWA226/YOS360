@@ -19,13 +19,18 @@
 
 body {
   font-family: 'Source Sans 3', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f4f6f9;
-  color: #212529;
+  background-color: #f4f7f6;
+  color: #1e293b;
 }
 
 .dark body {
-  background-color: #0f172a;
+  background-color: #0b1410;
   color: #f8fafc;
+}
+
+::selection {
+  background-color: #48B068;
+  color: #ffffff;
 }
 
 /* AdminLTE v4 Table styles */
@@ -40,32 +45,32 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6c757d;
-  border-bottom: 2px solid #dee2e6;
-  background-color: #f8f9fa;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  background-color: #f8faf9;
 }
 .dark .table-adminlte th {
   color: #94a3b8;
-  border-bottom: 2px solid #334155;
-  background-color: #1e293b;
+  border-bottom: 2px solid #1e2e26;
+  background-color: #0e1a14;
 }
 .table-adminlte td {
   padding: 0.75rem 0.85rem;
   font-size: 0.875rem;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf2f0;
   vertical-align: middle;
 }
 .dark .table-adminlte td {
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid #16241d;
 }
 .table-adminlte tbody tr:hover {
-  background-color: #f1f5f9;
+  background-color: #f0f7f3;
 }
 .dark .table-adminlte tbody tr:hover {
-  background-color: #1e293b;
+  background-color: #122119;
 }
 
-/* AdminLTE v4 Buttons */
+/* AdminLTE v4 Buttons with YOS360 Official Brand Colors */
 .btn-lte {
   display: inline-flex;
   align-items: center;
@@ -83,53 +88,95 @@ body {
   padding: 0.25rem 0.55rem;
   font-size: 0.75rem;
 }
+/* Primary: Official YOS Azure Blue (#0270B8) */
 .btn-lte-primary {
-  background-color: #0d6efd;
+  background-color: #0270B8;
   color: #ffffff;
-  border-color: #0d6efd;
+  border-color: #0270B8;
+  box-shadow: 0 1px 2px rgba(2, 112, 184, 0.2);
 }
 .btn-lte-primary:hover {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background-color: #025E9A;
+  border-color: #014C7D;
 }
+.btn-lte-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.25rem rgba(2, 112, 184, 0.35);
+}
+
+/* Success: Official YOS Emerald Green (#48B068) */
 .btn-lte-success {
-  background-color: #198754;
+  background-color: #48B068;
   color: #ffffff;
-  border-color: #198754;
+  border-color: #48B068;
+  box-shadow: 0 1px 2px rgba(72, 176, 104, 0.25);
 }
 .btn-lte-success:hover {
-  background-color: #157347;
-  border-color: #146c43;
+  background-color: #359B53;
+  border-color: #117A35;
 }
+.btn-lte-success:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.25rem rgba(72, 176, 104, 0.35);
+}
+
 .btn-lte-danger {
-  background-color: #dc3545;
+  background-color: #dc2626;
   color: #ffffff;
-  border-color: #dc3545;
+  border-color: #dc2626;
 }
 .btn-lte-danger:hover {
-  background-color: #bb2d3b;
-  border-color: #b02a37;
+  background-color: #b91c1c;
+  border-color: #991b1b;
 }
+
 .btn-lte-outline-primary {
   background-color: transparent;
-  color: #0d6efd;
-  border-color: #0d6efd;
+  color: #0270B8;
+  border-color: #0270B8;
 }
 .btn-lte-outline-primary:hover {
-  background-color: #0d6efd;
+  background-color: #0270B8;
   color: #ffffff;
 }
+.dark .btn-lte-outline-primary {
+  color: #4FAEEB;
+  border-color: #4FAEEB;
+}
+.dark .btn-lte-outline-primary:hover {
+  background-color: #0270B8;
+  color: #ffffff;
+}
+
+.btn-lte-outline-success {
+  background-color: transparent;
+  color: #117A35;
+  border-color: #48B068;
+}
+.btn-lte-outline-success:hover {
+  background-color: #48B068;
+  color: #ffffff;
+}
+.dark .btn-lte-outline-success {
+  color: #5CC47D;
+  border-color: #48B068;
+}
+.dark .btn-lte-outline-success:hover {
+  background-color: #48B068;
+  color: #ffffff;
+}
+
 .btn-lte-outline-secondary {
   background-color: transparent;
-  color: #6c757d;
-  border-color: #ced4da;
+  color: #64748b;
+  border-color: #cbd5e1;
 }
 .btn-lte-outline-secondary:hover {
-  background-color: #f8f9fa;
-  color: #212529;
+  background-color: #f1f5f9;
+  color: #1e293b;
 }
 .dark .btn-lte-outline-secondary {
-  border-color: #475569;
+  border-color: #334155;
   color: #cbd5e1;
 }
 .dark .btn-lte-outline-secondary:hover {
@@ -137,32 +184,32 @@ body {
   color: #ffffff;
 }
 
-/* AdminLTE Form Inputs */
+/* AdminLTE Form Inputs with Brand Focus Rings */
 .form-control-lte {
   width: 100%;
   padding: 0.425rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #212529;
+  color: #1e293b;
   background-color: #ffffff;
-  border: 1px solid #ced4da;
+  border: 1px solid #cbd5e1;
   border-radius: 0.375rem;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 .form-control-lte:focus {
-  border-color: #86b7fe;
+  border-color: #0270B8;
   outline: 0;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(2, 112, 184, 0.2);
 }
 .dark .form-control-lte {
   color: #f8fafc;
-  background-color: #1e293b;
-  border-color: #334155;
+  background-color: #0f1c16;
+  border-color: #24382e;
 }
 .dark .form-control-lte:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.25);
+  border-color: #48B068;
+  box-shadow: 0 0 0 0.25rem rgba(72, 176, 104, 0.25);
 }
 
 .dark ::-webkit-scrollbar-thumb {

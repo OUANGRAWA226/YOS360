@@ -22,24 +22,24 @@ interface CardProps {
 }
 
 const outlineTopBorders: Record<CardVariant, string> = {
-  primary: 'border-t-[3px] border-t-[#0d6efd]',
-  success: 'border-t-[3px] border-t-[#198754]',
-  warning: 'border-t-[3px] border-t-[#ffc107]',
-  danger: 'border-t-[3px] border-t-[#dc3545]',
-  info: 'border-t-[3px] border-t-[#0dcaf0]',
-  secondary: 'border-t-[3px] border-t-[#6c757d]',
-  dark: 'border-t-[3px] border-t-[#212529]',
+  primary: 'border-t-[3px] border-t-[#0270B8]', // YOS Brand Azure Blue
+  success: 'border-t-[3px] border-t-[#48B068]', // YOS Brand Emerald Green
+  warning: 'border-t-[3px] border-t-[#f59e0b]',
+  danger: 'border-t-[3px] border-t-[#dc2626]',
+  info: 'border-t-[3px] border-t-[#0284c7]',
+  secondary: 'border-t-[3px] border-t-[#64748b]',
+  dark: 'border-t-[3px] border-t-[#1e293b]',
   default: 'border-t-[3px] border-t-gray-300 dark:border-t-slate-700',
 };
 
 const solidHeaderBgs: Record<CardVariant, string> = {
-  primary: 'bg-[#0d6efd] text-white',
-  success: 'bg-[#198754] text-white',
-  warning: 'bg-[#ffc107] text-gray-900',
-  danger: 'bg-[#dc3545] text-white',
-  info: 'bg-[#0dcaf0] text-gray-900',
-  secondary: 'bg-[#6c757d] text-white',
-  dark: 'bg-[#212529] text-white',
+  primary: 'bg-[#0270B8] text-white',
+  success: 'bg-[#48B068] text-white',
+  warning: 'bg-[#f59e0b] text-gray-900',
+  danger: 'bg-[#dc2626] text-white',
+  info: 'bg-[#0284c7] text-white',
+  secondary: 'bg-[#64748b] text-white',
+  dark: 'bg-[#1e293b] text-white',
   default: 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white',
 };
 

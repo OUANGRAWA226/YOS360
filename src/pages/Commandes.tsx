@@ -363,7 +363,7 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
                       </td>
                       <td className="hidden sm:table-cell">
                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                          c.type === 'achat' ? 'bg-blue-100 text-[#0d6efd] dark:bg-blue-900/40 dark:text-blue-300' : 'bg-green-100 text-[#198754] dark:bg-green-900/40 dark:text-green-300'
+                          c.type === 'achat' ? 'bg-[#0270B8]/10 text-[#0270B8] dark:bg-[#0270B8]/20 dark:text-[#4FAEEB]' : 'bg-[#48B068]/15 text-[#117A35] dark:bg-[#48B068]/20 dark:text-[#5CC47D]'
                         }`}>
                           {c.type === 'achat' ? 'Achat' : 'Vente'}
                         </span>
