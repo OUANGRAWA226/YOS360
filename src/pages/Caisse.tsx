@@ -22,7 +22,8 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import type { ProduitWithCategorie, Client, Paiement, ModePaiement, Entreprise } from '@/lib/supabase';
+import type { ProduitWithCategorie, Client, Paiement, ModePaiement, Entreprise, ProduitUnite } from '@/lib/supabase';
+import { fetchTable } from '@/lib/dataLayer';
 import { can, type Role } from '@/lib/permissions';
 import { showToast } from '@/components/Toast';
 import { formatCurrency, MODES_PAIEMENT, nextNumeroDocument, formatNumber } from '@/lib/format';
@@ -39,7 +40,13 @@ type Props = {
   onRefresh: () => void;
 };
 
-type LigneCaisse = { produit: ProduitWithCategorie; quantite: number };
+// Une ligne = un article dans une unité (unité de base ou conditionnement : carton, pack…).
+// La quantité est exprimée dans cette unité ; le stock est toujours compté en unités de base.
+type LigneCaisse = { produit: ProduitWithCategorie; quantite: number; unite?: ProduitUnite | null };
+
+const cleLigne = (l: { produit: { id: string }; unite?: ProduitUnite | null }) => `${l.produit.id}:${l.unite?.id ?? ''}`;
+const coefDe = (l: LigneCaisse) => Number(l.unite?.coefficient ?? 1);
+const libelleUnite = (u: ProduitUnite) => `${u.nom_unite} (${Number(u.coefficient)})`;
 
 export interface CaisseSession {
   id: string;
@@ -110,6 +117,22 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
   const [montantRecuSimple, setMontantRecuSimple] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Conditionnements (carton, pack…) de tous les articles
+  const [unites, setUnites] = useState<ProduitUnite[]>([]);
+  useEffect(() => {
+    fetchTable<ProduitUnite>('produit_unites', '*', { column: 'coefficient', ascending: true }).then(setUnites).catch(() => setUnites([]));
+  }, []);
+  const unitesDe = (produitId: string) => unites.filter((u) => u.produit_id === produitId && !u.est_unite_base);
+
+  // Code-barres d'un conditionnement saisi ou scanné : l'ajouter directement
+  const uniteScannee = useMemo(() => {
+    const q = search.trim();
+    if (!q) return null;
+    const u = unites.find((x) => x.code_barres && x.code_barres === q);
+    const p = u ? produits.find((x) => x.id === u.produit_id) : undefined;
+    return u && p ? { unite: u, produit: p } : null;
+  }, [unites, produits, search]);
+
   // Recherche catalogue
   const resultats = useMemo(() => {
     const q = search.toLowerCase();
@@ -134,18 +157,24 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
     const t = setTimeout(async () => {
       const { data, error } = await supabase.rpc('tarifer_panier', {
         p_client_id: clientId || null,
-        p_panier: panier.map((l) => ({ produit_id: l.produit.id, quantite: l.quantite })),
+        p_panier: panier.map((l) => ({ produit_id: l.produit.id, unite_id: l.unite?.id ?? null, quantite: l.quantite })),
       });
       if (!actif || error || !data) return;
       const next: Record<string, { prix: number; motif: string }> = {};
-      for (const l of (data as { lignes: { produit_id: string; prix: number; motif: string }[] }).lignes) {
-        next[l.produit_id] = { prix: Number(l.prix), motif: l.motif };
+      for (const l of (data as { lignes: { produit_id: string; unite_id: string | null; prix: number; motif: string }[] }).lignes) {
+        next[`${l.produit_id}:${l.unite_id ?? ''}`] = { prix: Number(l.prix), motif: l.motif };
       }
       setTarifs(next);
     }, 200);
     return () => { actif = false; clearTimeout(t); };
   }, [panier, clientId]);
-  const prixDe = (l: LigneCaisse) => tarifs[l.produit.id]?.prix ?? l.produit.prix_vente;
+  // Prix affiché : celui calculé par la base, sinon (hors ligne) prix du conditionnement ou catalogue
+  const prixParDefaut = (l: LigneCaisse) =>
+    l.unite ? Number(l.unite.prix_vente_suggere || 0) || Math.round(l.produit.prix_vente * coefDe(l)) : l.produit.prix_vente;
+  const prixDe = (l: LigneCaisse) => tarifs[cleLigne(l)]?.prix ?? prixParDefaut(l);
+  // Unités de base déjà demandées pour un article, toutes lignes confondues
+  const qteBasePanier = (lignes: LigneCaisse[], produitId: string) =>
+    lignes.filter((l) => l.produit.id === produitId).reduce((s, l) => s + l.quantite * coefDe(l), 0);
 
   const total = panier.reduce((s, l) => s + l.quantite * prixDe(l), 0);
   const ht = tvaActive ? total / (1 + tvaTaux / 100) : total;
@@ -174,7 +203,7 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
     return null;
   }, [clientSelectionne, total, devise]);
 
-  const ajouter = (p: ProduitWithCategorie) => {
+  const ajouter = (p: ProduitWithCategorie, unite: ProduitUnite | null = null) => {
     if (!canUse) {
       showToast('Action non permise pour votre rôle', 'error');
       return;
@@ -185,30 +214,46 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
       return;
     }
 
+    const nouvelle: LigneCaisse = { produit: p, quantite: 1, unite };
     setPanier((prev) => {
-      const existant = prev.find((l) => l.produit.id === p.id);
-      if (existant) {
-        if (existant.quantite >= p.quantite) {
-          showToast('Stock disponible insuffisant', 'error');
-          return prev;
-        }
-        return prev.map((l) => (l.produit.id === p.id ? { ...l, quantite: l.quantite + 1 } : l));
-      }
-      if (p.quantite < 1) {
-        showToast('Stock épuisé pour ce produit', 'error');
+      if (qteBasePanier(prev, p.id) + coefDe(nouvelle) > p.quantite) {
+        showToast(p.quantite < 1 ? 'Stock épuisé pour ce produit' : 'Stock disponible insuffisant', 'error');
         return prev;
       }
-      return [...prev, { produit: p, quantite: 1 }];
+      const existant = prev.find((l) => cleLigne(l) === cleLigne(nouvelle));
+      if (existant) return prev.map((l) => (l === existant ? { ...l, quantite: l.quantite + 1 } : l));
+      return [...prev, nouvelle];
     });
   };
 
-  const changerQte = (pid: string, delta: number) => {
-    setPanier((prev) =>
-      prev
-        .map((l) => (l.produit.id === pid ? { ...l, quantite: l.quantite + delta } : l))
-        .filter((l) => l.quantite > 0)
-        .map((l) => (l.quantite > l.produit.quantite ? { ...l, quantite: l.produit.quantite } : l))
-    );
+  const changerQte = (cle: string, delta: number) => {
+    setPanier((prev) => {
+      const ligne = prev.find((l) => cleLigne(l) === cle);
+      if (!ligne) return prev;
+      if (delta > 0 && qteBasePanier(prev, ligne.produit.id) + delta * coefDe(ligne) > ligne.produit.quantite) {
+        showToast('Stock disponible insuffisant', 'error');
+        return prev;
+      }
+      return prev.map((l) => (l === ligne ? { ...l, quantite: l.quantite + delta } : l)).filter((l) => l.quantite > 0);
+    });
+  };
+
+  // Changer l'unité d'une ligne (unité de base ↔ carton, pack…) ; fusionne avec une ligne identique
+  const changerUnite = (cle: string, uniteId: string) => {
+    setPanier((prev) => {
+      const ligne = prev.find((l) => cleLigne(l) === cle);
+      if (!ligne) return prev;
+      const unite = unites.find((u) => u.id === uniteId) ?? null;
+      const modifiee: LigneCaisse = { ...ligne, unite };
+      const autres = prev.filter((l) => l !== ligne);
+      if (qteBasePanier(autres, ligne.produit.id) + modifiee.quantite * coefDe(modifiee) > ligne.produit.quantite) {
+        showToast('Stock disponible insuffisant pour ce conditionnement', 'error');
+        return prev;
+      }
+      const doublon = autres.find((l) => cleLigne(l) === cleLigne(modifiee));
+      if (doublon) return autres.map((l) => (l === doublon ? { ...l, quantite: l.quantite + modifiee.quantite } : l));
+      return prev.map((l) => (l === ligne ? modifiee : l));
+    });
   };
 
   // Initialisation ou ouverture de la session de caisse
@@ -329,7 +374,7 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
       const args = {
         p_client_id: clientId || null,
         p_client_walkin: clientId ? null : (walkinNom.trim() || 'Client comptoir'),
-        p_panier: panier.map((l) => ({ produit_id: l.produit.id, quantite: l.quantite })),
+        p_panier: panier.map((l) => ({ produit_id: l.produit.id, unite_id: l.unite?.id ?? null, quantite: l.quantite })),
         p_paiements: paiementsFinaux.map((p) => ({ mode: p.mode, montant: p.mode === 'especes' && !multiPaiement ? Math.max(recuSimple, p.montant) : p.montant, reference: p.reference || null })),
         p_vente_uuid: venteUuid,
         p_note: `Session ${session.numero_session}`,
@@ -345,7 +390,7 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
         if (error) throw error;
         const res = data as {
           numero_document: string; montant_ht: number; montant_tva: number; montant_total: number; rendu?: number;
-          lignes: { produit_id: string; quantite: number; prix_unitaire: number }[];
+          lignes: { produit_id: string; unite_id: string | null; quantite: number; quantite_unite: number; prix_unite: number; prix_unitaire: number }[];
         };
         numeroDoc = res.numero_document;
         totaux = { ht: Number(res.montant_ht), tva: Number(res.montant_tva), total: Number(res.montant_total) };
@@ -355,8 +400,10 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
           paiementsFinaux = [{ ...paiementsFinaux[0], montant: totaux.total }];
         }
         lignesTicket = res.lignes.map((rl) => {
-          const l = panier.find((x) => x.produit.id === rl.produit_id)!;
-          return { ...l, quantite: rl.quantite, produit: { ...l.produit, prix_vente: Number(rl.prix_unitaire) } };
+          const l = panier.find((x) => cleLigne(x) === `${rl.produit_id}:${rl.unite_id ?? ''}`)!;
+          return rl.unite_id
+            ? { ...l, quantite: Number(rl.quantite_unite), produit: { ...l.produit, prix_vente: Number(rl.prix_unite) } }
+            : { ...l, quantite: rl.quantite, produit: { ...l.produit, prix_vente: Number(rl.prix_unitaire) } };
         });
         showToast(`Vente ${numeroDoc} encaissée — ${formatCurrency(totaux.total, devise)}`, 'info');
       }
@@ -513,10 +560,33 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return;
+                const q = search.trim();
+                if (uniteScannee) { ajouter(uniteScannee.produit, uniteScannee.unite); setSearch(''); return; }
+                const p = produits.find((x) => x.code_barres && x.code_barres === q);
+                if (p) { ajouter(p); setSearch(''); }
+              }}
               placeholder="Rechercher par nom, référence SKU ou code-barres..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-sm"
             />
           </div>
+
+          {uniteScannee && (
+            <button
+              type="button"
+              onClick={() => { ajouter(uniteScannee.produit, uniteScannee.unite); setSearch(''); }}
+              className="w-full text-left p-3 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-between gap-3"
+            >
+              <span className="min-w-0">
+                <span className="block text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{uniteScannee.produit.nom}</span>
+                <span className="block text-[11px] text-emerald-700 dark:text-emerald-300">{libelleUnite(uniteScannee.unite)} — Entrée pour ajouter</span>
+              </span>
+              <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300 flex-shrink-0">
+                {formatCurrency(prixParDefaut({ produit: uniteScannee.produit, quantite: 1, unite: uniteScannee.unite }), devise)}
+              </span>
+            </button>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[580px] overflow-y-auto pr-1">
             {resultats.map((p) => {
@@ -573,33 +643,46 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
                 </div>
               ) : (
                 panier.map((l) => (
-                  <div key={l.produit.id} className="pt-2 flex items-center justify-between text-xs gap-2">
+                  <div key={cleLigne(l)} className="pt-2 flex items-center justify-between text-xs gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">{l.produit.nom}</p>
+                      {unitesDe(l.produit.id).length > 0 && (
+                        <select
+                          value={l.unite?.id ?? ''}
+                          onChange={(e) => changerUnite(cleLigne(l), e.target.value)}
+                          aria-label={`Unité de vente pour ${l.produit.nom}`}
+                          className="mt-0.5 mb-0.5 text-[10px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-slate-700 dark:text-slate-200"
+                        >
+                          <option value="">{l.produit.unite || 'Unité'}</option>
+                          {unitesDe(l.produit.id).map((u) => (
+                            <option key={u.id} value={u.id}>{libelleUnite(u)}</option>
+                          ))}
+                        </select>
+                      )}
                       <p className="text-[10px] text-slate-400 font-mono">
                         {formatCurrency(prixDe(l), devise)} × {l.quantite}
                       </p>
-                      {tarifs[l.produit.id] && tarifs[l.produit.id].prix !== l.produit.prix_vente && (
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">{tarifs[l.produit.id].motif}</p>
+                      {tarifs[cleLigne(l)] && tarifs[cleLigne(l)].prix !== prixParDefaut(l) && (
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">{tarifs[cleLigne(l)].motif}</p>
                       )}
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => changerQte(l.produit.id, -1)}
+                        onClick={() => changerQte(cleLigne(l), -1)}
                         className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200"
                       >
                         <Minus className="w-3 h-3 text-slate-600 dark:text-slate-200" />
                       </button>
                       <span className="w-6 text-center font-bold text-xs">{l.quantite}</span>
                       <button
-                        onClick={() => changerQte(l.produit.id, 1)}
+                        onClick={() => changerQte(cleLigne(l), 1)}
                         className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200"
                       >
                         <Plus className="w-3 h-3 text-slate-600 dark:text-slate-200" />
                       </button>
                       <button
-                        onClick={() => changerQte(l.produit.id, -l.quantite)}
+                        onClick={() => changerQte(cleLigne(l), -l.quantite)}
                         className="p-1 text-slate-400 hover:text-rose-500 ml-1"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1002,7 +1085,7 @@ function buildTicket(
     .map(
       (l) => `
     <tr>
-      <td colspan="3" style="padding-top:4px">${esc(l.produit.nom)}</td>
+      <td colspan="3" style="padding-top:4px">${esc(l.produit.nom)}${l.unite ? ' — ' + esc(libelleUnite(l.unite)) : ''}</td>
     </tr>
     <tr>
       <td style="font-size:10px">${l.quantite} × ${fmt(l.produit.prix_vente)}</td>
