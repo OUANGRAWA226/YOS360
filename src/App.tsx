@@ -268,24 +268,58 @@ function Shell() {
     return stop;
   }, [loadAll]);
 
-  const navigate = (p: Page, subTab?: string) => {
-    // Vérification souple de compatibilité pour achats / commandes
-    const canAccess = (target: Page) => {
-      if (target === 'achats') return can(role, 'achats', 'view') || can(role, 'commandes', 'view');
-      if (target === 'tarifs') return can(role, 'commandes', 'view') || can(role, 'tarifs', 'view');
-      if (target === 'validations') return can(role, 'audit', 'view') || can(role, 'validations', 'view');
-      return can(role, target as Module, 'view');
-    };
-    const isModuleActive = (target: Page) => {
-      if (target === 'achats') return modulesActifs.includes('achats') || modulesActifs.includes('commandes');
-      if (target === 'tarifs') return modulesActifs.includes('commandes') || modulesActifs.includes('tarifs');
-      if (target === 'validations') return modulesActifs.includes('audit') || modulesActifs.includes('validations');
-      if (target === 'comptabilite') return modulesActifs.includes('comptabilite') || modulesActifs.includes('paiements') || modulesActifs.length === 0;
-      if (target === 'tresorerie') return modulesActifs.includes('tresorerie') || modulesActifs.includes('paiements') || modulesActifs.length === 0;
-      if (target === 'equipe') return modulesActifs.includes('equipe') || modulesActifs.includes('parametres') || modulesActifs.length === 0;
-      return modulesActifs.includes(target as Module);
-    };
+  // Contrôle d'accès par rôle
+  const canAccess = useCallback((target: Page): boolean => {
+    if (profile?.super_admin) return true;
+    if (target === 'achats') return can(role, 'achats', 'view') || can(role, 'commandes', 'view');
+    if (target === 'tarifs') return can(role, 'commandes', 'view') || can(role, 'tarifs', 'view');
+    if (target === 'validations') return can(role, 'audit', 'view') || can(role, 'validations', 'view');
+    return can(role, target as Module, 'view');
+  }, [profile?.super_admin, role]);
 
+  // Activation des modules par entreprise (SaaS)
+  const isModuleActive = useCallback((target: Page): boolean => {
+    // 1. Le Super Admin a toujours accès à tous les modules
+    if (profile?.super_admin) return true;
+
+    // 2. Dashboard et Paramètres sont toujours accessibles
+    if (target === 'dashboard' || target === 'parametres') return true;
+
+    // 3. Si aucun module n'est explicitement configuré (null ou vide), tout est actif par défaut
+    if (!modulesActifs || modulesActifs.length === 0) return true;
+
+    // 4. Catégories fait partie intégrante du catalogue produits
+    if (target === 'categories') {
+      return modulesActifs.includes('categories') || modulesActifs.includes('produits');
+    }
+
+    // 5. Relations logiques entre modules métiers
+    if (target === 'produits') return modulesActifs.includes('produits') || modulesActifs.includes('categories');
+    if (target === 'mouvements') return modulesActifs.includes('mouvements') || modulesActifs.includes('produits');
+    if (target === 'lots') return modulesActifs.includes('lots') || modulesActifs.includes('produits');
+    if (target === 'scan') return modulesActifs.includes('scan') || modulesActifs.includes('produits') || modulesActifs.includes('caisse');
+    if (target === 'reappro') return modulesActifs.includes('reappro') || modulesActifs.includes('produits') || modulesActifs.includes('commandes') || modulesActifs.includes('achats');
+    if (target === 'inventaires') return modulesActifs.includes('inventaires') || modulesActifs.includes('produits');
+    if (target === 'entrepots') return modulesActifs.includes('entrepots');
+    if (target === 'transferts') return modulesActifs.includes('transferts') || modulesActifs.includes('entrepots');
+    if (target === 'achats') return modulesActifs.includes('achats') || modulesActifs.includes('commandes');
+    if (target === 'commandes') return modulesActifs.includes('commandes') || modulesActifs.includes('ventes') || modulesActifs.includes('achats');
+    if (target === 'tarifs') return modulesActifs.includes('tarifs') || modulesActifs.includes('commandes') || modulesActifs.includes('produits');
+    if (target === 'clients') return modulesActifs.includes('clients') || modulesActifs.includes('commandes') || modulesActifs.includes('caisse');
+    if (target === 'fournisseurs') return modulesActifs.includes('fournisseurs') || modulesActifs.includes('achats') || modulesActifs.includes('commandes');
+    if (target === 'caisse') return modulesActifs.includes('caisse');
+    if (target === 'paiements') return modulesActifs.includes('paiements') || modulesActifs.includes('caisse') || modulesActifs.includes('commandes');
+    if (target === 'tresorerie') return modulesActifs.includes('tresorerie') || modulesActifs.includes('paiements');
+    if (target === 'comptabilite') return modulesActifs.includes('comptabilite') || modulesActifs.includes('paiements');
+    if (target === 'equipe') return modulesActifs.includes('equipe') || modulesActifs.includes('parametres');
+    if (target === 'validations') return modulesActifs.includes('validations') || modulesActifs.includes('audit');
+    if (target === 'audit') return modulesActifs.includes('audit');
+    if (target === 'rapports') return modulesActifs.includes('rapports') || modulesActifs.includes('dashboard');
+
+    return modulesActifs.includes(target as Module);
+  }, [profile?.super_admin, modulesActifs]);
+
+  const navigate = (p: Page, subTab?: string) => {
     if (!canAccess(p)) {
       showToast('Vous n\'avez pas accès à cette section', 'error');
       return;
@@ -389,16 +423,6 @@ function Shell() {
       </div>
     );
   }
-
-  const isModuleActive = (target: Page) => {
-    if (target === 'achats') return modulesActifs.includes('achats') || modulesActifs.includes('commandes');
-    if (target === 'commandes') return modulesActifs.includes('commandes') || modulesActifs.includes('ventes');
-    return modulesActifs.includes(target as Module);
-  };
-  const canAccess = (target: Page) => {
-    if (target === 'achats') return can(role, 'achats', 'view') || can(role, 'commandes', 'view');
-    return can(role, target as Module, 'view');
-  };
 
   const visiblePage = !canAccess(page) || !isModuleActive(page) ? 'dashboard' : page;
 
