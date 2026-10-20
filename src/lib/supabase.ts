@@ -155,6 +155,8 @@ export type Fournisseur = {
   created_at: string;
 };
 
+export type PalierFidelite = 'bronze' | 'argent' | 'or' | 'platine';
+
 export type Client = {
   id: string;
   nom: string;
@@ -165,6 +167,17 @@ export type Client = {
   code_postal: string | null;
   pays: string;
   note: string | null;
+  ifu?: string | null;
+  rccm?: string | null;
+  division_fiscale?: string | null;
+  regime_imposition?: string | null;
+  encours_max?: number;
+  delai_paiement_jours?: number;
+  categorie_client?: CategorieClient;
+  points_fidelite?: number;
+  palier_fidelite?: PalierFidelite;
+  total_depense_cumule?: number;
+  date_dernier_achat?: string | null;
   created_at: string;
 };
 
@@ -767,6 +780,241 @@ export type NotificationQueue = {
   metadata?: Record<string, unknown>;
   created_at: string;
   envoye_at?: string | null;
+};
+
+// ==============================================================================
+// PHASE 3 — FINANCE SYSCOHADA, TRÉSORERIE, ÉQUIPE & COMMISSIONS, FIDÉLITÉ
+// ==============================================================================
+
+export type TypeTransactionFidelite = 'gain' | 'utilisation' | 'ajustement' | 'bonus' | 'expiration';
+
+export type FideliteTransaction = {
+  id: string;
+  entreprise_id: string;
+  client_id: string;
+  commande_id: string | null;
+  type: TypeTransactionFidelite;
+  points: number;
+  solde_apres: number;
+  valeur_fcfa_equivalente: number;
+  motif: string | null;
+  created_at: string;
+};
+
+export type ComptaExercice = {
+  id: string;
+  entreprise_id: string;
+  annee: number;
+  libelle: string;
+  date_debut: string;
+  date_fin: string;
+  statut: 'ouvert' | 'cloture';
+  created_at: string;
+};
+
+export type ComptaCompteType = 'actif' | 'passif' | 'charge' | 'produit' | 'tresorerie' | 'tiers' | 'ordinaire';
+
+export type ComptaCompte = {
+  id: string;
+  entreprise_id: string;
+  numero: string;
+  libelle: string;
+  classe: number;
+  type: ComptaCompteType;
+  lettrable: boolean;
+  actif: boolean;
+  parent_numero: string | null;
+  created_at: string;
+};
+
+export type ComptaJournalType = 'ventes' | 'achats' | 'banque' | 'caisse' | 'mobile_money' | 'operations_diverses';
+
+export type ComptaJournal = {
+  id: string;
+  entreprise_id: string;
+  code: string;
+  libelle: string;
+  type: ComptaJournalType;
+  compte_contrepartie_defaut: string | null;
+  created_at: string;
+};
+
+export type ComptaPiece = {
+  id: string;
+  entreprise_id: string;
+  site_id: string | null;
+  journal_id: string;
+  exercice_id: string | null;
+  numero_piece: string;
+  date_piece: string;
+  libelle: string;
+  reference_document: string | null;
+  origine_type: string | null;
+  origine_id: string | null;
+  statut: 'brouillon' | 'valide' | 'annule';
+  total_debit: number;
+  total_credit: number;
+  created_by: string | null;
+  created_at: string;
+  journal?: ComptaJournal;
+};
+
+export type ComptaEcriture = {
+  id: string;
+  entreprise_id: string;
+  piece_id: string;
+  compte_numero: string;
+  compte_libelle: string;
+  site_id: string | null;
+  debit: number;
+  credit: number;
+  libelle_ligne: string | null;
+  lettrage: string | null;
+  tiers_id: string | null;
+  tiers_nom: string | null;
+  date_ecriture: string;
+  created_at: string;
+  piece?: ComptaPiece;
+};
+
+export type TypeCompteTresorerie = 'banque' | 'caisse_physique' | 'orange_money' | 'moov_money' | 'wave' | 'autre';
+
+export type TresorerieCompte = {
+  id: string;
+  entreprise_id: string;
+  site_id: string | null;
+  nom: string;
+  type: TypeCompteTresorerie;
+  numero_compte: string | null;
+  etablissement: string | null;
+  devise: string;
+  solde_initial: number;
+  solde_actuel: number;
+  compte_comptable_numero: string;
+  actif: boolean;
+  created_at: string;
+  entrepots?: { nom: string } | null;
+};
+
+export type TypeMouvementTresorerie = 'encaissement' | 'decaissement' | 'virement_interne';
+export type StatutRapprochement = 'non_rapproche' | 'rapproche' | 'en_suspens';
+
+export type TresorerieMouvement = {
+  id: string;
+  entreprise_id: string;
+  site_id: string | null;
+  compte_id: string;
+  date_mouvement: string;
+  type: TypeMouvementTresorerie;
+  montant: number;
+  solde_avant: number;
+  solde_apres: number;
+  motif: string;
+  tiers_nom: string | null;
+  reference_operation: string | null;
+  statut_rapprochement: StatutRapprochement;
+  date_rapprochement: string | null;
+  piece_jointe_url: string | null;
+  created_by: string | null;
+  created_at: string;
+  compte?: TresorerieCompte;
+};
+
+export type DepenseCategorie = {
+  id: string;
+  entreprise_id: string;
+  nom: string;
+  code_comptable: string;
+  budget_mensuel_max: number;
+  couleur: string;
+  actif: boolean;
+  created_at: string;
+};
+
+export type ModeReglementDepense = 'especes' | 'orange_money' | 'moov_money' | 'wave' | 'virement' | 'cheque' | 'autre';
+export type StatutDepense = 'en_attente' | 'validee' | 'payee' | 'rejetee';
+
+export type Depense = {
+  id: string;
+  entreprise_id: string;
+  site_id: string | null;
+  categorie_id: string;
+  compte_tresorerie_id: string | null;
+  numero_depense: string;
+  date_depense: string;
+  montant: number;
+  beneficiaire: string;
+  motif: string;
+  mode_reglement: ModeReglementDepense;
+  numero_facture_fournisseur: string | null;
+  justificatif_url: string | null;
+  statut: StatutDepense;
+  piece_comptable_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  categorie?: DepenseCategorie;
+  compte?: TresorerieCompte;
+};
+
+export type StatutCollaborateur = 'actif' | 'conge' | 'suspendu' | 'sorti';
+export type BaseCalculCommission = 'ca_encaisse' | 'ca_facture' | 'marge_brute';
+
+export type EquipeCollaborateur = {
+  id: string;
+  entreprise_id: string;
+  site_id: string | null;
+  user_id: string | null;
+  matricule: string;
+  nom: string;
+  prenom: string;
+  poste: string;
+  telephone: string | null;
+  email: string | null;
+  date_embauche: string;
+  salaire_base: number;
+  taux_commission_pct: number;
+  base_calcul_commission: BaseCalculCommission;
+  statut: StatutCollaborateur;
+  notes: string | null;
+  created_at: string;
+  site?: { nom: string } | null;
+};
+
+export type EquipeObjectif = {
+  id: string;
+  entreprise_id: string;
+  collaborateur_id: string;
+  site_id: string | null;
+  periode: string; // YYYY-MM
+  objectif_ca: number;
+  objectif_marge: number;
+  realise_ca: number;
+  realise_marge: number;
+  taux_atteinte_pct?: number;
+  prime_objectif: number;
+  created_at: string;
+  collaborateur?: EquipeCollaborateur;
+};
+
+export type StatutCommission = 'calcule' | 'valide' | 'paye';
+
+export type EquipeCommission = {
+  id: string;
+  entreprise_id: string;
+  collaborateur_id: string;
+  periode: string; // YYYY-MM
+  total_ventes_base: number;
+  taux_applique: number;
+  montant_commission: number;
+  prime_bonus: number;
+  retenues: number;
+  net_a_payer: number;
+  statut: StatutCommission;
+  date_reglement: string | null;
+  mode_reglement: string | null;
+  valide_par: string | null;
+  created_at: string;
+  collaborateur?: EquipeCollaborateur;
 };
 
 

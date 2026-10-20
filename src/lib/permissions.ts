@@ -51,7 +51,10 @@ export type Module =
   | 'parametres'
   | 'import_export'
   | 'tarifs'
-  | 'validations';
+  | 'validations'
+  | 'comptabilite'
+  | 'tresorerie'
+  | 'equipe';
 
 export type Permission = {
   view: boolean;
@@ -72,6 +75,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     fournisseurs: FULL, clients: FULL, commandes: FULL, achats: FULL, ventes: FULL,
     paiements: FULL, caisse: FULL, rapports: FULL, audit: FULL, parametres: FULL, import_export: FULL,
     tarifs: FULL, validations: FULL,
+    comptabilite: FULL, tresorerie: FULL, equipe: FULL,
   },
   admin: {
     dashboard: FULL, produits: FULL, categories: FULL, mouvements: FULL,
@@ -79,6 +83,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     fournisseurs: FULL, clients: FULL, commandes: FULL, achats: FULL, ventes: FULL,
     paiements: FULL, caisse: FULL, rapports: FULL, audit: FULL, parametres: FULL, import_export: FULL,
     tarifs: FULL, validations: FULL,
+    comptabilite: FULL, tresorerie: FULL, equipe: FULL,
   },
   gerant: {
     dashboard: FULL, produits: FULL, categories: FULL, mouvements: FULL,
@@ -90,6 +95,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     import_export: FULL,
     tarifs: FULL,
     validations: FULL,
+    comptabilite: FULL, tresorerie: FULL, equipe: FULL,
   },
   gestionnaire: {
     dashboard: FULL, produits: FULL, categories: FULL, mouvements: FULL,
@@ -101,6 +107,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     import_export: READ_ONLY,
     tarifs: FULL,
     validations: { view: true, create: true, edit: false, delete: false },
+    comptabilite: READ_ONLY, tresorerie: READ_ONLY, equipe: READ_ONLY,
   },
   comptable: {
     dashboard: FULL, produits: READ_ONLY, categories: READ_ONLY, mouvements: READ_ONLY,
@@ -112,6 +119,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     import_export: FULL,
     tarifs: READ_ONLY,
     validations: { view: true, create: true, edit: false, delete: false },
+    comptabilite: FULL, tresorerie: FULL, equipe: { view: true, create: true, edit: true, delete: false },
   },
   magasinier: {
     dashboard: { view: true, create: false, edit: false, delete: false },
@@ -137,6 +145,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     import_export: NONE,
     tarifs: NONE,
     validations: { view: true, create: true, edit: false, delete: false },
+    comptabilite: NONE, tresorerie: NONE, equipe: NONE,
   },
   caissier: {
     dashboard: { view: true, create: false, edit: false, delete: false },
@@ -162,6 +171,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     import_export: NONE,
     tarifs: READ_ONLY,
     validations: NONE,
+    comptabilite: NONE, tresorerie: NONE, equipe: NONE,
   },
   vendeur: {
     dashboard: { view: true, create: false, edit: false, delete: false },
@@ -187,6 +197,8 @@ export const ROLE_PERMISSIONS: Record<Role, Record<Module, Permission>> = {
     import_export: NONE,
     tarifs: READ_ONLY,
     validations: { view: true, create: true, edit: false, delete: false },
+    comptabilite: NONE, tresorerie: NONE,
+    equipe: { view: true, create: false, edit: false, delete: false },
   },
 };
 

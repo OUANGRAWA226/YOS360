@@ -42,6 +42,7 @@ import {
   ShieldAlert,
   Percent,
   CheckSquare,
+  Scale,
 } from 'lucide-react';
 import type { Page } from '@/App';
 import type { Role } from '@/lib/supabase';
@@ -217,6 +218,29 @@ export function Sidebar({
           icon: HandCoins,
           module: 'paiements',
           dynamicBadge: dynamicCounts.impayes,
+        },
+        {
+          id: 'tresorerie',
+          label: 'Trésorerie & Dépenses',
+          icon: Wallet,
+          module: 'tresorerie',
+        },
+        {
+          id: 'comptabilite',
+          label: 'Comptabilité SYSCOHADA',
+          icon: Scale,
+          module: 'comptabilite',
+        },
+      ],
+    },
+    {
+      title: 'Équipe & RH',
+      items: [
+        {
+          id: 'equipe',
+          label: 'Collaborateurs & Commissions',
+          icon: Award,
+          module: 'equipe',
         },
       ],
     },

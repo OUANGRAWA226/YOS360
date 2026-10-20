@@ -47,6 +47,9 @@ import { Caisse } from '@/pages/Caisse';
 import { Lots } from '@/pages/Lots';
 import { TarifsPromos } from '@/pages/TarifsPromos';
 import { Validations } from '@/pages/Validations';
+import { Comptabilite } from '@/pages/Comptabilite';
+import { Tresorerie } from '@/pages/Tresorerie';
+import { Equipe } from '@/pages/Equipe';
 import { LoginScreen } from '@/pages/Login';
 import { ToastContainer, showToast } from '@/components/Toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -85,6 +88,9 @@ export type Page =
   | 'commandes'
   | 'achats'
   | 'paiements'
+  | 'tresorerie'
+  | 'comptabilite'
+  | 'equipe'
   | 'caisse'
   | 'rapports'
   | 'audit'
@@ -109,6 +115,9 @@ const BREADCRUMBS: Record<Page, { section: string; title: string }> = {
   clients: { section: 'Tiers', title: 'Clients & Fidélité' },
   fournisseurs: { section: 'Tiers', title: 'Fournisseurs' },
   paiements: { section: 'Finance', title: 'Encaissements & Créances' },
+  tresorerie: { section: 'Finance', title: 'Trésorerie & Dépenses' },
+  comptabilite: { section: 'Finance', title: 'Comptabilité SYSCOHADA' },
+  equipe: { section: 'Équipe & RH', title: 'Collaborateurs & Commissions' },
   validations: { section: 'Administration', title: 'Validations en attente' },
   audit: { section: 'Administration', title: "Journal d'Audit" },
   parametres: { section: 'Administration', title: 'Paramètres du système' },
@@ -261,6 +270,9 @@ function Shell() {
       if (target === 'achats') return modulesActifs.includes('achats') || modulesActifs.includes('commandes');
       if (target === 'tarifs') return modulesActifs.includes('commandes') || modulesActifs.includes('tarifs');
       if (target === 'validations') return modulesActifs.includes('audit') || modulesActifs.includes('validations');
+      if (target === 'comptabilite') return modulesActifs.includes('comptabilite') || modulesActifs.includes('paiements') || modulesActifs.length === 0;
+      if (target === 'tresorerie') return modulesActifs.includes('tresorerie') || modulesActifs.includes('paiements') || modulesActifs.length === 0;
+      if (target === 'equipe') return modulesActifs.includes('equipe') || modulesActifs.includes('parametres') || modulesActifs.length === 0;
       return modulesActifs.includes(target as Module);
     };
 
@@ -736,7 +748,15 @@ function Shell() {
             <Fournisseurs fournisseurs={fournisseurs} loading={loading} onRefresh={loadAll} role={role} />
           )}
           {visiblePage === 'clients' && (
-            <Clients clients={clients} loading={loading} onRefresh={loadAll} role={role} />
+            <Clients
+              clients={clients}
+              commandes={commandes}
+              paiements={paiements}
+              entreprise={entreprise}
+              loading={loading}
+              onRefresh={loadAll}
+              role={role}
+            />
           )}
           {visiblePage === 'commandes' && (
             <Commandes commandes={commandes} produits={produits} fournisseurs={fournisseurs} clients={clients} entreprise={entreprise} numerosFactures={commandes.filter((c) => c.numero_document?.startsWith('FAC-')).map((c) => c.numero_document!)} loading={loading} onRefresh={loadAll} role={role} />
@@ -763,6 +783,15 @@ function Shell() {
           )}
           {visiblePage === 'paiements' && (
             <Paiements paiements={paiements} clients={clients} fournisseurs={fournisseurs} commandes={commandes} entreprise={entreprise} loading={loading} onRefresh={loadAll} role={role} />
+          )}
+          {visiblePage === 'tresorerie' && (
+            <Tresorerie entrepots={entrepots} role={role} loading={loading} />
+          )}
+          {visiblePage === 'comptabilite' && (
+            <Comptabilite entrepots={entrepots} role={role} loading={loading} />
+          )}
+          {visiblePage === 'equipe' && (
+            <Equipe entrepots={entrepots} commandes={commandes} role={role} loading={loading} />
           )}
           {visiblePage === 'rapports' && (
             <Rapports produits={produits} mouvements={mouvements} commandes={commandes} categories={categories} lots={lots} entrepots={entrepots} stocksEntrepot={stocksEntrepot} loading={loading} />

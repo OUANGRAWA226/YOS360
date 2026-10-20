@@ -125,24 +125,27 @@ flowchart TD
 
 ---
 
-### PHASE 3 — FINANCE SYSCOHADA, ÉQUIPE & FIDÉLITÉ
+### PHASE 3 — FINANCE SYSCOHADA, ÉQUIPE & FIDÉLITÉ (LIVRÉE)
 
-- **3.1 Pré-Comptabilité SYSCOHADA Révisé** :
-  - Plan comptable général OHADA pré-configuré (Comptes classes 1 à 7).
-  - Journaux auxiliaires : Ventes, Achats, Banque, Caisse, Opérations Diverses.
-  - Génération automatique des écritures comptables à partir des factures et encaissements/décaissements.
-  - Grand livre, balance générale et export FEC / Excel.
-- **3.2 Trésorerie & Dépenses** :
-  - Gestion des comptes bancaires et des comptes marchands Mobile Money.
-  - Rapprochement bancaire assisté.
-  - Gestion des charges et dépenses d'exploitation par catégorie budgétaire.
-- **3.3 Gestion de l'Équipe & Commissions** :
-  - Fiche collaborateur, rattachement aux sites d'affectation.
-  - Règles de calcul des commissions vendeurs (% sur CA ou marge).
-  - Suivi des objectifs mensuels par vendeur et par boutique.
-- **3.4 Programme de Fidélité & Vue Client 360°** :
-  - Cumul de points de fidélité, paliers de fidélité (Bronze, Argent, Or).
-  - Vue Client 360° : historique d'achats, panier moyen, solde dû, retours, préférences.
+- [x] **3.1 Pré-Comptabilité SYSCOHADA Révisé** :
+  - Plan comptable général OHADA pré-configuré (Comptes classes 1 à 7, seed automatique `rpc_seed_syscohada_plan`).
+  - Journaux auxiliaires normalisés : Ventes (VE), Achats (AC), Banque (BQ), Caisse (CA), Mobile Money (MM), Opérations Diverses (OD).
+  - Génération automatique des écritures comptables en partie double à partir des factures de vente (`rpc_generer_ecriture_vente`).
+  - Grand livre dynamique, balance générale équilibrée (Débit = Crédit) et export normalisé FEC (Fichier des Écritures Comptables) / CSV.
+- [x] **3.2 Trésorerie & Dépenses d'Exploitation** :
+  - Comptes de trésorerie multi-devises (Banques, Caisses physiques, Orange Money, Moov Money, Wave).
+  - Mouvements de trésorerie et virements internes de compte à compte avec recalcul des soldes.
+  - Rapprochement bancaire assisté calculant le solde théorique comptable, les opérations en suspens et l'écart.
+  - Gestion des dépenses et charges d'exploitation par catégorie budgétaire avec suivi des plafonds mensuels et pièces justificatives.
+- [x] **3.3 Gestion de l'Équipe, Commissions & Objectifs** :
+  - Fiches collaborateurs complètes avec rattachement aux sites d'affectation et matricule unique.
+  - Moteur de calcul automatique des commissions (% sur CA encaissé, CA facturé ou marge brute).
+  - Suivi mensuel des objectifs commerciaux (CA & marge) avec calcul de prime d'atteinte et statut de liquidation (Calculé, Validé, Payé).
+- [x] **3.4 Programme de Fidélité & Vue Client 360°** :
+  - Paliers de fidélité UEMOA (Bronze, Argent, Or, Platine) avec cumul automatique de points (1 pt / 1 000 FCFA) et bonus par palier.
+  - Transactions de fidélité tracées avec valeur de conversion monétaire (1 pt = 25 FCFA).
+  - Modal « Vue Client 360° » complet : métriques de CA cumulé, solde dû, panier moyen, historique des commandes, règlements et relance WhatsApp 1-clic.
+
 
 ---
 

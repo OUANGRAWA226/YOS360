@@ -1019,3 +1019,243 @@ ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.validations_workflow ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications_queue ENABLE ROW LEVEL SECURITY;
 
+-- ==============================================================================
+-- SECTION PHASE 3 : FINANCE SYSCOHADA, ÉQUIPE & COMMISSIONS, FIDÉLITÉ CLIENT
+-- ==============================================================================
+
+ALTER TABLE public.clients 
+ADD COLUMN IF NOT EXISTS points_fidelite INT NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS palier_fidelite TEXT NOT NULL DEFAULT 'bronze' CHECK (palier_fidelite IN ('bronze', 'argent', 'or', 'platine')),
+ADD COLUMN IF NOT EXISTS total_depense_cumule NUMERIC NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS date_dernier_achat TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS public.fidelite_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
+    commande_id UUID REFERENCES public.commandes(id) ON DELETE SET NULL,
+    type TEXT NOT NULL CHECK (type IN ('gain', 'utilisation', 'ajustement', 'bonus', 'expiration')),
+    points INT NOT NULL,
+    solde_apres INT NOT NULL,
+    valeur_fcfa_equivalente NUMERIC DEFAULT 0,
+    motif TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.compta_exercices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    annee INT NOT NULL,
+    libelle TEXT NOT NULL,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    statut TEXT NOT NULL DEFAULT 'ouvert' CHECK (statut IN ('ouvert', 'cloture')),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(entreprise_id, annee)
+);
+
+CREATE TABLE IF NOT EXISTS public.compta_comptes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    numero TEXT NOT NULL,
+    libelle TEXT NOT NULL,
+    classe INT NOT NULL CHECK (classe BETWEEN 1 AND 8),
+    type TEXT NOT NULL DEFAULT 'ordinaire' CHECK (type IN ('actif', 'passif', 'charge', 'produit', 'tresorerie', 'tiers', 'ordinaire')),
+    lettrable BOOLEAN DEFAULT false,
+    actif BOOLEAN DEFAULT true,
+    parent_numero TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(entreprise_id, numero)
+);
+
+CREATE TABLE IF NOT EXISTS public.compta_journaux (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    libelle TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('ventes', 'achats', 'banque', 'caisse', 'mobile_money', 'operations_diverses')),
+    compte_contrepartie_defaut TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(entreprise_id, code)
+);
+
+CREATE TABLE IF NOT EXISTS public.compta_pieces (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    site_id UUID REFERENCES public.entrepots(id) ON DELETE SET NULL,
+    journal_id UUID NOT NULL REFERENCES public.compta_journaux(id) ON DELETE CASCADE,
+    exercice_id UUID REFERENCES public.compta_exercices(id) ON DELETE SET NULL,
+    numero_piece TEXT NOT NULL,
+    date_piece DATE NOT NULL DEFAULT CURRENT_DATE,
+    libelle TEXT NOT NULL,
+    reference_document TEXT,
+    origine_type TEXT,
+    origine_id UUID,
+    statut TEXT NOT NULL DEFAULT 'valide' CHECK (statut IN ('brouillon', 'valide', 'annule')),
+    total_debit NUMERIC NOT NULL DEFAULT 0,
+    total_credit NUMERIC NOT NULL DEFAULT 0,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.compta_ecritures (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    piece_id UUID NOT NULL REFERENCES public.compta_pieces(id) ON DELETE CASCADE,
+    compte_numero TEXT NOT NULL,
+    compte_libelle TEXT NOT NULL,
+    site_id UUID REFERENCES public.entrepots(id) ON DELETE SET NULL,
+    debit NUMERIC NOT NULL DEFAULT 0 CHECK (debit >= 0),
+    credit NUMERIC NOT NULL DEFAULT 0 CHECK (credit >= 0),
+    libelle_ligne TEXT,
+    lettrage TEXT,
+    tiers_id UUID,
+    tiers_nom TEXT,
+    date_ecriture DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.tresorerie_comptes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    site_id UUID REFERENCES public.entrepots(id) ON DELETE SET NULL,
+    nom TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('banque', 'caisse_physique', 'orange_money', 'moov_money', 'wave', 'autre')),
+    numero_compte TEXT,
+    etablissement TEXT,
+    devise TEXT NOT NULL DEFAULT 'XOF',
+    solde_initial NUMERIC NOT NULL DEFAULT 0,
+    solde_actuel NUMERIC NOT NULL DEFAULT 0,
+    compte_comptable_numero TEXT DEFAULT '521000',
+    actif BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.tresorerie_mouvements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    site_id UUID REFERENCES public.entrepots(id) ON DELETE SET NULL,
+    compte_id UUID NOT NULL REFERENCES public.tresorerie_comptes(id) ON DELETE CASCADE,
+    date_mouvement DATE NOT NULL DEFAULT CURRENT_DATE,
+    type TEXT NOT NULL CHECK (type IN ('encaissement', 'decaissement', 'virement_interne')),
+    montant NUMERIC NOT NULL CHECK (montant > 0),
+    solde_avant NUMERIC DEFAULT 0,
+    solde_apres NUMERIC DEFAULT 0,
+    motif TEXT NOT NULL,
+    tiers_nom TEXT,
+    reference_operation TEXT,
+    statut_rapprochement TEXT NOT NULL DEFAULT 'non_rapproche' CHECK (statut_rapprochement IN ('non_rapproche', 'rapproche', 'en_suspens')),
+    date_rapprochement DATE,
+    piece_jointe_url TEXT,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.depenses_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    nom TEXT NOT NULL,
+    code_comptable TEXT NOT NULL DEFAULT '605000',
+    budget_mensuel_max NUMERIC DEFAULT 0,
+    couleur TEXT DEFAULT '#3b82f6',
+    actif BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.depenses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    site_id UUID REFERENCES public.entrepots(id) ON DELETE SET NULL,
+    categorie_id UUID NOT NULL REFERENCES public.depenses_categories(id) ON DELETE RESTRICT,
+    compte_tresorerie_id UUID REFERENCES public.tresorerie_comptes(id) ON DELETE SET NULL,
+    numero_depense TEXT NOT NULL,
+    date_depense DATE NOT NULL DEFAULT CURRENT_DATE,
+    montant NUMERIC NOT NULL CHECK (montant > 0),
+    beneficiaire TEXT NOT NULL,
+    motif TEXT NOT NULL,
+    mode_reglement TEXT NOT NULL DEFAULT 'especes' CHECK (mode_reglement IN ('especes', 'orange_money', 'moov_money', 'wave', 'virement', 'cheque', 'autre')),
+    numero_facture_fournisseur TEXT,
+    justificatif_url TEXT,
+    statut TEXT NOT NULL DEFAULT 'payee' CHECK (statut IN ('en_attente', 'validee', 'payee', 'rejetee')),
+    piece_comptable_id UUID REFERENCES public.compta_pieces(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.equipe_collaborateurs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    site_id UUID REFERENCES public.entrepots(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    matricule TEXT NOT NULL,
+    nom TEXT NOT NULL,
+    prenom TEXT NOT NULL,
+    poste TEXT NOT NULL,
+    telephone TEXT,
+    email TEXT,
+    date_embauche DATE DEFAULT CURRENT_DATE,
+    salaire_base NUMERIC DEFAULT 0,
+    taux_commission_pct NUMERIC NOT NULL DEFAULT 2.0,
+    base_calcul_commission TEXT NOT NULL DEFAULT 'ca_encaisse' CHECK (base_calcul_commission IN ('ca_encaisse', 'ca_facture', 'marge_brute')),
+    statut TEXT NOT NULL DEFAULT 'actif' CHECK (statut IN ('actif', 'conge', 'suspendu', 'sorti')),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(entreprise_id, matricule)
+);
+
+CREATE TABLE IF NOT EXISTS public.equipe_objectifs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    collaborateur_id UUID NOT NULL REFERENCES public.equipe_collaborateurs(id) ON DELETE CASCADE,
+    site_id UUID REFERENCES public.entrepots(id) ON DELETE SET NULL,
+    periode TEXT NOT NULL,
+    objectif_ca NUMERIC NOT NULL DEFAULT 0,
+    objectif_marge NUMERIC NOT NULL DEFAULT 0,
+    realise_ca NUMERIC NOT NULL DEFAULT 0,
+    realise_marge NUMERIC NOT NULL DEFAULT 0,
+    prime_objectif NUMERIC DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(entreprise_id, collaborateur_id, periode)
+);
+
+CREATE TABLE IF NOT EXISTS public.equipe_commissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entreprise_id UUID NOT NULL REFERENCES public.entreprises(id) ON DELETE CASCADE,
+    collaborateur_id UUID NOT NULL REFERENCES public.equipe_collaborateurs(id) ON DELETE CASCADE,
+    periode TEXT NOT NULL,
+    total_ventes_base NUMERIC NOT NULL DEFAULT 0,
+    taux_applique NUMERIC NOT NULL DEFAULT 0,
+    montant_commission NUMERIC NOT NULL DEFAULT 0,
+    prime_bonus NUMERIC NOT NULL DEFAULT 0,
+    retenues NUMERIC NOT NULL DEFAULT 0,
+    net_a_payer NUMERIC NOT NULL DEFAULT 0,
+    statut TEXT NOT NULL DEFAULT 'calcule' CHECK (statut IN ('calcule', 'valide', 'paye')),
+    date_reglement DATE,
+    mode_reglement TEXT,
+    valide_par UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(entreprise_id, collaborateur_id, periode)
+);
+
+ALTER TABLE public.fidelite_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compta_exercices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compta_comptes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compta_journaux ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compta_pieces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compta_ecritures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tresorerie_comptes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tresorerie_mouvements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.depenses_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.depenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.equipe_collaborateurs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.equipe_objectifs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.equipe_commissions ENABLE ROW LEVEL SECURITY;
+
+-- Mise à jour automatique des modules pour les entreprises
+UPDATE public.entreprises
+SET modules = ARRAY(
+    SELECT DISTINCT unnest(modules || ARRAY['comptabilite', 'tresorerie', 'equipe', 'lots', 'tarifs', 'validations'])
+)
+WHERE modules IS NOT NULL;
+
+

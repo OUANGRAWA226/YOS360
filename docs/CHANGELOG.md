@@ -153,3 +153,63 @@ Tous les changements notables apportés au projet YOS360 sont consignés dans ce
   - Signature cryptographique SHA256 envoyée dans l'en-tête `X-YOS360-Signature`.
   - Table `webhook_deliveries` traçant le payload, statut HTTP, temps de réponse et tentatives d'envoi.
   - Modal interactif de test de webhook avec calcul de payload et signature dans `Paramètres > API & Intégrations`.
+
+---
+
+## [Phase 3] — 20 Octobre 2026 : Finance SYSCOHADA, Équipe & Fidélité
+
+### 1. Pré-Comptabilité SYSCOHADA Révisé (Norme OHADA)
+- **Plan Comptable Général Intégré (Classes 1 à 7)** :
+  - Comptes capitaux (1), immobilisations (2), stocks (3), tiers (4), trésorerie (5), charges (6), et produits (7).
+  - Procédure stockée `rpc_seed_syscohada_plan` initialisant le plan comptable d'une entreprise en un clic.
+- **Journaux Auxiliaires Structurés** :
+  - Journal des Ventes (`VE`), Achats (`AC`), Banque (`BQ`), Caisse (`CA`), Mobile Money (`MM`), Opérations Diverses (`OD`).
+- **Génération Automatique des Écritures en Double Entrée** :
+  - Fonction PostgreSQL `rpc_generer_ecriture_vente` déversant automatiquement les factures de vente :
+    - Débit 411100 (Client TTC)
+    - Crédit 701000 (Ventes HT)
+    - Crédit 443100 (TVA 18% si applicable)
+- **États Comptables & Fichier FEC Conforme** :
+  - **Balance Générale des Comptes** : calcul en temps réel des débits, crédits, soldes débiteurs/créditeurs avec contrôle d'équilibre.
+  - **Grand Livre Interactif** : consultation détaillée par compte avec solde progressif ligne par ligne.
+  - **Export FEC (Fichier des Écritures Comptables)** : fichier normalisé tabulaire prêt pour les logiciels comptables et l'administration fiscale.
+
+### 2. Gestion de Trésorerie & Dépenses d'Exploitation
+- **Comptes de Trésorerie Multi-Canaux** :
+  - Banques locales, Caisses physiques showroom/boutiques, Comptes marchands Mobile Money (Orange Money, Moov Money, Wave).
+  - Module de **Virements Internes** de compte à compte avec traçabilité et mise à jour instantanée des soldes.
+- **Rapprochement Bancaire Assisté** :
+  - Comparaison entre le solde comptable théorique et le solde du relevé bancaire.
+  - Pointage des écritures rapprochées vs opérations en suspens avec calcul instantané de l'écart.
+- **Dépenses d'Exploitation & Budgets** :
+  - Catégorisation des charges avec imputation comptable SYSCOHADA automatique (Loyer, Carburant, Télécoms, Fournitures, Maintenance).
+  - Suivi des plafonds budgétaires mensuels par catégorie et archivage des pièces justificatives.
+
+### 3. Gestion de l'Équipe, Commissions & Objectifs Commerciaux
+- **Fiche Collaborateur RH** :
+  - Matricule unique, poste, affectation par site/boutique, salaire de base conventionnel, statut d'activité.
+- **Moteur de Commissions Vendeurs Paramétrable** :
+  - Taux de commission personnalisable par collaborateur.
+  - Base de calcul modulable : CA encaissé, CA facturé ou Marge brute réalisée.
+  - Fonction `rpc_calculer_commissions_vendeur` agrégeant automatiquement les ventes de la période.
+- **Objectifs Mensuels & Primes d'Atteinte** :
+  - Cibles de Chiffre d'Affaires et de Marge par commercial.
+  - Baromètre visuel du taux d'atteinte avec déblocage automatique des primes sur objectifs.
+  - Workflow de validation et de liquidation des commissions (Calculé → Validé → Payé).
+
+### 4. Programme de Fidélité & Vue Client 360°
+- **Système de Récompenses UEMOA** :
+  - Barème : 1 point fidélité par tranche de 1 000 FCFA d'achat TTC.
+  - Valeur de rachat : 1 point = 25 FCFA de réduction.
+  - Paliers d'élévation automatique selon le volume d'achats cumulé :
+    - Bronze (0 à 99 999 FCFA)
+    - Argent (100 000 à 499 999 FCFA — Bonus +5% de points)
+    - Or (500 000 à 1 999 999 FCFA — Bonus +10% de points)
+    - Platine (2 000 000 FCFA et plus — Bonus +20% de points)
+  - Table `fidelite_transactions` consignant les gains, utilisations et expirations de points.
+- **Modal Vue Client 360° Interactif** :
+  - Synthèse financière en temps réel : Total facturé, Total réglé, Solde dû, Panier moyen.
+  - Historique complet des commandes et des paiements du client.
+  - Statut de l'encours de crédit avec alerte en cas de dépassement de l'encours max autorisé.
+  - Bouton de relance WhatsApp 1-clic générant un message officiel pré-rempli.
+
