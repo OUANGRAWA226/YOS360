@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Search, Trash2, ShoppingCart, Eye, X, ArrowRight, PackageCheck, FileText, Printer } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import type { CommandeWithRelations, ProduitWithCategorie, Fournisseur, Client, CommandeItemWithProduit, Entreprise } from '@/lib/supabase';
-import { writeRow } from '@/lib/dataLayer';
+import type { CommandeWithRelations, ProduitWithCategorie, Fournisseur, Client, CommandeItemWithProduit, Entreprise, ProduitUnite } from '@/lib/supabase';
+import { writeRow, fetchTable } from '@/lib/dataLayer';
 import { can, type Role } from '@/lib/permissions';
 import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -23,11 +23,15 @@ type Props = {
   role: Role | null;
 };
 
+// Une ligne saisie : quantité et prix exprimés dans l'unité choisie (unité de base ou conditionnement)
 type ItemType = {
   produit_id: string;
+  unite_id: string;
   quantite: string;
   prix_unitaire: string;
 };
+
+const LIGNE_VIDE: ItemType = { produit_id: '', unite_id: '', quantite: '1', prix_unitaire: '0' };
 
 export function Commandes({ commandes, produits, fournisseurs, clients, entreprise, numerosFactures, loading, onRefresh, role }: Props) {
   const canCreate = can(role, 'commandes', 'create');
@@ -48,7 +52,16 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
   const [dateEcheance, setDateEcheance] = useState('');
   const [typeDocument, setTypeDocument] = useState<'facture' | 'devis' | 'bon_livraison' | 'avoir'>('facture');
   const [note, setNote] = useState('');
-  const [items, setItems] = useState<ItemType[]>([{ produit_id: '', quantite: '1', prix_unitaire: '0' }]);
+  const [items, setItems] = useState<ItemType[]>([LIGNE_VIDE]);
+
+  // Conditionnements (carton, pack…) proposés sur les lignes de vente
+  const [unites, setUnites] = useState<ProduitUnite[]>([]);
+  useEffect(() => {
+    fetchTable<ProduitUnite>('produit_unites', '*', { column: 'coefficient', ascending: true }).then(setUnites).catch(() => setUnites([]));
+  }, []);
+  const unitesDe = (produitId: string) => unites.filter((u) => u.produit_id === produitId && !u.est_unite_base);
+  const uniteDe = (it: ItemType) => unites.find((u) => u.id === it.unite_id) ?? null;
+  const prixUnite = (p: { prix_vente: number }, u: ProduitUnite) => Number(u.prix_vente_suggere || 0) || Math.round(p.prix_vente * Number(u.coefficient));
   const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
@@ -68,7 +81,7 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
     setDateEcheance('');
     setTypeDocument('facture');
     setNote('');
-    setItems([{ produit_id: '', quantite: '1', prix_unitaire: '0' }]);
+    setItems([LIGNE_VIDE]);
     setCreateOpen(true);
   };
 
@@ -77,16 +90,23 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
       if (i !== idx) return it;
       const updated = { ...it, [field]: value };
       if (field === 'produit_id') {
+        updated.unite_id = '';
         const p = produits.find((pr) => pr.id === value);
         if (p) {
           updated.prix_unitaire = cmdType === 'achat' ? String(p.prix_unitaire) : String(p.prix_vente);
         }
       }
+      // Changement d'unité : prix du conditionnement (prix suggéré, sinon prix unitaire × nombre d'unités)
+      if (field === 'unite_id' && cmdType === 'vente') {
+        const p = produits.find((pr) => pr.id === it.produit_id);
+        const u = unites.find((x) => x.id === value);
+        if (p) updated.prix_unitaire = String(u ? prixUnite(p, u) : p.prix_vente);
+      }
       return updated;
     }));
   };
 
-  const addItem = () => setItems((prev) => [...prev, { produit_id: '', quantite: '1', prix_unitaire: '0' }]);
+  const addItem = () => setItems((prev) => [...prev, LIGNE_VIDE]);
   const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
 
   const totalCmd = items.reduce((sum, it) => sum + (parseFloat(it.quantite) || 0) * (parseFloat(it.prix_unitaire) || 0), 0);
@@ -99,10 +119,16 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
     // Vente sous le coût d'achat moyen : refusée par la base sauf pour un responsable,
     // on prévient avant d'envoyer (les avoirs ne sont pas concernés)
     const responsable = role === 'proprietaire' || role === 'admin' || role === 'gerant';
+    const coefLigne = (it: ItemType) => (cmdType === 'vente' ? Number(uniteDe(it)?.coefficient ?? 1) : 1);
+    const fractionnee = validItems.find((it) => !Number.isInteger(Math.round((parseFloat(it.quantite) || 0) * coefLigne(it) * 1000) / 1000));
+    if (fractionnee) {
+      showToast('Quantité invalide : le total en unités doit être un nombre entier (ex. un demi-carton de 12, pas un quart de pack de 6).', 'error');
+      return;
+    }
     if (cmdType === 'vente' && typeDocument !== 'avoir' && !responsable) {
       const sousCout = validItems
         .map((it) => ({ it, produit: produits.find((p) => p.id === it.produit_id) }))
-        .filter(({ it, produit }) => produit && produit.cmup > 0 && (parseFloat(it.prix_unitaire) || 0) < produit.cmup);
+        .filter(({ it, produit }) => produit && produit.cmup > 0 && (parseFloat(it.prix_unitaire) || 0) / coefLigne(it) < produit.cmup);
       if (sousCout.length > 0) {
         const detail = sousCout.map(({ it, produit }) => `${produit!.nom} (${formatCurrency(parseFloat(it.prix_unitaire) || 0)} < coût ${formatCurrency(produit!.cmup)})`).join(', ');
         showToast(`Prix sous le coût d'achat : ${detail}. Un gérant ou un administrateur doit valider ce prix.`, 'error');
@@ -145,13 +171,27 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
       return;
     }
 
-    const itemPayload = validItems.map((it) => ({
-      commande_id: cmdData.id,
-      produit_id: it.produit_id,
-      quantite: parseInt(it.quantite),
-      prix_unitaire: parseFloat(it.prix_unitaire) || 0,
-      sous_total: (parseFloat(it.quantite) || 0) * (parseFloat(it.prix_unitaire) || 0),
-    }));
+    // Stock et prix restent en unités de base ; l'unité vendue est mémorisée pour les documents
+    const itemPayload = validItems.map((it) => {
+      const qte = parseFloat(it.quantite) || 0;
+      const prix = parseFloat(it.prix_unitaire) || 0;
+      const u = cmdType === 'vente' ? uniteDe(it) : null;
+      if (!u) {
+        return { commande_id: cmdData.id, produit_id: it.produit_id, quantite: parseInt(it.quantite), prix_unitaire: prix, sous_total: qte * prix };
+      }
+      const coef = Number(u.coefficient);
+      return {
+        commande_id: cmdData.id,
+        produit_id: it.produit_id,
+        quantite: Math.round(qte * coef),
+        prix_unitaire: Math.round((prix / coef) * 100) / 100,
+        sous_total: qte * prix,
+        unite_id: u.id,
+        libelle_unite: `${u.nom_unite} (${coef})`,
+        quantite_unite: qte,
+        prix_unite: prix,
+      };
+    });
 
     const { error: itemError } = await supabase.from('commande_items').insert(itemPayload);
     setSaving(false);
@@ -437,7 +477,13 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
                     <option value="">Produit...</option>
                     {produits.map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
                   </select>
-                  <input type="number" value={it.quantite} onChange={(e) => updateItem(idx, 'quantite', e.target.value)} min="1" className="w-16 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Qté" />
+                  {cmdType === 'vente' && it.produit_id && unitesDe(it.produit_id).length > 0 && (
+                    <select value={it.unite_id} onChange={(e) => updateItem(idx, 'unite_id', e.target.value)} aria-label="Unité" className="w-28 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+                      <option value="">{produits.find((p) => p.id === it.produit_id)?.unite || 'Unité'}</option>
+                      {unitesDe(it.produit_id).map((u) => <option key={u.id} value={u.id}>{u.nom_unite} ({Number(u.coefficient)})</option>)}
+                    </select>
+                  )}
+                  <input type="number" value={it.quantite} onChange={(e) => updateItem(idx, 'quantite', e.target.value)} min="0" step="any" className="w-16 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Qté" />
                   <input type="number" step="0.01" value={it.prix_unitaire} onChange={(e) => updateItem(idx, 'prix_unitaire', e.target.value)} className="w-20 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Prix" />
                   <button onClick={() => removeItem(idx)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><X className="w-4 h-4" /></button>
                 </div>
@@ -507,12 +553,17 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
                     <tr key={it.id}>
                       <td className="px-4 py-2 text-slate-900">{it.produits?.nom || '—'}</td>
                       <td className="px-4 py-2 text-right text-slate-700">
-                        {it.quantite}
+                        {it.libelle_unite ? (
+                          <>
+                            {Number(it.quantite_unite)} {it.libelle_unite}
+                            <span className="block text-xs text-slate-400">{it.quantite} unités</span>
+                          </>
+                        ) : it.quantite}
                         {viewTarget.type === 'achat' && (it.quantite_recue || 0) > 0 && (
                           <span className="ml-1 text-xs text-emerald-600 font-medium">({it.quantite_recue} reçus)</span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-right text-slate-700">{formatCurrency(it.prix_unitaire)}</td>
+                      <td className="px-4 py-2 text-right text-slate-700">{formatCurrency(it.libelle_unite ? Number(it.prix_unite) : it.prix_unitaire)}</td>
                       <td className="px-4 py-2 text-right font-semibold text-slate-900">{formatCurrency(it.sous_total)}</td>
                     </tr>
                   ))}

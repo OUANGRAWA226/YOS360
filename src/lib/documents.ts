@@ -62,8 +62,8 @@ export function printDocumentCommercial(
   const lignesHtml = lignes.map((it) => `
     <tr>
       <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0">${esc(it.produits?.nom || 'Article')}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:right">${it.quantite}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:right">${fmt(it.prix_unitaire)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:right">${it.libelle_unite ? `${Number(it.quantite_unite)} ${esc(it.libelle_unite)}<br><span style="font-size:10px;color:#64748b">${it.quantite} unités</span>` : it.quantite}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:right">${fmt(it.libelle_unite ? Number(it.prix_unite) : it.prix_unitaire)}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:600">${fmt(it.sous_total)}</td>
     </tr>`).join('');
 

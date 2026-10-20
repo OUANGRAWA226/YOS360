@@ -217,6 +217,11 @@ export type CommandeItem = {
   quantite_recue: number;
   prix_unitaire: number;
   sous_total: number;
+  // Conditionnement vendu (carton, pack…) ; quantite et prix_unitaire restent en unités de base
+  unite_id?: string | null;
+  libelle_unite?: string | null;
+  quantite_unite?: number | null;
+  prix_unite?: number | null;
   created_at: string;
 };
 
