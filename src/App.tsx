@@ -63,7 +63,6 @@ import {
   Sun,
   Moon,
   Building2,
-  Sparkles,
   ChevronDown,
   Settings,
   Warehouse,
@@ -457,14 +456,6 @@ function Shell() {
                   Caisse POS
                 </button>
               )}
-              {profile?.super_admin && (
-                <button
-                  onClick={() => navigate('parametres')}
-                  className="px-3 py-1.5 rounded-lg text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 font-semibold transition-colors flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5" /> Espace Super Admin
-                </button>
-              )}
             </div>
 
             {/* Enterprise Switcher */}
@@ -481,11 +472,6 @@ function Shell() {
                     <option key={e.id} value={e.id}>{e.nom}</option>
                   ))}
                 </select>
-                {profile?.super_admin && (
-                  <span className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 shadow-2xs flex-shrink-0">
-                    👑 Super Admin
-                  </span>
-                )}
               </div>
             )}
             {entreprisesDisponibles.length === 1 && (
@@ -493,11 +479,6 @@ function Shell() {
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[190px]">
                   {entreprisesDisponibles[0].nom}
                 </span>
-                {profile?.super_admin && (
-                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 flex-shrink-0">
-                    👑 Super Admin
-                  </span>
-                )}
               </div>
             )}
             {/* Global Site Selector (Multi-sites header) */}
