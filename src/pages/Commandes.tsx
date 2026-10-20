@@ -96,6 +96,20 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
     const validItems = items.filter((it) => it.produit_id && parseInt(it.quantite) > 0);
     if (validItems.length === 0) { showToast('Ajoutez au moins un produit', 'error'); return; }
 
+    // Vente sous le coût d'achat moyen : refusée par la base sauf pour un responsable,
+    // on prévient avant d'envoyer (les avoirs ne sont pas concernés)
+    const responsable = role === 'proprietaire' || role === 'admin' || role === 'gerant';
+    if (cmdType === 'vente' && typeDocument !== 'avoir' && !responsable) {
+      const sousCout = validItems
+        .map((it) => ({ it, produit: produits.find((p) => p.id === it.produit_id) }))
+        .filter(({ it, produit }) => produit && produit.cmup > 0 && (parseFloat(it.prix_unitaire) || 0) < produit.cmup);
+      if (sousCout.length > 0) {
+        const detail = sousCout.map(({ it, produit }) => `${produit!.nom} (${formatCurrency(parseFloat(it.prix_unitaire) || 0)} < coût ${formatCurrency(produit!.cmup)})`).join(', ');
+        showToast(`Prix sous le coût d'achat : ${detail}. Un gérant ou un administrateur doit valider ce prix.`, 'error');
+        return;
+      }
+    }
+
     if (!navigator.onLine) {
       showToast('La création de commande nécessite une connexion internet. Vos autres modifications restent enregistrées localement.', 'error');
       return;
@@ -142,6 +156,8 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
     const { error: itemError } = await supabase.from('commande_items').insert(itemPayload);
     setSaving(false);
     if (itemError) {
+      // Lignes refusées : on retire l'en-tête pour ne pas laisser une commande vide
+      await supabase.from('commandes').delete().eq('id', cmdData.id);
       showToast('Erreur: ' + itemError.message, 'error');
       return;
     }

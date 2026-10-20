@@ -82,7 +82,7 @@ export const MODELES: { id: 'superette' | 'grossiste'; label: string; icon: type
   },
 ];
 
-type ModeleResultat = { categories_creees: number; grilles_creees: number; site_cree: boolean; modules: number };
+type ModeleResultat = { categories_creees: number; grilles_creees: number; site_cree: boolean; modules: number; modules_ajoutes: number };
 
 type Props = {
   entreprise: Entreprise | null;
@@ -240,11 +240,12 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
     if (!out) return;
     const modele = MODELES.find((m) => m.id === secteur);
     const ajouts = [
+      out.res.modules_ajoutes ? `${out.res.modules_ajoutes} module(s)` : null,
       out.res.categories_creees ? `${out.res.categories_creees} catégorie(s)` : null,
       out.res.grilles_creees ? `${out.res.grilles_creees} grille(s) tarifaire(s)` : null,
       out.res.site_cree ? '1 point de vente' : null,
     ].filter(Boolean);
-    showToast(`${selected.nom} configurée en « ${modele?.label} » : ${out.res.modules} modules${ajouts.length ? ', ' + ajouts.join(', ') + ' ajoutés' : ''}`);
+    showToast(`${selected.nom} configurée en « ${modele?.label} »${ajouts.length ? ' : ' + ajouts.join(', ') + ' ajoutés' : ' : déjà à jour'}`);
   };
 
   const toggleSuspend = async () => {
@@ -316,7 +317,7 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
             </p>
             <p className="text-xs text-slate-400 mb-2">
               Configure l’entreprise pour son métier en un clic : modules, catégories de produits, grilles tarifaires et premier point de vente.
-              Rien de ce que le client a déjà créé n’est supprimé.
+              Les modules déjà actifs sont conservés et rien de ce que le client a créé n’est supprimé.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {MODELES.map((m) => {
@@ -467,7 +468,7 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
           if (id) applyModele(id);
         }}
         title={`Appliquer le modèle « ${MODELES.find((m) => m.id === modeleTarget)?.label ?? ''} » ?`}
-        message={`Les modules de ${selected?.nom ?? 'cette entreprise'} seront remplacés par ceux du modèle. Les catégories, grilles tarifaires et le premier point de vente manquants seront ajoutés ; rien d’existant n’est supprimé.`}
+        message={`Les modules du modèle seront ajoutés à ceux déjà actifs pour ${selected?.nom ?? 'cette entreprise'}, ainsi que les catégories, grilles tarifaires et le premier point de vente manquants. Rien d’existant n’est retiré ni supprimé.`}
         confirmLabel="Appliquer"
       />
 
