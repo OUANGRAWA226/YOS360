@@ -124,7 +124,30 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
       .slice(0, 16);
   }, [produits, search]);
 
-  const total = panier.reduce((s, l) => s + l.quantite * l.produit.prix_vente, 0);
+  // Prix calculés par la base (prix catalogue + grille tarifaire du client) : l'écran affiche
+  // exactement ce qui sera encaissé. Hors ligne ou en attente : prix catalogue.
+  const [tarifs, setTarifs] = useState<Record<string, { prix: number; motif: string }>>({});
+  useEffect(() => {
+    if (panier.length === 0) { setTarifs({}); return; }
+    if (!navigator.onLine) return;
+    let actif = true;
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc('tarifer_panier', {
+        p_client_id: clientId || null,
+        p_panier: panier.map((l) => ({ produit_id: l.produit.id, quantite: l.quantite })),
+      });
+      if (!actif || error || !data) return;
+      const next: Record<string, { prix: number; motif: string }> = {};
+      for (const l of (data as { lignes: { produit_id: string; prix: number; motif: string }[] }).lignes) {
+        next[l.produit_id] = { prix: Number(l.prix), motif: l.motif };
+      }
+      setTarifs(next);
+    }, 200);
+    return () => { actif = false; clearTimeout(t); };
+  }, [panier, clientId]);
+  const prixDe = (l: LigneCaisse) => tarifs[l.produit.id]?.prix ?? l.produit.prix_vente;
+
+  const total = panier.reduce((s, l) => s + l.quantite * prixDe(l), 0);
   const ht = tvaActive ? total / (1 + tvaTaux / 100) : total;
   const tva = total - ht;
 
@@ -292,110 +315,49 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
     }
 
     setSaving(true);
-    const numeroDoc = nextNumeroDocument('facture', numerosFactures);
+    let numeroDoc = nextNumeroDocument('facture', numerosFactures);
+    let lignesTicket = panier.map((l) => ({ ...l, produit: { ...l.produit, prix_vente: prixDe(l) } }));
+    let totaux = { ht, tva, total };
+    let renduTicket = multiPaiement ? 0 : renduSimple;
     const client = clients.find((c) => c.id === clientId) ?? null;
     const isOffline = !navigator.onLine;
 
     try {
+      // Paramètres communs : la base recalcule les prix, vérifie stock et paiements,
+      // puis enregistre vente, lignes, sorties de stock et paiements en une seule opération
+      const venteUuid = crypto.randomUUID();
+      const args = {
+        p_client_id: clientId || null,
+        p_client_walkin: clientId ? null : (walkinNom.trim() || 'Client comptoir'),
+        p_panier: panier.map((l) => ({ produit_id: l.produit.id, quantite: l.quantite })),
+        p_paiements: paiementsFinaux.map((p) => ({ mode: p.mode, montant: p.mode === 'especes' && !multiPaiement ? Math.max(recuSimple, p.montant) : p.montant, reference: p.reference || null })),
+        p_vente_uuid: venteUuid,
+        p_note: `Session ${session.numero_session}`,
+      };
+
       if (isOffline) {
-        // --- MODE HORS-LIGNE ROBUSTE : Enqueue locale dans IndexedDB ---
-        const localCmd = {
-          type: 'vente',
-          client_id: clientId || null,
-          client_walkin: clientId ? null : (walkinNom.trim() || 'Client comptoir'),
-          statut: 'recue',
-          reference: numeroDoc.replace('FAC', 'VEN'),
-          numero_document: numeroDoc,
-          type_document: 'facture',
-          tva_taux: tvaActive ? tvaTaux : null,
-          montant_ht: ht,
-          montant_tva: tvaActive ? tva : 0,
-          montant_total: total,
-          caisse_session_id: session.id,
-          note: `Vente Hors-ligne ${numeroDoc} (Session ${session.numero_session})`,
-        };
-
-        await enqueue({
-          table: 'commandes',
-          op: 'insert',
-          row: localCmd,
-        });
-
-        for (const p of paiementsFinaux) {
-          await enqueue({
-            table: 'paiements',
-            op: 'insert',
-            row: {
-              sens: 'encaissement',
-              client_id: clientId || null,
-              montant: p.montant,
-              mode: p.mode,
-              reference: p.reference || null,
-              note: `Vente POS Hors-ligne ${numeroDoc}`,
-            },
-          });
-        }
-
+        // --- HORS LIGNE : la vente complète est mise en file et rejouée à la reconnexion ---
+        await enqueue({ table: 'encaisser_vente_caisse', op: 'rpc', row: { ...args, p_hors_ligne: true, p_note: `Ticket hors ligne ${numeroDoc} — Session ${session.numero_session}` } });
         showToast(`Vente enregistrée en mode HORS-LIGNE (${numeroDoc}) — synchronisation automatique dès retour internet`, 'info');
       } else {
-        // --- MODE EN LIGNE : Enregistrement atomique Supabase ---
-        const { data: cmd, error: cmdError } = await supabase
-          .from('commandes')
-          .insert({
-            type: 'vente',
-            client_id: clientId || null,
-            client_walkin: clientId ? null : (walkinNom.trim() || 'Client comptoir'),
-            statut: 'recue',
-            reference: numeroDoc.replace('FAC', 'VEN'),
-            numero_document: numeroDoc,
-            type_document: 'facture' as const,
-            tva_taux: tvaActive ? tvaTaux : null,
-            montant_ht: ht,
-            montant_tva: tvaActive ? tva : 0,
-            montant_total: total,
-            note: `Vente POS (Session ${session.numero_session})`,
-          })
-          .select()
-          .single();
-
-        if (cmdError) throw cmdError;
-
-        // Insertion des articles de commande
-        await supabase.from('commande_items').insert(
-          panier.map((l) => ({
-            commande_id: cmd.id,
-            produit_id: l.produit.id,
-            quantite: l.quantite,
-            prix_unitaire: l.produit.prix_vente,
-            sous_total: l.quantite * l.produit.prix_vente,
-          }))
-        );
-
-        // Sortie de stock
-        for (const l of panier) {
-          await supabase.from('mouvements').insert({
-            produit_id: l.produit.id,
-            type: 'sortie' as const,
-            quantite: l.quantite,
-            motif: `Vente caisse ${numeroDoc}`,
-            reference: numeroDoc,
-          });
+        const { data, error } = await supabase.rpc('encaisser_vente_caisse', args);
+        if (error) throw error;
+        const res = data as {
+          numero_document: string; montant_ht: number; montant_tva: number; montant_total: number; rendu?: number;
+          lignes: { produit_id: string; quantite: number; prix_unitaire: number }[];
+        };
+        numeroDoc = res.numero_document;
+        totaux = { ht: Number(res.montant_ht), tva: Number(res.montant_tva), total: Number(res.montant_total) };
+        if (!multiPaiement) {
+          renduTicket = Number(res.rendu ?? renduSimple);
+          // Montant réellement encaissé = total confirmé par la base (pour la session et le ticket)
+          paiementsFinaux = [{ ...paiementsFinaux[0], montant: totaux.total }];
         }
-
-        // Insertion des paiements (simples ou fractionnés)
-        for (const p of paiementsFinaux) {
-          await supabase.from('paiements').insert({
-            commande_id: cmd.id,
-            client_id: clientId || null,
-            sens: 'encaissement' as const,
-            montant: p.montant,
-            mode: p.mode,
-            reference: p.reference || null,
-            note: `Vente caisse POS ${session.numero_session}`,
-          });
-        }
-
-        showToast(`Vente ${numeroDoc} encaissée — ${formatCurrency(total, devise)}`, 'info');
+        lignesTicket = res.lignes.map((rl) => {
+          const l = panier.find((x) => x.produit.id === rl.produit_id)!;
+          return { ...l, quantite: rl.quantite, produit: { ...l.produit, prix_vente: Number(rl.prix_unitaire) } };
+        });
+        showToast(`Vente ${numeroDoc} encaissée — ${formatCurrency(totaux.total, devise)}`, 'info');
       }
 
       // Mise à jour de la session de caisse
@@ -417,7 +379,7 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
         total_mobile_money: session.total_mobile_money + addMM,
         total_carte: session.total_carte + addCarte,
         total_credit: session.total_credit + addCredit,
-        total_ventes: session.total_ventes + total,
+        total_ventes: session.total_ventes + totaux.total,
         nb_ventes: session.nb_ventes + 1,
       };
       saveActiveSession(updatedSession);
@@ -425,10 +387,10 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
       // Impression du ticket thermique
       const ticketHtml = buildTicket(
         numeroDoc,
-        panier,
-        { ht, tva, total, tvaTaux, tvaActive },
+        lignesTicket,
+        { ...totaux, tvaTaux, tvaActive },
         paiementsFinaux,
-        multiPaiement ? 0 : renduSimple,
+        renduTicket,
         entreprise,
         client,
         session.numero_session,
@@ -614,8 +576,11 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">{l.produit.nom}</p>
                       <p className="text-[10px] text-slate-400 font-mono">
-                        {formatCurrency(l.produit.prix_vente, devise)} × {l.quantite}
+                        {formatCurrency(prixDe(l), devise)} × {l.quantite}
                       </p>
+                      {tarifs[l.produit.id] && tarifs[l.produit.id].prix !== l.produit.prix_vente && (
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">{tarifs[l.produit.id].motif}</p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5">

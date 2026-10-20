@@ -13,8 +13,8 @@ void STORES;
 
 export type QueuedOperation = {
   id?: number;
-  table: string;
-  op: 'insert' | 'update' | 'delete';
+  table: string; // nom de la table, ou de la fonction pour op = 'rpc'
+  op: 'insert' | 'update' | 'delete' | 'rpc';
   row: Record<string, unknown>;
   rowId?: string;
   created_at: string;
@@ -161,6 +161,17 @@ export async function syncNow(): Promise<{ ok: boolean; replayed: number; confli
         } else if (op.op === 'update') {
           const { error } = await supabase.from(op.table).update(op.row).eq('id', op.rowId!);
           if (error) throw error;
+        } else if (op.op === 'rpc') {
+          // Fonction côté base (ex. vente de caisse) : un refus métier est définitif
+          const { error } = await supabase.rpc(op.table, op.row);
+          if (error) {
+            if (error.code === 'P0001') {
+              conflicts++;
+              console.error('Opération hors-ligne refusée par la base :', op.table, error.message);
+            } else {
+              throw error;
+            }
+          }
         } else if (op.op === 'delete') {
           const { error } = await supabase.from(op.table).delete().eq('id', op.rowId!);
           if (error) throw error;
