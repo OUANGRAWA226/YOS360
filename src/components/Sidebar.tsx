@@ -48,7 +48,6 @@ import type { Page } from '@/App';
 import type { Role } from '@/lib/supabase';
 import { can, type Module } from '@/lib/permissions';
 import { usePrefs } from '@/lib/prefs';
-import { useAuth } from '@/lib/auth';
 
 export type NavSubItem = {
   id: string;
@@ -102,7 +101,6 @@ export function Sidebar({
   dynamicCounts = {},
 }: Props) {
   const { t } = usePrefs();
-  const { profile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTrees, setExpandedTrees] = useState<Record<string, boolean>>({
     ventes: false,
@@ -324,37 +322,6 @@ export function Sidebar({
           </button>
         )}
       </div>
-
-      {/* 2. AdminLTE User Profile Panel */}
-      {!collapsed ? (
-        <div className="px-4 py-3.5 border-b border-slate-800/60 bg-[#162032]/40 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50 flex items-center justify-center text-xs font-bold text-sky-400 shadow-sm flex-shrink-0">
-              {(profile?.nom_complet || profile?.email || 'U').slice(0, 2).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white truncate leading-tight">
-                {profile?.nom_complet || profile?.email}
-              </p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[11px] text-slate-400 leading-none">
-                  {profile?.super_admin ? '👑 Super Admin' : (role ? role.toUpperCase() : 'UTILISATEUR')}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="py-3 flex justify-center border-b border-slate-800/60 flex-shrink-0">
-          <div
-            className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-sky-400"
-            title={`${profile?.nom_complet || profile?.email} (${role})`}
-          >
-            {(profile?.nom_complet || profile?.email || 'U').slice(0, 2).toUpperCase()}
-          </div>
-        </div>
-      )}
 
       {/* 3. AdminLTE Sidebar Live Search */}
       {!collapsed && (
