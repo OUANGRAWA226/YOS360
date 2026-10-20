@@ -143,7 +143,7 @@ export function Dashboard({
     <div className="space-y-5">
       {/* Super Admin Top Control Banner */}
       {isSuperAdmin && (
-        <div className="bg-[#0c1612] text-white rounded-md border-t-[3px] border-t-[#48B068] shadow-sm p-4 sm:p-5">
+        <div className="bg-[#0c1612] text-white rounded-xl border border-[#192b22] shadow-sm p-4 sm:p-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#48B068]/20 text-[#5CC47D] mb-1">

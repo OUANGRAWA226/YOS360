@@ -22,14 +22,14 @@ interface CardProps {
 }
 
 const outlineTopBorders: Record<CardVariant, string> = {
-  primary: 'border-t-[3px] border-t-[#0270B8]', // YOS Brand Azure Blue
-  success: 'border-t-[3px] border-t-[#48B068]', // YOS Brand Emerald Green
-  warning: 'border-t-[3px] border-t-[#f59e0b]',
-  danger: 'border-t-[3px] border-t-[#dc2626]',
-  info: 'border-t-[3px] border-t-[#0284c7]',
-  secondary: 'border-t-[3px] border-t-[#64748b]',
-  dark: 'border-t-[3px] border-t-[#1e293b]',
-  default: 'border-t-[3px] border-t-gray-300 dark:border-t-slate-700',
+  primary: '',
+  success: '',
+  warning: '',
+  danger: '',
+  info: '',
+  secondary: '',
+  dark: '',
+  default: '',
 };
 
 const solidHeaderBgs: Record<CardVariant, string> = {
@@ -81,7 +81,7 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 shadow-sm transition-all duration-200 ${
+      className={`bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800/90 shadow-xs transition-all duration-200 ${
         maximized
           ? 'fixed inset-4 z-50 overflow-auto shadow-2xl bg-white dark:bg-slate-900'
           : ''
