@@ -23,6 +23,14 @@ import {
   Check,
   Eye,
   Trash2,
+  Lock,
+  Unlock,
+  PieChart,
+  Coins,
+  BarChart2,
+  Printer,
+  Archive,
+  FileCheck,
 } from 'lucide-react';
 import type {
   ComptaCompte,
@@ -46,10 +54,14 @@ import {
   JOURNAUX_SYSCOHADA_STANDARD,
   calculerBalanceGenerale,
   calculerGrandLivre,
+  calculerCompteDeResultatOHADA,
+  calculerBilanOHADA,
   genererExportFEC,
   telechargerFichier,
   type ResultatBalance,
   type CompteGrandLivre,
+  type SoldesIntermediairesGestion,
+  type BilanOHADA,
 } from '@/lib/comptaSyscohada';
 
 type Props = {
@@ -58,7 +70,7 @@ type Props = {
   loading: boolean;
 };
 
-type TabType = 'journaux' | 'grand_livre' | 'balance' | 'plan_comptes';
+type TabType = 'journaux' | 'grand_livre' | 'balance' | 'etats_financiers' | 'cloture' | 'plan_comptes';
 
 export function Comptabilite({ role, entrepots, loading: parentLoading }: Props) {
   const { profile, entrepriseId } = useAuth();
@@ -182,6 +194,52 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
   const grandLivreData: CompteGrandLivre[] = useMemo(() => {
     return calculerGrandLivre(ecrituresFiltrees);
   }, [ecrituresFiltrees]);
+
+  // Calcul Compte de Résultat & SIG (Phase 4)
+  const compteDeResultat: SoldesIntermediairesGestion = useMemo(() => {
+    return calculerCompteDeResultatOHADA(ecrituresFiltrees);
+  }, [ecrituresFiltrees]);
+
+  // Calcul Bilan Actif / Passif OHADA (Phase 4)
+  const bilanData: BilanOHADA = useMemo(() => {
+    return calculerBilanOHADA(ecrituresFiltrees, compteDeResultat.resultatNet);
+  }, [ecrituresFiltrees, compteDeResultat.resultatNet]);
+
+  // Sous-onglet pour les états financiers
+  const [sousOngletEtats, setSousOngletEtats] = useState<'resultat' | 'bilan'>('resultat');
+
+  // Clôture d'exercice annuel
+  const [clotureLoading, setClotureLoading] = useState(false);
+  const [clotureModalOpen, setClotureModalOpen] = useState(false);
+  const [selectedExoCloture, setSelectedExoCloture] = useState<ComptaExercice | null>(null);
+
+  const handleCloturerExercice = async (exerciceId: string) => {
+    if (!balanceResult.estEquilibree) {
+      showToast('Impossible de clôturer : la balance générale n\'est pas équilibrée.', 'error');
+      return;
+    }
+    setClotureLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('rpc_cloturer_exercice_comptable', {
+        p_entreprise_id: entrepriseId,
+        p_exercice_id: exerciceId,
+        p_user_id: profile?.id || null,
+      });
+
+      if (error) throw error;
+      if (data && !data.success) {
+        throw new Error(data.error);
+      }
+
+      showToast(`Exercice ${data.annee} clôturé avec succès ! Résultat net : ${formatCurrency(data.resultat_net)}`, 'success');
+      setClotureModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Erreur lors de la clôture', 'error');
+    } finally {
+      setClotureLoading(false);
+    }
+  };
 
   // Totaux nouvelle pièce
   const totalDebitSaisie = useMemo(() => {
@@ -456,6 +514,33 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
           ) : (
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" title="Écart détecté" />
           )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('etats_financiers')}
+          className={`px-4 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            activeTab === 'etats_financiers'
+              ? 'border-sky-600 text-sky-600 dark:border-sky-400 dark:text-sky-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
+          }`}
+        >
+          <PieChart className="w-4 h-4" />
+          <span>Bilan & Compte de Résultat (SIG)</span>
+          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+            OHADA
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('cloture')}
+          className={`px-4 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            activeTab === 'cloture'
+              ? 'border-sky-600 text-sky-600 dark:border-sky-400 dark:text-sky-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
+          }`}
+        >
+          <Lock className="w-4 h-4" />
+          <span>Clôture Annuelle & PAF</span>
         </button>
 
         <button
@@ -804,6 +889,636 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
             </table>
           </div>
         </Card>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ONGLET 4 : ÉTATS FINANCIERS SYSCOHADA (BILAN & COMPTE DE RÉSULTAT / SIG) */}
+      {/* ========================================================================= */}
+      {activeTab === 'etats_financiers' && (
+        <div className="space-y-6">
+          {/* Sélecteur de sous-onglet */}
+          <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+              <button
+                onClick={() => setSousOngletEtats('resultat')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                  sousOngletEtats === 'resultat'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <BarChart2 className="w-4 h-4" />
+                <span>Compte de Résultat & SIG</span>
+              </button>
+              <button
+                onClick={() => setSousOngletEtats('bilan')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                  sousOngletEtats === 'bilan'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <Scale className="w-4 h-4" />
+                <span>Bilan Actif / Passif OHADA</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.print()}
+                className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Imprimer l'état officiel</span>
+              </button>
+            </div>
+          </div>
+
+          {/* VUE 1 : COMPTE DE RÉSULTAT & SOLDES INTERMÉDIAIRES DE GESTION (SIG) */}
+          {sousOngletEtats === 'resultat' && (
+            <div className="space-y-4">
+              {/* Carte résultat net d'exercice */}
+              <div
+                className={`p-5 rounded-2xl border ${
+                  compteDeResultat.sensResultat === 'benefice'
+                    ? 'bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/30'
+                    : compteDeResultat.sensResultat === 'perte'
+                    ? 'bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent border-rose-500/30'
+                    : 'bg-slate-50 border-slate-200 dark:bg-slate-800'
+                } flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4`}
+              >
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                    Système Normal SYSCOHADA Révisé
+                  </span>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+                    {compteDeResultat.sensResultat === 'benefice'
+                      ? 'Bénéfice Net de l\'Exercice'
+                      : compteDeResultat.sensResultat === 'perte'
+                      ? 'Perte Nette de l\'Exercice'
+                      : 'Résultat à l\'Équilibre'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Calculé en cascade à partir des comptes de charges (Classe 6) et de produits (Classe 7 et 8).
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <div
+                    className={`text-2xl font-black font-mono ${
+                      compteDeResultat.sensResultat === 'benefice'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : compteDeResultat.sensResultat === 'perte'
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-slate-600'
+                    }`}
+                  >
+                    {compteDeResultat.sensResultat === 'benefice' ? '+' : ''}
+                    {formatCurrency(compteDeResultat.resultatNet)}
+                  </div>
+                  <span
+                    className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase mt-1 ${
+                      compteDeResultat.sensResultat === 'benefice'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300'
+                    }`}
+                  >
+                    {compteDeResultat.sensResultat === 'benefice' ? 'Solde Créditeur (Bénéfice)' : 'Solde Débiteur (Déficit)'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tableau en cascade des Soldes Intermédiaires de Gestion */}
+              <Card title="Soldes Intermédiaires de Gestion (SIG OHADA)">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-semibold uppercase text-[11px]">
+                        <th className="py-2.5 px-3 text-left">Postes & Soldes Intermédiaires</th>
+                        <th className="py-2.5 px-3 text-left">Comptes SYSCOHADA</th>
+                        <th className="py-2.5 px-3 text-right">Montant (FCFA)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {/* 1. Marge commerciale */}
+                      <tr className="bg-slate-50/50 dark:bg-slate-800/30">
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Ventes de marchandises</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">701</td>
+                        <td className="py-2 px-3 text-right font-mono text-emerald-600 font-medium">
+                          +{formatCurrency(compteDeResultat.ventesMarchandises)}
+                        </td>
+                      </tr>
+                      <tr className="bg-slate-50/50 dark:bg-slate-800/30">
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Achats de marchandises & variations de stock</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">601, 6031</td>
+                        <td className="py-2 px-3 text-right font-mono text-rose-600 font-medium">
+                          -{formatCurrency(compteDeResultat.achatsMarchandises + compteDeResultat.variationStocksMarchandises)}
+                        </td>
+                      </tr>
+                      <tr className="bg-sky-50/60 dark:bg-sky-950/20 font-bold border-y border-sky-100 dark:border-sky-900/40">
+                        <td className="py-2.5 px-3 text-sky-900 dark:text-sky-200">= MARGE COMMERCIALE</td>
+                        <td className="py-2.5 px-3 text-sky-700 dark:text-sky-300 font-mono text-[10px]">SIG 1</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-sky-800 dark:text-sky-300 font-bold">
+                          {formatCurrency(compteDeResultat.margeCommerciale)}
+                        </td>
+                      </tr>
+
+                      {/* 2. Production de l'exercice */}
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Production vendue, stockée & immobilisée</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">702-706, 72, 73</td>
+                        <td className="py-2 px-3 text-right font-mono text-emerald-600 font-medium">
+                          +{formatCurrency(compteDeResultat.productionExercice)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Consommations de l'exercice (Matières, transports, services extérieurs)</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">602-608, 61, 62, 63</td>
+                        <td className="py-2 px-3 text-right font-mono text-rose-600 font-medium">
+                          -{formatCurrency(compteDeResultat.consommationExercice)}
+                        </td>
+                      </tr>
+                      <tr className="bg-indigo-50/60 dark:bg-indigo-950/20 font-bold border-y border-indigo-100 dark:border-indigo-900/40">
+                        <td className="py-2.5 px-3 text-indigo-900 dark:text-indigo-200">= VALEUR AJOUTÉE (VA)</td>
+                        <td className="py-2.5 px-3 text-indigo-700 dark:text-indigo-300 font-mono text-[10px]">SIG 2</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-indigo-800 dark:text-indigo-300 font-bold">
+                          {formatCurrency(compteDeResultat.valeurAjoutee)}
+                        </td>
+                      </tr>
+
+                      {/* 3. Excédent Brut d'Exploitation */}
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Subventions d'exploitation</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">71</td>
+                        <td className="py-2 px-3 text-right font-mono text-emerald-600 font-medium">
+                          +{formatCurrency(compteDeResultat.subventionsExploitation)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Charges de personnel & Impôts/taxes</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">64, 66</td>
+                        <td className="py-2 px-3 text-right font-mono text-rose-600 font-medium">
+                          -{formatCurrency(compteDeResultat.chargesPersonnel + compteDeResultat.impotsTaxes)}
+                        </td>
+                      </tr>
+                      <tr className="bg-amber-50/60 dark:bg-amber-950/20 font-bold border-y border-amber-100 dark:border-amber-900/40">
+                        <td className="py-2.5 px-3 text-amber-900 dark:text-amber-200">= EXCÉDENT BRUT D'EXPLOITATION (EBE)</td>
+                        <td className="py-2.5 px-3 text-amber-700 dark:text-amber-300 font-mono text-[10px]">SIG 3</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-amber-800 dark:text-amber-300 font-bold">
+                          {formatCurrency(compteDeResultat.excedentBrutExploitation)}
+                        </td>
+                      </tr>
+
+                      {/* 4. Résultat d'Exploitation */}
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Dotations aux amortissements & autres charges</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">65, 68, 69</td>
+                        <td className="py-2 px-3 text-right font-mono text-rose-600 font-medium">
+                          -{formatCurrency(compteDeResultat.dotationsAmortissements + compteDeResultat.autresChargesExploitation)}
+                        </td>
+                      </tr>
+                      <tr className="bg-purple-50/60 dark:bg-purple-950/20 font-bold border-y border-purple-100 dark:border-purple-900/40">
+                        <td className="py-2.5 px-3 text-purple-900 dark:text-purple-200">= RÉSULTAT D'EXPLOITATION (RE)</td>
+                        <td className="py-2.5 px-3 text-purple-700 dark:text-purple-300 font-mono text-[10px]">SIG 4</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-purple-800 dark:text-purple-300 font-bold">
+                          {formatCurrency(compteDeResultat.resultatExploitation)}
+                        </td>
+                      </tr>
+
+                      {/* 5. Résultat Financier */}
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Résultat Financier (Produits 77 - Charges 67)</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">77, 67</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">
+                          {compteDeResultat.resultatFinancier >= 0 ? '+' : ''}
+                          {formatCurrency(compteDeResultat.resultatFinancier)}
+                        </td>
+                      </tr>
+
+                      {/* 6. RAO */}
+                      <tr className="font-semibold bg-slate-50 dark:bg-slate-800/40">
+                        <td className="py-2 px-3 text-slate-800 dark:text-slate-200">= RÉSULTAT ACTIVITÉS ORDINAIRES (RAO)</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">RE + RF</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold">
+                          {formatCurrency(compteDeResultat.resultatActivitesOrdinaires)}
+                        </td>
+                      </tr>
+
+                      {/* 7. RHAO & Impôt */}
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Résultat Hors Activités Ordinaires (RHAO)</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">81-88</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">
+                          {formatCurrency(compteDeResultat.resultatHAO)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">Impôts sur les bénéfices / Acomptes BIC</td>
+                        <td className="py-2 px-3 font-mono text-slate-500">89</td>
+                        <td className="py-2 px-3 text-right font-mono text-rose-600 font-medium">
+                          -{formatCurrency(compteDeResultat.impotsSurBenefices)}
+                        </td>
+                      </tr>
+
+                      {/* LIGNE FINALE RÉSULTAT NET */}
+                      <tr className="bg-slate-900 text-white font-extrabold text-sm border-t-2 border-slate-900">
+                        <td className="py-3 px-3 uppercase tracking-wider">
+                          RÉSULTAT NET DE L'EXERCICE ({compteDeResultat.sensResultat.toUpperCase()})
+                        </td>
+                        <td className="py-3 px-3 font-mono text-xs text-slate-300">Compte 131 / 139</td>
+                        <td className="py-3 px-3 text-right font-mono text-base text-amber-400">
+                          {compteDeResultat.sensResultat === 'benefice' ? '+' : ''}
+                          {formatCurrency(compteDeResultat.resultatNet)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* VUE 2 : BILAN OHADA (ACTIF / PASSIF) */}
+          {sousOngletEtats === 'bilan' && (
+            <div className="space-y-4">
+              {/* Statut d'équilibre du bilan */}
+              <div
+                className={`p-4 rounded-2xl border flex items-center justify-between ${
+                  bilanData.equilibre.estEquilibre
+                    ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300'
+                    : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {bilanData.equilibre.estEquilibre ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-rose-600" />
+                  )}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase">
+                      {bilanData.equilibre.estEquilibre
+                        ? 'Bilan OHADA Strictement Équilibré'
+                        : 'Déséquilibre Détecté dans le Bilan'}
+                    </h4>
+                    <p className="text-[11px] opacity-80">
+                      Total Actif : <strong>{formatCurrency(bilanData.actif.totalGeneralActif)}</strong> = Total Passif : <strong>{formatCurrency(bilanData.passif.totalGeneralPassif)}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right font-mono font-bold text-xs">
+                  Écart : {formatCurrency(bilanData.equilibre.ecart)}
+                </div>
+              </div>
+
+              {/* Deux colonnes Actif vs Passif */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* COLONNE ACTIF */}
+                <Card title="ACTIF (Emplois)" badge={formatCurrency(bilanData.actif.totalGeneralActif)}>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                    {/* Actif Immobilisé */}
+                    <div className="py-2.5">
+                      <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        <span>ACTIF IMMOBILISÉ (Classe 2)</span>
+                        <span className="font-mono text-sky-600">{formatCurrency(bilanData.actif.actifImmobilise.total)}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-slate-500 text-[11px]">
+                        <div className="flex justify-between">
+                          <span>Immobilisations incorporelles</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.actifImmobilise.immobilisationsIncorporelles)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Immobilisations corporelles (matériel, mobilier)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.actifImmobilise.immobilisationsCorporelles)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Immobilisations financières</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.actifImmobilise.immobilisationsFinancieres)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actif Circulant */}
+                    <div className="py-2.5">
+                      <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        <span>ACTIF CIRCULANT (Classes 3 & 4)</span>
+                        <span className="font-mono text-sky-600">{formatCurrency(bilanData.actif.actifCirculant.total)}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-slate-500 text-[11px]">
+                        <div className="flex justify-between">
+                          <span>Stocks de marchandises & matières</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.actifCirculant.stocksMarchandises)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Créances clients (compte 411)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.actifCirculant.creancesClients)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Autres créances (TVA déductible, acomptes)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.actifCirculant.autresCreances)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Trésorerie Actif */}
+                    <div className="py-2.5">
+                      <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        <span>TRÉSORERIE ACTIF (Classe 5)</span>
+                        <span className="font-mono text-sky-600">{formatCurrency(bilanData.actif.tresorerieActif.total)}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-slate-500 text-[11px]">
+                        <div className="flex justify-between">
+                          <span>Banques locales (comptes courants)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.tresorerieActif.banques)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Mobile Money (Orange, Moov, Wave)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.tresorerieActif.mobileMoney)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Caisses physiques (espèces)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.actif.tresorerieActif.caisses)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total Actif */}
+                    <div className="pt-3 font-bold text-sm flex items-center justify-between bg-sky-50 dark:bg-sky-950/20 -mx-4 -mb-4 p-4 rounded-b-2xl">
+                      <span className="uppercase text-sky-900 dark:text-sky-200">TOTAL GÉNÉRAL ACTIF</span>
+                      <span className="font-mono text-sky-700 dark:text-sky-300">{formatCurrency(bilanData.actif.totalGeneralActif)}</span>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* COLONNE PASSIF */}
+                <Card title="PASSIF (Ressources)" badge={formatCurrency(bilanData.passif.totalGeneralPassif)}>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                    {/* Capitaux Propres & Dettes Financières */}
+                    <div className="py-2.5">
+                      <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        <span>CAPITAUX PROPRES & RESSOURCES (Classe 1)</span>
+                        <span className="font-mono text-emerald-600">{formatCurrency(bilanData.passif.capitauxPropres.total)}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-slate-500 text-[11px]">
+                        <div className="flex justify-between">
+                          <span>Capital social (compte 101)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.passif.capitauxPropres.capitalSocial)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Report à nouveau & réserves</span>
+                          <span className="font-mono">{formatCurrency(bilanData.passif.capitauxPropres.reportANouveau)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-300">
+                          <span>Résultat Net de l'exercice (compte 13)</span>
+                          <span className="font-mono text-amber-600">{formatCurrency(bilanData.passif.capitauxPropres.resultatNetExercice)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Emprunts & dettes financières (compte 16)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.passif.capitauxPropres.dettesFinancieres)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Passif Circulant */}
+                    <div className="py-2.5">
+                      <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        <span>PASSIF CIRCULANT (Classe 4)</span>
+                        <span className="font-mono text-emerald-600">{formatCurrency(bilanData.passif.passifCirculant.total)}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-slate-500 text-[11px]">
+                        <div className="flex justify-between">
+                          <span>Dettes fournisseurs (compte 401)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.passif.passifCirculant.dettesFournisseurs)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Dettes fiscales & sociales (TVA 18%, personnel)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.passif.passifCirculant.dettesFiscalesSociales)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Autres dettes d'exploitation</span>
+                          <span className="font-mono">{formatCurrency(bilanData.passif.passifCirculant.autresDettes)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Trésorerie Passif */}
+                    <div className="py-2.5">
+                      <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        <span>TRÉSORERIE PASSIF (Classe 5)</span>
+                        <span className="font-mono text-emerald-600">{formatCurrency(bilanData.passif.tresoreriePassif.total)}</span>
+                      </div>
+                      <div className="pl-3 space-y-1 text-slate-500 text-[11px]">
+                        <div className="flex justify-between">
+                          <span>Découverts bancaires & crédits d'escompte (compte 56)</span>
+                          <span className="font-mono">{formatCurrency(bilanData.passif.tresoreriePassif.decouvertsBancaires)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total Passif */}
+                    <div className="pt-3 font-bold text-sm flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/20 -mx-4 -mb-4 p-4 rounded-b-2xl">
+                      <span className="uppercase text-emerald-900 dark:text-emerald-200">TOTAL GÉNÉRAL PASSIF</span>
+                      <span className="font-mono text-emerald-700 dark:text-emerald-300">{formatCurrency(bilanData.passif.totalGeneralPassif)}</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ONGLET 5 : CLÔTURE D'EXERCICE COMPTABLE & PISTE D'AUDIT FIABLE (PAF) */}
+      {/* ========================================================================= */}
+      {activeTab === 'cloture' && (
+        <div className="space-y-6">
+          {/* Guide explicatif */}
+          <Callout variant="info" title="Procédure Réglementaire de Clôture d'Exercice (SYSCOHADA)">
+            La clôture annuelle d'exercice est une opération irréversible qui garantit l'inviolabilité des comptes :
+            elle solde les comptes de gestion (Classes 6 et 7), affecte le résultat au Bilan (compte 13), verrouille
+            les écritures et génère automatiquement la pièce d'À-Nouveaux pour l'exercice suivant (Bilan d'Ouverture N+1).
+          </Callout>
+
+          {/* Liste des exercices comptables et statut */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {exercices.map((exo) => {
+              const isOuvert = exo.statut === 'ouvert';
+
+              return (
+                <div
+                  key={exo.id}
+                  className={`p-5 rounded-2xl border transition-all ${
+                    isOuvert
+                      ? 'bg-white dark:bg-slate-900 border-sky-300 dark:border-sky-800 shadow-sm'
+                      : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-90'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">
+                      Exercice {exo.annee}
+                    </span>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 ${
+                        isOuvert
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      {isOuvert ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                      <span>{isOuvert ? 'En cours (Ouvert)' : 'Clôturé & Verrouillé'}</span>
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-500 mb-4">
+                    Du <strong>{formatDate(exo.date_debut)}</strong> au <strong>{formatDate(exo.date_fin)}</strong>
+                  </p>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    {isOuvert ? (
+                      <button
+                        onClick={() => {
+                          setSelectedExoCloture(exo);
+                          setClotureModalOpen(true);
+                        }}
+                        disabled={!canEdit}
+                        className="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Clôturer cet exercice</span>
+                      </button>
+                    ) : (
+                      <div className="w-full flex items-center justify-between text-xs text-slate-500 font-medium">
+                        <span className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                          <CheckCircle2 className="w-4 h-4" /> Scellé (PAF Certifiée)
+                        </span>
+                        <button
+                          onClick={handleExportFEC}
+                          className="text-sky-600 hover:underline flex items-center gap-1"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Archive FEC</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Checklist d'intégrité avant clôture */}
+          <Card title="Checklist d'Audit & Conformité Pré-Clôture">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center gap-2.5">
+                  {balanceResult.estEquilibree ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-rose-600" />
+                  )}
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Équilibre rigoureux de la Balance Générale
+                    </h5>
+                    <p className="text-[11px] text-slate-500">
+                      Débit total ({formatCurrency(balanceResult.totalDebit)}) = Crédit total ({formatCurrency(balanceResult.totalCredit)})
+                    </p>
+                  </div>
+                </div>
+                <span className={`text-xs font-bold ${balanceResult.estEquilibree ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {balanceResult.estEquilibree ? 'Conforme (Écart : 0 FCFA)' : `Écart : ${formatCurrency(balanceResult.ecart)}`}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Validation de l'ensemble des pièces comptables
+                    </h5>
+                    <p className="text-[11px] text-slate-500">
+                      Toutes les pièces de l'exercice sont validées sans écriture en statut brouillon
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-emerald-600">
+                  {pieces.length} pièces prêtes
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Piste d'Audit Fiable & Scellement Numérique SHA-256
+                    </h5>
+                    <p className="text-[11px] text-slate-500">
+                      Empreinte cryptographique générée automatiquement lors du scellement de la clôture
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-bold text-sky-600">
+                  SHA-256 Prêt
+                </span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal Confirmation de Clôture */}
+      {clotureModalOpen && selectedExoCloture && (
+        <Modal
+          open={true}
+          onClose={() => setClotureModalOpen(false)}
+          title={`Clôture Officielle de l'Exercice ${selectedExoCloture.annee}`}
+        >
+          <div className="space-y-4">
+            <Callout variant="danger" title="Avertissement d'irréversibilité">
+              La clôture de l'exercice <strong>{selectedExoCloture.annee}</strong> est définitive.
+              Aucune écriture ne pourra plus être ajoutée ou modifiée sur cet exercice.
+            </Callout>
+
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Exercice à clôturer :</span>
+                <span className="font-bold font-mono">Année {selectedExoCloture.annee}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Résultat net déterminé :</span>
+                <span className={`font-bold font-mono ${compteDeResultat.resultatNet >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {formatCurrency(compteDeResultat.resultatNet)} ({compteDeResultat.sensResultat.toUpperCase()})
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Écriture d'À-Nouveaux :</span>
+                <span className="font-bold text-sky-600">Exercice {selectedExoCloture.annee + 1} (Génération auto)</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setClotureModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCloturerExercice(selectedExoCloture.id)}
+                disabled={clotureLoading || !balanceResult.estEquilibree}
+                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                {clotureLoading ? 'Clôture en cours...' : 'Confirmer la Clôture Définitive'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* ========================================================================= */}

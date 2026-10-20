@@ -146,6 +146,24 @@ flowchart TD
   - Transactions de fidélité tracées avec valeur de conversion monétaire (1 pt = 25 FCFA).
   - Modal « Vue Client 360° » complet : métriques de CA cumulé, solde dû, panier moyen, historique des commandes, règlements et relance WhatsApp 1-clic.
 
+---
+
+### PHASE 4 — ÉTATS FINANCIERS SYSCOHADA, FACTURE NORMALISÉE UEMOA & CLÔTURE D'EXERCICE (LIVRÉE)
+
+- [x] **4.1 États Financiers SYSCOHADA Révisé (Système Normal OHADA)** :
+  - **Compte de Résultat & Soldes Intermédiaires de Gestion (SIG)** en cascade officielle : Marge commerciale, Production de l'exercice, Consommations intermédiaires, Valeur Ajoutée (VA), Excédent Brut d'Exploitation (EBE), Résultat d'Exploitation (RE), Résultat Financier (RF), Résultat des Activités Ordinaires (RAO), Résultat Hors Activités Ordinaires (RHAO) et Résultat Net de l'exercice.
+  - **Bilan SYSCOHADA (Actif & Passif)** : Actif Immobilisé, Actif Circulant, Trésorerie Actif, Capitaux Propres avec résultat net synchronisé, Passif Circulant, Trésorerie Passif avec contrôle d'équilibre strict (Total Actif = Total Passif).
+  - Édition et impression officielle normalisée des états financiers certifiés OHADA.
+- [x] **4.2 Facturation Électronique Normalisée UEMOA & QR Code Fiscal (DGI / e-Sintax)** :
+  - Formatage standardisé de la charge fiscale : `FISC-BF*IFU*FAC*DT*HT*TVA*TTC*CIFU*SIG`.
+  - Générateur pur SVG vectoriel de QR Code fiscal intégré aux documents de facturation sans dépendance npm externe.
+  - Intégration du bloc légal fiscal certifié sur les factures A4 et tickets thermiques de caisse avec signature d'inviolabilité.
+  - Chaînage cryptographique d'inviolabilité `hash_facture` et `hash_precedent` garantissant une traçabilité inviolable (anti-altération).
+- [x] **4.3 Clôture Annuelle d'Exercice & Piste d'Audit Fiable (PAF)** :
+  - Procédure stockée `rpc_cloturer_exercice_comptable` : contrôle d'équilibre de la balance, affectation automatique du résultat net (compte 131/139), soldage des comptes de gestion (classes 6 et 7).
+  - Bascule irréversible de l'exercice en statut `cloture` (gel des écritures).
+  - Création automatique de l'exercice N+1 et génération de la pièce d'À-Nouveaux (Bilan d'Ouverture des comptes classes 1 à 5).
+  - Scellement d'intégrité SHA-256 consigné dans `compta_clotures` pour la Piste d'Audit Fiable (PAF) exigée par l'administration fiscale et les commissaires aux comptes.
 
 ---
 

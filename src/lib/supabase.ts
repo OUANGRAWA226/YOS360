@@ -202,6 +202,10 @@ export type Commande = {
   montant_tva: number | null;
   date_echeance: string | null;
   client_walkin: string | null;
+  hash_facture?: string | null;
+  hash_precedent?: string | null;
+  signature_dgi?: string | null;
+  qr_code_fiscal_data?: string | null;
   created_at: string;
 };
 
@@ -242,7 +246,7 @@ export type MouvementWithProduit = Mouvement & {
 
 export type CommandeWithRelations = Commande & {
   fournisseurs: { nom: string } | null;
-  clients: { nom: string; telephone: string | null; adresse: string | null; ville: string | null } | null;
+  clients: { nom: string; telephone: string | null; adresse: string | null; ville: string | null; ifu?: string | null } | null;
   commande_items: (CommandeItem & { produits: { nom: string; sku: string | null } | null })[];
 };
 
@@ -1016,5 +1020,31 @@ export type EquipeCommission = {
   created_at: string;
   collaborateur?: EquipeCollaborateur;
 };
+
+// ============================================================================
+// PHASE 4 : CLÔTURE D'EXERCICE COMPTABLE & PISTE D'AUDIT FIABLE (PAF)
+// ============================================================================
+
+export type ComptaCloture = {
+  id: string;
+  entreprise_id: string;
+  exercice_id: string;
+  annee: number;
+  date_cloture: string;
+  cloture_par: string | null;
+  total_debit: number;
+  total_credit: number;
+  total_produits: number;
+  total_charges: number;
+  resultat_net: number;
+  sens_resultat: 'benefice' | 'perte' | 'equilibre';
+  piece_cloture_id: string | null;
+  piece_a_nouveaux_id: string | null;
+  exercice_suivant_id: string | null;
+  paf_hash_archive: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
 
 

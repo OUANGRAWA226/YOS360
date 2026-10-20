@@ -484,3 +484,365 @@ export function determinerPalierFidelite(cumulDepenses: number): PalierFidelite 
   if (cumulDepenses >= 100000) return 'argent';
   return 'bronze';
 }
+
+// ------------------------------------------------------------------------------
+// 8. ÉTATS FINANCIERS SYSCOHADA RÉVISÉ (OHADA) : COMPTE DE RÉSULTAT & SIG
+// ------------------------------------------------------------------------------
+
+export interface SoldesIntermediairesGestion {
+  // 1. Marge commerciale
+  ventesMarchandises: number; // 701
+  achatsMarchandises: number; // 601
+  variationStocksMarchandises: number; // 6031
+  margeCommerciale: number;
+
+  // 2. Production de l'exercice
+  productionVendue: number; // 702 - 706
+  productionStockee: number; // 73
+  productionImmobilisee: number; // 72
+  productionExercice: number;
+
+  // 3. Consommation de l'exercice
+  achatsMatieres: number; // 602
+  variationStocksMatieres: number; // 6032
+  autresAchatsConsommables: number; // 604 - 608
+  transports: number; // 61
+  servicesExterieurs: number; // 62 - 63
+  consommationExercice: number;
+
+  // 4. Valeur Ajoutée (VA)
+  valeurAjoutee: number;
+
+  // 5. Excédent Brut d'Exploitation (EBE)
+  subventionsExploitation: number; // 71
+  chargesPersonnel: number; // 66
+  impotsTaxes: number; // 64
+  excedentBrutExploitation: number;
+
+  // 6. Résultat d'Exploitation (RE)
+  autresProduitsExploitation: number; // 75
+  reprisesProvisionsExploitation: number; // 79
+  dotationsAmortissements: number; // 68
+  autresChargesExploitation: number; // 65
+  resultatExploitation: number;
+
+  // 7. Résultat Financier (RF)
+  produitsFinanciers: number; // 77
+  chargesFinancieres: number; // 67
+  resultatFinancier: number;
+
+  // 8. Résultat des Activités Ordinaires (RAO)
+  resultatActivitesOrdinaires: number;
+
+  // 9. Résultat Hors Activités Ordinaires (RHAO)
+  produitsHAO: number; // 82, 84, 86, 88
+  chargesHAO: number; // 81, 83, 85
+  resultatHAO: number;
+
+  // 10. Résultat Net de l'Exercice (RN)
+  impotsSurBenefices: number; // 89
+  resultatNet: number;
+  sensResultat: 'benefice' | 'perte' | 'equilibre';
+}
+
+export function calculerCompteDeResultatOHADA(ecritures: ComptaEcriture[]): SoldesIntermediairesGestion {
+  const soldes = new Map<string, number>();
+
+  // Agréger le solde net de chaque compte (Crédit - Débit pour produits 7/8, Débit - Crédit pour charges 6/8)
+  ecritures.forEach((e) => {
+    const num = e.compte_numero;
+    const debit = Number(e.debit) || 0;
+    const credit = Number(e.credit) || 0;
+
+    const current = soldes.get(num) || 0;
+    soldes.set(num, current + (debit - credit)); // Solde débiteur par défaut
+  });
+
+  const getSoldeDebit = (prefix: string): number => {
+    let tot = 0;
+    soldes.forEach((val, num) => {
+      if (num.startsWith(prefix)) tot += val;
+    });
+    return Math.max(0, tot);
+  };
+
+  const getSoldeCredit = (prefix: string): number => {
+    let tot = 0;
+    soldes.forEach((val, num) => {
+      if (num.startsWith(prefix)) tot += -val; // Crédit net
+    });
+    return Math.max(0, tot);
+  };
+
+  // 1. Marge commerciale
+  const ventesMarchandises = getSoldeCredit('701');
+  const achatsMarchandises = getSoldeDebit('601');
+  const variationStocksMarchandises = getSoldeDebit('6031');
+  const margeCommerciale = ventesMarchandises - (achatsMarchandises + variationStocksMarchandises);
+
+  // 2. Production
+  const productionVendue = getSoldeCredit('706') + getSoldeCredit('707');
+  const productionStockee = getSoldeCredit('73');
+  const productionImmobilisee = getSoldeCredit('72');
+  const productionExercice = productionVendue + productionStockee + productionImmobilisee;
+
+  // 3. Consommation
+  const achatsMatieres = getSoldeDebit('602');
+  const variationStocksMatieres = getSoldeDebit('6032');
+  const autresAchatsConsommables = getSoldeDebit('605');
+  const transports = getSoldeDebit('61');
+  const servicesExterieurs = getSoldeDebit('62') + getSoldeDebit('63');
+  const consommationExercice = achatsMatieres + variationStocksMatieres + autresAchatsConsommables + transports + servicesExterieurs;
+
+  // 4. Valeur Ajoutée
+  const valeurAjoutee = (margeCommerciale + productionExercice) - consommationExercice;
+
+  // 5. EBE
+  const subventionsExploitation = getSoldeCredit('71');
+  const chargesPersonnel = getSoldeDebit('66');
+  const impotsTaxes = getSoldeDebit('64');
+  const excedentBrutExploitation = valeurAjoutee + subventionsExploitation - (chargesPersonnel + impotsTaxes);
+
+  // 6. Résultat d'Exploitation
+  const autresProduitsExploitation = getSoldeCredit('75');
+  const reprisesProvisionsExploitation = getSoldeCredit('79');
+  const dotationsAmortissements = getSoldeDebit('68') + getSoldeDebit('69');
+  const autresChargesExploitation = getSoldeDebit('65');
+  const resultatExploitation = excedentBrutExploitation + autresProduitsExploitation + reprisesProvisionsExploitation - (dotationsAmortissements + autresChargesExploitation);
+
+  // 7. Résultat Financier
+  const produitsFinanciers = getSoldeCredit('77');
+  const chargesFinancieres = getSoldeDebit('67');
+  const resultatFinancier = produitsFinanciers - chargesFinancieres;
+
+  // 8. RAO
+  const resultatActivitesOrdinaires = resultatExploitation + resultatFinancier;
+
+  // 9. RHAO
+  const produitsHAO = getSoldeCredit('82') + getSoldeCredit('84') + getSoldeCredit('86') + getSoldeCredit('88');
+  const chargesHAO = getSoldeDebit('81') + getSoldeDebit('83') + getSoldeDebit('85');
+  const resultatHAO = produitsHAO - chargesHAO;
+
+  // 10. Résultat Net
+  const impotsSurBenefices = getSoldeDebit('89');
+  const resultatNet = Math.round(resultatActivitesOrdinaires + resultatHAO - impotsSurBenefices);
+
+  return {
+    ventesMarchandises: Math.round(ventesMarchandises),
+    achatsMarchandises: Math.round(achatsMarchandises),
+    variationStocksMarchandises: Math.round(variationStocksMarchandises),
+    margeCommerciale: Math.round(margeCommerciale),
+
+    productionVendue: Math.round(productionVendue),
+    productionStockee: Math.round(productionStockee),
+    productionImmobilisee: Math.round(productionImmobilisee),
+    productionExercice: Math.round(productionExercice),
+
+    achatsMatieres: Math.round(achatsMatieres),
+    variationStocksMatieres: Math.round(variationStocksMatieres),
+    autresAchatsConsommables: Math.round(autresAchatsConsommables),
+    transports: Math.round(transports),
+    servicesExterieurs: Math.round(servicesExterieurs),
+    consommationExercice: Math.round(consommationExercice),
+
+    valeurAjoutee: Math.round(valeurAjoutee),
+
+    subventionsExploitation: Math.round(subventionsExploitation),
+    chargesPersonnel: Math.round(chargesPersonnel),
+    impotsTaxes: Math.round(impotsTaxes),
+    excedentBrutExploitation: Math.round(excedentBrutExploitation),
+
+    autresProduitsExploitation: Math.round(autresProduitsExploitation),
+    reprisesProvisionsExploitation: Math.round(reprisesProvisionsExploitation),
+    dotationsAmortissements: Math.round(dotationsAmortissements),
+    autresChargesExploitation: Math.round(autresChargesExploitation),
+    resultatExploitation: Math.round(resultatExploitation),
+
+    produitsFinanciers: Math.round(produitsFinanciers),
+    chargesFinancieres: Math.round(chargesFinancieres),
+    resultatFinancier: Math.round(resultatFinancier),
+
+    resultatActivitesOrdinaires: Math.round(resultatActivitesOrdinaires),
+
+    produitsHAO: Math.round(produitsHAO),
+    chargesHAO: Math.round(chargesHAO),
+    resultatHAO: Math.round(resultatHAO),
+
+    impotsSurBenefices: Math.round(impotsSurBenefices),
+    resultatNet,
+    sensResultat: resultatNet > 0 ? 'benefice' : resultatNet < 0 ? 'perte' : 'equilibre',
+  };
+}
+
+// ------------------------------------------------------------------------------
+// 9. ÉTATS FINANCIERS SYSCOHADA RÉVISÉ (OHADA) : BILAN ACTIF / PASSIF
+// ------------------------------------------------------------------------------
+
+export interface BilanOHADA {
+  actif: {
+    actifImmobilise: {
+      immobilisationsIncorporelles: number; // 21
+      immobilisationsCorporelles: number; // 22, 23, 24
+      immobilisationsFinancieres: number; // 26, 27
+      total: number;
+    };
+    actifCirculant: {
+      stocksMarchandises: number; // 31, 32
+      creancesClients: number; // 41
+      autresCreances: number; // 42, 43, 44, 47
+      total: number;
+    };
+    tresorerieActif: {
+      banques: number; // 52
+      caisses: number; // 57
+      mobileMoney: number; // 5211, 5212, 5213
+      total: number;
+    };
+    totalGeneralActif: number;
+  };
+  passif: {
+    capitauxPropres: {
+      capitalSocial: number; // 10
+      reportANouveau: number; // 11, 12
+      resultatNetExercice: number; // 13 (synchronisé avec le compte de résultat)
+      dettesFinancieres: number; // 16
+      total: number;
+    };
+    passifCirculant: {
+      dettesFournisseurs: number; // 40
+      dettesFiscalesSociales: number; // 42, 43, 44
+      autresDettes: number; // 47, 48
+      total: number;
+    };
+    tresoreriePassif: {
+      decouvertsBancaires: number; // 56
+      total: number;
+    };
+    totalGeneralPassif: number;
+  };
+  equilibre: {
+    ecart: number;
+    estEquilibre: boolean;
+  };
+}
+
+export function calculerBilanOHADA(
+  ecritures: ComptaEcriture[],
+  resultatNet: number
+): BilanOHADA {
+  const soldes = new Map<string, number>();
+
+  ecritures.forEach((e) => {
+    const num = e.compte_numero;
+    const debit = Number(e.debit) || 0;
+    const credit = Number(e.credit) || 0;
+    const diff = debit - credit; // > 0 = Solde débiteur (Actif), < 0 = Solde créditeur (Passif)
+
+    soldes.set(num, (soldes.get(num) || 0) + diff);
+  });
+
+  const getSoldeActif = (prefixes: string[]): number => {
+    let tot = 0;
+    soldes.forEach((val, num) => {
+      if (prefixes.some((p) => num.startsWith(p)) && val > 0) tot += val;
+    });
+    return Math.round(tot);
+  };
+
+  const getSoldePassif = (prefixes: string[]): number => {
+    let tot = 0;
+    soldes.forEach((val, num) => {
+      if (prefixes.some((p) => num.startsWith(p)) && val < 0) tot += Math.abs(val);
+    });
+    return Math.round(tot);
+  };
+
+  // Actif Immobilisé
+  const immoIncorp = getSoldeActif(['21']);
+  const immoCorp = getSoldeActif(['22', '23', '24', '215', '218']);
+  const immoFin = getSoldeActif(['26', '27']);
+  const totImmo = immoIncorp + immoCorp + immoFin;
+
+  // Actif Circulant
+  const stocks = getSoldeActif(['31', '32', '33']);
+  const clients = getSoldeActif(['41']);
+  const autresCreances = getSoldeActif(['42', '43', '445', '47']);
+  const totActifCirculant = stocks + clients + autresCreances;
+
+  // Trésorerie Actif
+  const banques = getSoldeActif(['5210']);
+  const mobileMoney = getSoldeActif(['5211', '5212', '5213']);
+  const caisses = getSoldeActif(['57']);
+  const totTresorerieActif = banques + mobileMoney + caisses;
+
+  const totalGeneralActif = totImmo + totActifCirculant + totTresorerieActif;
+
+  // Passif : Capitaux propres
+  const capital = getSoldePassif(['101', '10']);
+  const report = getSoldePassif(['11', '12']);
+  const dettesFin = getSoldePassif(['16']);
+  const totCapitaux = capital + report + dettesFin + resultatNet;
+
+  // Passif Circulant
+  const fournisseurs = getSoldePassif(['40']);
+  const dettesFiscales = getSoldePassif(['42', '43', '443', '444']);
+  const autresDettes = getSoldePassif(['47', '48']);
+  const totPassifCirculant = fournisseurs + dettesFiscales + autresDettes;
+
+  // Trésorerie Passif
+  const decouverts = getSoldePassif(['56']);
+  const totTresoreriePassif = decouverts;
+
+  const totalGeneralPassif = totCapitaux + totPassifCirculant + totTresoreriePassif;
+
+  const ecart = Math.abs(totalGeneralActif - totalGeneralPassif);
+
+  return {
+    actif: {
+      actifImmobilise: {
+        immobilisationsIncorporelles: immoIncorp,
+        immobilisationsCorporelles: immoCorp,
+        immobilisationsFinancieres: immoFin,
+        total: totImmo,
+      },
+      actifCirculant: {
+        stocksMarchandises: stocks,
+        creancesClients: clients,
+        autresCreances: autresCreances,
+        total: totActifCirculant,
+      },
+      tresorerieActif: {
+        banques,
+        caisses,
+        mobileMoney,
+        total: totTresorerieActif,
+      },
+      totalGeneralActif,
+    },
+    passif: {
+      capitauxPropres: {
+        capitalSocial: capital,
+        reportANouveau: report,
+        resultatNetExercice: Math.round(resultatNet),
+        dettesFinancieres: dettesFin,
+        total: totCapitaux,
+      },
+      passifCirculant: {
+        dettesFournisseurs: fournisseurs,
+        dettesFiscalesSociales: dettesFiscales,
+        autresDettes: autresDettes,
+        total: totPassifCirculant,
+      },
+      tresoreriePassif: {
+        decouvertsBancaires: decouverts,
+        total: totTresoreriePassif,
+      },
+      totalGeneralPassif,
+    },
+    equilibre: {
+      ecart,
+      estEquilibre: ecart === 0,
+    },
+  };
+}
+

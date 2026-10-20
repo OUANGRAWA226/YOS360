@@ -213,3 +213,50 @@ Tous les changements notables apportés au projet YOS360 sont consignés dans ce
   - Statut de l'encours de crédit avec alerte en cas de dépassement de l'encours max autorisé.
   - Bouton de relance WhatsApp 1-clic générant un message officiel pré-rempli.
 
+---
+
+## [Phase 4] — 20 Octobre 2026 : États Financiers SYSCOHADA, Facturation Normalisée UEMOA & Clôture Annuelle d'Exercice
+
+### 1. États Financiers Officiels SYSCOHADA Révisé (Système Normal OHADA)
+- **Compte de Résultat & Soldes Intermédiaires de Gestion (SIG)** :
+  - Décomposition séquentielle officielle :
+    1. Marge commerciale (Ventes 701 - Achats 601 - Variations de stocks 6031)
+    2. Production de l'exercice (702-706, 72, 73)
+    3. Consommations de l'exercice (602, 604, 605, 61, 62, 63)
+    4. **Valeur Ajoutée (VA)**
+    5. **Excédent Brut d'Exploitation (EBE)**
+    6. **Résultat d'Exploitation (RE)**
+    7. **Résultat Financier (RF)**
+    8. **Résultat des Activités Ordinaires (RAO)**
+    9. **Résultat Hors Activités Ordinaires (RHAO)**
+    10. **Résultat Net de l'Exercice (RN)** (Bénéfice net ou Perte nette)
+  - Visualisation AdminLTE en cascade avec indicateurs de rentabilité et boutons d'impression normalisée.
+- **Bilan SYSCOHADA (Actif / Passif)** :
+  - Présentation bilantaire rigoureuse :
+    - **Actif** : Actif Immobilisé (Classe 2), Actif Circulant (Stocks Classe 3, Créances clients Classe 41, Autres créances), Trésorerie Actif (Banques 52, Caisses 57, Mobile Money 521).
+    - **Passif** : Capitaux Propres & Dettes financières (Capital 101, Report 11/12, Résultat net 13, Dettes financières 16), Passif Circulant (Fournisseurs 401, Dettes fiscales et sociales 42-44), Trésorerie Passif (Découverts 56).
+  - Contrôle d'équilibre strict : Total Actif = Total Passif avec alerte immédiate en cas de déséquilibre.
+
+### 2. Facturation Électronique Normalisée UEMOA & QR Code Fiscal (DGI / e-Sintax)
+- **Format Normalisé DGI / e-Sintax UEMOA** :
+  - Chaîne fiscale normée : `FISC-BF*IFU:<IFU>*FAC:<NUM>*DT:<DATE>*HT:<HT>*TVA:<TVA>*TTC:<TTC>*CIFU:<CLIENT_IFU>*SIG:<SIGNATURE>`.
+- **Générateur Pur SVG Vectoriel de QR Code Fiscal** :
+  - Algorithme autonome en TypeScript pur (`src/lib/fiscalQrCode.ts`) sans dépendance tierce, encodant les matrices Version 6 avec Reed-Solomon Error Correction.
+- **Bloc Fiscal Officiel sur Documents Imprimables & Tickets POS** :
+  - Intégration sur les factures A4 et tickets de caisse POS thermiques (58mm/80mm).
+  - Mention légale de déductibilité fiscale, signature électronique et QR code scannable par les agents du fisc et clients.
+- **Chaîne Cryptographique d'Inviolabilité** :
+  - Colonnes `hash_facture` et `hash_precedent` sur les commandes pour scellement Merkle (type blockchain) interdisant toute altération ou insertion rétroactive.
+
+### 3. Clôture Annuelle d'Exercice & Piste d'Audit Fiable (PAF)
+- **Procédure Stockée Transactionnelle `rpc_cloturer_exercice_comptable`** :
+  - Vérification préalable de l'équilibre parfait de la Balance Générale ($\Delta = 0$).
+  - Calcul et affectation automatique du Résultat Net au compte `131000` (Bénéfice) ou `139000` (Perte).
+  - Génération de la pièce de clôture soldant les comptes de gestion (Classes 6 et 7) dans le journal des Opérations Diverses (`OD`).
+  - Verrouillage irréversible de l'exercice (`statut = 'cloture'`).
+  - Ouverture automatique de l'exercice $N+1$ et génération de la pièce d'À-Nouveaux (`PC-AN-YYYY`) reprenant les soldes des comptes de bilan (Classes 1 à 5).
+- **Piste d'Audit Fiable (PAF)** :
+  - Empreinte numérique SHA-256 scellée et enregistrée dans la table `compta_clotures` pour archivage légal et contrôles DGI.
+  - Export direct du dossier d'audit FEC normalisé OHADA.
+
+
