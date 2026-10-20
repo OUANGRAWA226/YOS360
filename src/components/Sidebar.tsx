@@ -303,12 +303,9 @@ export function Sidebar({
             <img src="/icon-yos360.png" alt="YOS360" className="w-8 h-8 object-contain" />
           </div>
           {!collapsed && (
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg font-black tracking-tight text-white font-sans truncate">
+            <div className="flex items-center min-w-0">
+              <span className="text-xl font-black tracking-tight text-white font-sans truncate">
                 <span className="text-sky-400">YOS</span><span className="text-emerald-400">360</span>
-              </span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                ERP UEMOA
               </span>
             </div>
           )}

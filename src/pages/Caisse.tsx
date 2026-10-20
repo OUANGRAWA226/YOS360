@@ -1072,7 +1072,7 @@ function buildTicket(
   ${rendu > 0 ? `<p style="font-size:10px">Monnaie rendue : <strong>${fmt(rendu)} ${symbole}</strong></p>` : ''}
   <div class="sep"></div>
   <p class="c">Merci de votre confiance !</p>
-  <p class="c" style="font-size:9px">— YOS360 ERP UEMOA —</p>
+  <p class="c" style="font-size:9px">— YOS360 —</p>
 </body></html>`;
 }
 
