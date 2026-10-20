@@ -316,13 +316,22 @@ export function Parametres({
     }
 
     if (data.user) {
-      const targetEntId = newUserEntrepriseId || entreprise?.id;
-      await supabase.from('profiles').update({
-        role: newUserRole,
-        entreprise_id: targetEntId,
-        super_admin: isNewUserSuperAdmin,
-        nom_complet: newUserName.trim() || null,
-      }).eq('id', data.user.id);
+      // Le super admin règle tout directement ; un admin d'entreprise rattache le compte
+      // à SON entreprise via la base (rattacher_utilisateur), seule voie autorisée.
+      const { error: rattachementError } = profile?.super_admin
+        ? await supabase.from('profiles').update({
+            role: newUserRole,
+            entreprise_id: newUserEntrepriseId || entreprise?.id,
+            super_admin: isNewUserSuperAdmin,
+            nom_complet: newUserName.trim() || null,
+          }).eq('id', data.user.id)
+        : await supabase.rpc('rattacher_utilisateur', { p_user_id: data.user.id, p_role: newUserRole });
+      if (rattachementError) {
+        setCreatingUser(false);
+        showToast('Compte créé mais non rattaché : ' + rattachementError.message, 'error');
+        loadUsers();
+        return;
+      }
     }
 
     setCreatingUser(false);

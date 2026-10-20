@@ -66,7 +66,7 @@ export function LoginScreen() {
       const { error } = await signUp(email.trim(), password, nomComplet.trim());
       setBusy(false);
       if (error) showToast(error, 'error');
-      else showToast('Compte créé. Bienvenue !');
+      else showToast('Compte créé. Votre administrateur doit maintenant vous rattacher à votre entreprise.');
     }
   };
 

@@ -18,6 +18,7 @@ import type {
 } from '@/lib/supabase';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { splashProgress, hideSplash } from '@/lib/splash';
+import { YosMark } from '@/components/brand/YosLogo';
 import { PrefsProvider, usePrefs } from '@/lib/prefs';
 import { can, type Module } from '@/lib/permissions';
 import { fetchTable } from '@/lib/dataLayer';
@@ -340,6 +341,29 @@ function Shell() {
   }
 
   if (!session) return <LoginScreen />;
+
+  // Compte créé mais pas encore rattaché à une entreprise : aucun accès aux données
+  if (profile && !profile.entreprise_id && !profile.super_admin) {
+    return (
+      <div className="min-h-screen bg-[#FBFCFB] dark:bg-[#0B1410] flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <YosMark className="w-16 h-16 mx-auto mb-5" title="YOS360" />
+          <h1 className="font-['Montserrat'] font-extrabold text-2xl text-slate-900 dark:text-white mb-2">Compte en attente</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+            Votre compte <span className="font-medium text-slate-700 dark:text-slate-200">{profile.email}</span> est créé.
+            Demandez à l’administrateur de votre entreprise de vous y rattacher depuis Paramètres › Utilisateurs,
+            puis reconnectez-vous.
+          </p>
+          <button
+            onClick={signOut}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-[#0270B8] hover:bg-[#025E9A] rounded-xl transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Se déconnecter
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Entreprise suspendue : écran de blocage (le super-admin garde un accès pour administrer)
   const bloque = entreprise?.suspendue && !profile?.super_admin;
