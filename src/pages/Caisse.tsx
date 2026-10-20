@@ -337,8 +337,9 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
 
       if (isOffline) {
         // --- HORS LIGNE : la vente complète est mise en file et rejouée à la reconnexion ---
-        await enqueue({ table: 'encaisser_vente_caisse', op: 'rpc', row: { ...args, p_hors_ligne: true, p_note: `Ticket hors ligne ${numeroDoc} — Session ${session.numero_session}` } });
-        showToast(`Vente enregistrée en mode HORS-LIGNE (${numeroDoc}) — synchronisation automatique dès retour internet`, 'info');
+        numeroDoc = numeroRecuProvisoire();
+        await enqueue({ table: 'encaisser_vente_caisse', op: 'rpc', row: { ...args, p_hors_ligne: true, p_note: `Reçu provisoire ${numeroDoc} — Session ${session.numero_session}` } });
+        showToast(`Vente enregistrée hors ligne (reçu provisoire ${numeroDoc}) — la facture sera émise à la reconnexion`, 'info');
       } else {
         const { data, error } = await supabase.rpc('encaisser_vente_caisse', args);
         if (error) throw error;
@@ -965,6 +966,22 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
 }
 
 // Génération du Ticket de caisse standard (58mm/80mm)
+// Reçus provisoires hors ligne : série distincte des factures (HL-AAAAMMJJ-NNN), compteur par
+// appareil et par jour. La facture définitive est numérotée par la base à la synchronisation.
+function numeroRecuProvisoire(): string {
+  const d = new Date();
+  const jour = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  const cle = `yos360_hl_${jour}`;
+  let n = 1;
+  try {
+    n = (parseInt(localStorage.getItem(cle) || '0', 10) || 0) + 1;
+    localStorage.setItem(cle, String(n));
+  } catch {
+    n = Math.floor(Date.now() / 1000) % 1000;
+  }
+  return `HL-${jour}-${String(n).padStart(3, '0')}`;
+}
+
 function buildTicket(
   numero: string,
   lignes: LigneCaisse[],
@@ -1017,13 +1034,15 @@ function buildTicket(
   .total { font-size: 13px; font-weight: bold; }
   .badge-offline { border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; font-size: 9px; margin-bottom: 4px; }
 </style></head><body>
-  ${isOffline ? '<div class="badge-offline">MODE HORS-LIGNE (SYNCHRO EN ATTENTE)</div>' : ''}
+  ${isOffline ? '<div class="badge-offline">HORS LIGNE — SYNCHRONISATION EN ATTENTE</div>' : ''}
   <h2>${esc(entreprise?.nom || 'CAISSE POS')}</h2>
   ${entreprise?.slogan ? `<p class="c" style="font-size:10px">${esc(entreprise.slogan)}</p>` : ''}
   ${entreprise?.ifu ? `<p class="c" style="font-size:9px">IFU: ${esc(entreprise.ifu)} · RCCM: ${esc(entreprise.rccm || '—')}</p>` : ''}
   ${entreprise?.telephone ? `<p class="c" style="font-size:10px">Tel: ${esc(entreprise.telephone)}</p>` : ''}
   <div class="sep"></div>
-  <p class="c">TICKET — ${esc(numero)}</p>
+  ${isOffline
+    ? `<p class="c" style="font-weight:bold">REÇU PROVISOIRE — ${esc(numero)}</p><p class="c" style="font-size:9px">Facture émise à la synchronisation</p>`
+    : `<p class="c">TICKET — ${esc(numero)}</p>`}
   <p class="c" style="font-size:9px">Session: ${esc(sessionId)} · ${new Date().toLocaleString('fr-FR')}</p>
   ${client ? `<p class="c" style="font-size:10px">Client: ${esc(client.nom)}</p>` : ''}
   <div class="sep"></div>
