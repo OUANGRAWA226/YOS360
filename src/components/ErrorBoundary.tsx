@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { hideSplash } from '@/lib/splash';
 
 interface Props {
   children: ReactNode;
@@ -22,6 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('YOS360 Uncaught Error:', error, errorInfo);
+    hideSplash(); // l'écran de chargement ne doit pas masquer le message d'erreur
   }
 
   public render() {

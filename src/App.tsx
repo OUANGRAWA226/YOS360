@@ -17,6 +17,7 @@ import type {
   ValidationWorkflow,
 } from '@/lib/supabase';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { splashProgress, hideSplash } from '@/lib/splash';
 import { PrefsProvider, usePrefs } from '@/lib/prefs';
 import { can, type Module } from '@/lib/permissions';
 import { fetchTable } from '@/lib/dataLayer';
@@ -220,6 +221,14 @@ function Shell() {
   useEffect(() => {
     if (session && entrepriseId) loadAll();
   }, [session, entrepriseId, loadAll]);
+
+  // Écran de chargement (index.html) : refermé quand la session est connue et, si connecté, les données chargées
+  useEffect(() => {
+    if (authLoading) return;
+    if (!session || !entrepriseId) { hideSplash(); return; }
+    if (loading) splashProgress(0.55);
+    else hideSplash();
+  }, [authLoading, session, entrepriseId, loading]);
 
   // Liste des entreprises pour le sélecteur (super-admin) ou la sienne
   const refreshEntreprises = useCallback(() => {
