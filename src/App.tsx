@@ -66,6 +66,7 @@ import {
   Building2,
   ChevronDown,
   Settings,
+  Sliders,
   Warehouse,
 } from 'lucide-react';
 import { ROLE_LABELS } from '@/lib/permissions';
@@ -584,6 +585,14 @@ function Shell() {
                       >
                         <Settings className="w-4 h-4 text-slate-400" />
                         <span>Paramètres de la plateforme</span>
+                      </button>
+                      {/* Réglage personnel : ici plutôt que dans l'administration du menu latéral */}
+                      <button
+                        onClick={() => { setUserMenuOpen(false); navigate('parametres', 'preferences'); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <Sliders className="w-4 h-4 text-slate-400" />
+                        <span>Préférences d'affichage</span>
                       </button>
                       {profile?.super_admin && (
                         <button

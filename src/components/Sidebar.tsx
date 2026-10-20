@@ -43,12 +43,15 @@ import {
   Percent,
   CheckSquare,
   Scale,
+  ClipboardList,
+  PackageCheck,
 } from 'lucide-react';
 import type { Page } from '@/App';
 import type { Role } from '@/lib/supabase';
 import { can, type Module } from '@/lib/permissions';
 import { usePrefs } from '@/lib/prefs';
 import { useAuth } from '@/lib/auth';
+import { YosMark, YosWordmark } from '@/components/brand/YosLogo';
 
 export type NavSubItem = {
   id: string;
@@ -65,6 +68,7 @@ export type NavItem = {
   module: Module;
   dynamicBadge?: number;
   subTab?: string;
+  keywords?: string; // termes trouvés par la recherche sans être affichés
   children?: NavSubItem[];
 };
 
@@ -112,80 +116,47 @@ export function Sidebar({
     administration: false,
   });
 
-  // Nouveau Menu Entreprise 9 sections ordonné conforme aux spécifications
+  // Menu en 7 sections : chaque entrée en un clic, cycles de vente et d'achat dans l'ordre du métier,
+  // clients et fournisseurs à côté de leurs documents
   const navSections: NavSection[] = useMemo(() => [
     {
       title: "Vue d'ensemble",
       items: [
         { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, module: 'dashboard' },
-        { id: 'rapports', label: 'Rapports & Analyses', icon: BarChart3, module: 'rapports' },
+        { id: 'rapports', label: 'Rapports & analyses', icon: BarChart3, module: 'rapports' },
       ],
     },
     {
       title: 'Ventes',
       items: [
+        { id: 'caisse', label: 'Caisse (POS)', icon: Store, module: 'caisse' },
         {
           id: 'commandes',
-          label: 'Commandes & Ventes',
+          label: 'Commandes & factures',
           icon: ShoppingCart,
           module: 'commandes',
           dynamicBadge: dynamicCounts.pendingVentes,
-          children: [
-            { id: 'devis', label: 'Devis' },
-            { id: 'commandes', label: 'Commandes clients' },
-            { id: 'livraisons', label: 'Bons de livraison' },
-            { id: 'factures', label: 'Factures de vente' },
-            { id: 'avoirs', label: 'Avoirs & Retours' },
-          ],
+          keywords: 'devis commandes clients bons de livraison factures de vente avoirs retours',
         },
-        { id: 'caisse', label: 'Caisse (POS)', icon: Store, module: 'caisse' },
-        { id: 'tarifs', label: 'Grilles & Promotions', icon: Percent, module: 'commandes' },
+        { id: 'clients', label: 'Clients & fidélité', icon: Users, module: 'clients' },
+        { id: 'tarifs', label: 'Tarifs & promotions', icon: Percent, module: 'commandes' },
       ],
     },
     {
       title: 'Achats',
       items: [
+        { id: 'achats', subTab: 'demandes', label: "Demandes d'achat", icon: ClipboardList, module: 'commandes' },
         {
           id: 'achats',
-          label: 'Achats Fournisseurs',
-          icon: Truck,
-          module: 'commandes', // ou achats
+          subTab: 'bc',
+          label: 'Bons de commande',
+          icon: FileText,
+          module: 'commandes',
           dynamicBadge: dynamicCounts.pendingAchats,
-          children: [
-            { id: 'bc', label: 'Bons de commande' },
-            { id: 'demandes', label: 'Demandes d\'achat' },
-            { id: 'receptions', label: 'Réceptions (CMUP)' },
-            { id: 'retours', label: 'Retours fournisseurs' },
-          ],
         },
-      ],
-    },
-    {
-      title: 'Stock',
-      items: [
-        {
-          id: 'produits',
-          label: 'Produits',
-          icon: Package,
-          module: 'produits',
-          dynamicBadge: dynamicCounts.stockAlerts,
-        },
-        {
-          id: 'lots',
-          label: 'Lots & DLUO (FEFO)',
-          icon: Boxes,
-          module: 'lots',
-          dynamicBadge: dynamicCounts.lotsAlert,
-        },
-        { id: 'categories', label: 'Catégories', icon: Tags, module: 'categories' },
-        { id: 'mouvements', label: 'Mouvements & Pertes', icon: ArrowLeftRight, module: 'mouvements' },
-        {
-          id: 'inventaires',
-          label: 'Comptages de stock',
-          icon: ClipboardCheck,
-          module: 'inventaires',
-        },
-        { id: 'scan', label: 'Scan & étiquettes', icon: ScanLine, module: 'scan' },
+        { id: 'achats', subTab: 'receptions', label: 'Réceptions', icon: PackageCheck, module: 'commandes', keywords: 'cmup rapprochement' },
+        { id: 'achats', subTab: 'retours', label: 'Retours fournisseurs', icon: RotateCcw, module: 'commandes' },
+        { id: 'fournisseurs', label: 'Fournisseurs', icon: Truck, module: 'fournisseurs' },
         {
           id: 'reappro',
           label: 'Réapprovisionnement',
@@ -196,17 +167,29 @@ export function Sidebar({
       ],
     },
     {
-      title: 'Multi-sites',
+      title: 'Stock & sites',
       items: [
-        { id: 'entrepots', label: 'Entrepôts & boutiques', icon: Warehouse, module: 'entrepots' },
-        { id: 'transferts', label: 'Transferts inter-sites', icon: Repeat, module: 'transferts' },
-      ],
-    },
-    {
-      title: 'Tiers',
-      items: [
-        { id: 'clients', label: 'Clients & Fidélité', icon: Users, module: 'clients' },
-        { id: 'fournisseurs', label: 'Fournisseurs', icon: Truck, module: 'fournisseurs' },
+        {
+          id: 'produits',
+          label: 'Produits',
+          icon: Package,
+          module: 'produits',
+          dynamicBadge: dynamicCounts.stockAlerts,
+        },
+        { id: 'categories', label: 'Catégories', icon: Tags, module: 'categories' },
+        {
+          id: 'lots',
+          label: 'Lots & péremptions',
+          icon: Boxes,
+          module: 'lots',
+          dynamicBadge: dynamicCounts.lotsAlert,
+          keywords: 'dluo fefo',
+        },
+        { id: 'mouvements', label: 'Mouvements & pertes', icon: ArrowLeftRight, module: 'mouvements' },
+        { id: 'inventaires', label: 'Inventaires', icon: ClipboardCheck, module: 'inventaires', keywords: 'comptages' },
+        { id: 'scan', label: 'Scan & étiquettes', icon: ScanLine, module: 'scan' },
+        { id: 'entrepots', label: 'Entrepôts & boutiques', icon: Warehouse, module: 'entrepots', keywords: 'multi-sites' },
+        { id: 'transferts', label: 'Transferts entre sites', icon: Repeat, module: 'transferts' },
       ],
     },
     {
@@ -214,34 +197,19 @@ export function Sidebar({
       items: [
         {
           id: 'paiements',
-          label: 'Encaissements & Créances',
+          label: 'Encaissements & créances',
           icon: HandCoins,
           module: 'paiements',
           dynamicBadge: dynamicCounts.impayes,
         },
-        {
-          id: 'tresorerie',
-          label: 'Trésorerie & Dépenses',
-          icon: Wallet,
-          module: 'tresorerie',
-        },
-        {
-          id: 'comptabilite',
-          label: 'Comptabilité SYSCOHADA',
-          icon: Scale,
-          module: 'comptabilite',
-        },
+        { id: 'tresorerie', label: 'Trésorerie & dépenses', icon: Wallet, module: 'tresorerie' },
+        { id: 'comptabilite', label: 'Comptabilité SYSCOHADA', icon: Scale, module: 'comptabilite' },
       ],
     },
     {
       title: 'Équipe & RH',
       items: [
-        {
-          id: 'equipe',
-          label: 'Collaborateurs & Commissions',
-          icon: Award,
-          module: 'equipe',
-        },
+        { id: 'equipe', label: 'Collaborateurs & commissions', icon: Award, module: 'equipe' },
       ],
     },
     {
@@ -255,20 +223,11 @@ export function Sidebar({
           dynamicBadge: dynamicCounts.pendingValidations,
         },
         { id: 'audit', label: "Journal d'audit", icon: ShieldCheck, module: 'audit' },
-        {
-          id: 'parametres',
-          label: 'Paramètres du système',
-          icon: Settings,
-          module: 'parametres',
-          children: [
-            { id: 'donnees', label: 'Centre Import/Export' },
-            { id: 'utilisateurs', label: 'Utilisateurs & RBAC' },
-            { id: 'entreprise', label: 'Entreprise & Facturation' },
-            { id: 'preferences', label: 'Préférences d\'affichage' },
-            { id: 'modules', label: 'Gouvernance Modules' },
-            { id: 'integrations', label: 'API & Webhooks' },
-          ],
-        },
+        { id: 'parametres', subTab: 'utilisateurs', label: 'Utilisateurs & rôles', icon: KeyRound, module: 'parametres', keywords: 'rbac' },
+        { id: 'parametres', subTab: 'entreprise', label: 'Entreprise & abonnement', icon: Building2, module: 'parametres' },
+        { id: 'parametres', subTab: 'modules', label: 'Modules activés', icon: Layers, module: 'parametres' },
+        { id: 'parametres', subTab: 'donnees', label: 'Import / export', icon: Database, module: 'parametres' },
+        { id: 'parametres', subTab: 'integrations', label: 'Intégrations (API)', icon: Sliders, module: 'parametres', keywords: 'webhooks' },
       ],
     },
   ], [dynamicCounts]);
@@ -284,6 +243,7 @@ export function Sidebar({
           item.label.toLowerCase().includes(q) ||
           sec.title.toLowerCase().includes(q) ||
           item.id.toLowerCase().includes(q) ||
+          !!item.keywords?.includes(q) ||
           item.children?.some((c) => c.label.toLowerCase().includes(q))
         ),
       }))
@@ -297,19 +257,30 @@ export function Sidebar({
       } ${collapsed ? 'w-20' : 'w-72'}`}
     >
       {/* 1. AdminLTE Brand Logo */}
-      <div className="h-16 px-4 border-b border-slate-800/80 flex items-center justify-between bg-[#0f172a]/70 backdrop-blur flex-shrink-0">
-        <div className={`flex items-center gap-3 overflow-hidden ${collapsed ? 'justify-center w-full' : ''}`}>
-          <div className="w-10 h-10 rounded-xl bg-slate-900/90 border border-slate-700/60 p-1 flex items-center justify-center shadow-lg shadow-emerald-500/10 flex-shrink-0">
-            <img src="/icon-yos360.png" alt="YOS360" className="w-8 h-8 object-contain" />
-          </div>
-          {!collapsed && (
-            <div className="flex items-center min-w-0">
-              <span className="text-xl font-black tracking-tight text-white font-sans truncate">
-                <span className="text-sky-400">YOS</span><span className="text-emerald-400">360</span>
+      <div className="relative h-16 px-4 border-b border-slate-800/80 flex items-center justify-between bg-[#0f172a]/70 backdrop-blur flex-shrink-0 overflow-hidden">
+        {/* Halo vert discret derrière le cube */}
+        <div aria-hidden="true" className={`absolute top-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-[#48B068]/20 blur-2xl pointer-events-none ${collapsed ? 'left-1/2 -translate-x-1/2' : 'left-1'}`} />
+        {collapsed ? (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            title="Agrandir la barre latérale"
+            aria-label="Agrandir la barre latérale"
+            className="relative mx-auto p-1.5 rounded-xl hover:bg-white/5 transition-colors"
+          >
+            <YosMark className="w-8 h-8 drop-shadow-[0_4px_10px_rgba(72,176,104,0.35)]" />
+          </button>
+        ) : (
+          <div className="relative flex items-center gap-2.5 min-w-0">
+            <YosMark className="w-8 h-8 flex-shrink-0 drop-shadow-[0_4px_10px_rgba(72,176,104,0.35)]" title="YOS360" />
+            <div className="min-w-0 leading-none">
+              <YosWordmark onDark className="block text-[21px]" />
+              <span className="block mt-1 text-[9px] font-['Montserrat'] font-extrabold tracking-[0.22em] text-[#4FAEEB]/90">
+                <span className="font-medium tracking-[0.06em] text-slate-500 mr-1">by</span>YOPOE
               </span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {!collapsed && onToggleCollapse && (
           <button
@@ -365,12 +336,13 @@ export function Sidebar({
               <div className="space-y-0.5">
                 {items.map((item) => {
                   const Icon = item.icon;
-                  const active = currentPage === item.id;
+                  // Entrée liée à un onglet (achats, paramètres) : active seulement sur cet onglet
+                  const active = currentPage === item.id && (!item.subTab || (currentSubPage ?? '').startsWith(item.subTab));
                   const hasChildren = item.children && item.children.length > 0;
                   const isTreeOpen = expandedTrees[item.id] ?? (currentPage === item.id);
 
                   return (
-                    <div key={item.id} className="space-y-0.5">
+                    <div key={`${item.id}-${item.subTab ?? ''}`} className="space-y-0.5">
                       <div className="flex items-center">
                         <button
                           onClick={() => {
