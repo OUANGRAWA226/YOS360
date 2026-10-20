@@ -286,6 +286,7 @@ export type Entreprise = {
   rccm?: string | null;
   division_fiscale?: string | null;
   pack: string | null;
+  secteur?: 'superette' | 'grossiste' | null;
   suspendue: boolean;
   actif: boolean;
   created_at: string;

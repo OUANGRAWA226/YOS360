@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Check, Loader2, PauseCircle, PlayCircle, Package, ShieldAlert, Plus, X, Sparkles } from 'lucide-react';
+import { Building2, Check, Loader2, PauseCircle, PlayCircle, Package, ShieldAlert, Plus, X, Sparkles, ShoppingBasket, Truck, Store } from 'lucide-react';
 import { supabase, type Entreprise } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -20,6 +20,13 @@ const MODULES: { id: string; label: string; desc: string }[] = [
   { id: 'commandes', label: 'Commandes', desc: 'Achats et ventes' },
   { id: 'paiements', label: 'Paiements & créances', desc: 'Encaissements, dettes' },
   { id: 'caisse', label: 'Caisse (POS)', desc: 'Point de vente' },
+  { id: 'achats', label: 'Achats', desc: 'Demandes, bons de commande, réceptions' },
+  { id: 'tarifs', label: 'Tarifs & promotions', desc: 'Grilles par type de client' },
+  { id: 'validations', label: 'Validations', desc: 'Circuit d’approbation' },
+  { id: 'tresorerie', label: 'Trésorerie', desc: 'Caisses, banques, dépenses' },
+  { id: 'comptabilite', label: 'Comptabilité SYSCOHADA', desc: 'Journaux et états financiers' },
+  { id: 'equipe', label: 'Équipe & commissions', desc: 'Commerciaux et objectifs' },
+  { id: 'import_export', label: 'Import / export', desc: 'Données en masse' },
   { id: 'rapports', label: 'Rapports', desc: 'Analyses et exports' },
   { id: 'audit', label: 'Journal d’audit', desc: 'Traçabilité des actions' },
   { id: 'parametres', label: 'Paramètres', desc: 'Configuration' },
@@ -46,6 +53,37 @@ export const PACKS: { id: string; label: string; modules: string[]; desc: string
   },
 ];
 
+// Modèles métier : modules, catégories, grilles tarifaires et premier site,
+// appliqués côté base par appliquer_modele_metier (super admin uniquement)
+export const MODELES: { id: 'superette' | 'grossiste'; label: string; icon: typeof Store; desc: string; points: string[] }[] = [
+  {
+    id: 'superette',
+    label: 'Supérette / Alimentation',
+    icon: ShoppingBasket,
+    desc: 'Commerce de détail alimentaire',
+    points: [
+      'Caisse rapide, codes-barres, hors ligne',
+      'Péremptions (FEFO) et inventaires',
+      'Prix détail et client fidèle (−3 %)',
+      '8 catégories : épicerie, boissons, frais…',
+    ],
+  },
+  {
+    id: 'grossiste',
+    label: 'Grossiste / Distributeur',
+    icon: Truck,
+    desc: 'Négoce en volume',
+    points: [
+      'Tarifs détail, demi-gros (−5 %), gros (−10 %)',
+      'Plusieurs dépôts et transferts',
+      'Crédit client, trésorerie, comptabilité',
+      'Commerciaux et commissions',
+    ],
+  },
+];
+
+type ModeleResultat = { categories_creees: number; grilles_creees: number; site_cree: boolean; modules: number };
+
 type Props = {
   entreprise: Entreprise | null;
   entreprises: Entreprise[];
@@ -58,6 +96,7 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
   const [busy, setBusy] = useState(false);
   const [suspending, setSuspending] = useState<Entreprise | null>(null);
   const [packTarget, setPackTarget] = useState<string | null>(null);
+  const [modeleTarget, setModeleTarget] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -71,6 +110,7 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
     tva_taux: 18,
     tva_active: true,
     pack: 'standard',
+    secteur: '' as '' | 'superette' | 'grossiste',
   });
 
   const selected = entreprises.find((e) => e.id === selectedId) ?? null;
@@ -102,6 +142,7 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
     }
     setCreating(true);
     const packObj = PACKS.find((p) => p.id === newEnt.pack) ?? PACKS[1];
+    const secteur = newEnt.secteur;
     const { data, error } = await supabase
       .from('entreprises')
       .insert({
@@ -125,8 +166,12 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
       return;
     }
 
-    // Initialisation automatique du dépôt et catégorie par défaut
-    await Promise.all([
+    // Modèle métier : modules, catégories, grilles et premier site créés côté base.
+    // Sinon : initialisation minimale (dépôt et catégorie par défaut).
+    if (secteur) {
+      const out = await runModele(data.id, secteur);
+      if (out) Object.assign(data, out.ent);
+    } else await Promise.all([
       supabase.from('entrepots').insert({
         entreprise_id: data.id,
         nom: 'Boutique Principale',
@@ -153,6 +198,7 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
       tva_taux: 18,
       tva_active: true,
       pack: 'standard',
+      secteur: '',
     });
     onEntrepriseSaved(data as Entreprise);
     if (onEntrepriseCreated) onEntrepriseCreated(data as Entreprise);
@@ -171,6 +217,34 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
     const pack = PACKS.find((p) => p.id === packId);
     if (!pack) return;
     await patchEntreprise(selected.id, { modules: [...pack.modules], pack: pack.id }, `Pack « ${pack.label} » appliqué à ${selected.nom}`);
+  };
+
+  // Applique un modèle métier puis recharge l'entreprise (modules, secteur, pack à jour)
+  const runModele = async (entrepriseId: string, secteur: string): Promise<{ ent: Entreprise; res: ModeleResultat } | null> => {
+    const { data, error } = await supabase.rpc('appliquer_modele_metier', { p_entreprise: entrepriseId, p_secteur: secteur });
+    if (error) {
+      showToast('Échec du modèle métier : ' + error.message, 'error');
+      return null;
+    }
+    const { data: ent } = await supabase.from('entreprises').select('*').eq('id', entrepriseId).single();
+    if (!ent) return null;
+    onEntrepriseSaved(ent as Entreprise);
+    return { ent: ent as Entreprise, res: data as ModeleResultat };
+  };
+
+  const applyModele = async (secteur: string) => {
+    if (!selected) return;
+    setBusy(true);
+    const out = await runModele(selected.id, secteur);
+    setBusy(false);
+    if (!out) return;
+    const modele = MODELES.find((m) => m.id === secteur);
+    const ajouts = [
+      out.res.categories_creees ? `${out.res.categories_creees} catégorie(s)` : null,
+      out.res.grilles_creees ? `${out.res.grilles_creees} grille(s) tarifaire(s)` : null,
+      out.res.site_cree ? '1 point de vente' : null,
+    ].filter(Boolean);
+    showToast(`${selected.nom} configurée en « ${modele?.label} » : ${out.res.modules} modules${ajouts.length ? ', ' + ajouts.join(', ') + ' ajoutés' : ''}`);
   };
 
   const toggleSuspend = async () => {
@@ -214,6 +288,11 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
           >
             {e.suspendue && <ShieldAlert className="w-3.5 h-3.5 text-red-500" />}
             {e.nom}
+            {e.secteur && (
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${e.id === selectedId ? 'bg-white/20' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'}`}>
+                {e.secteur === 'superette' ? 'Supérette' : 'Grossiste'}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -230,13 +309,60 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
             </div>
           )}
 
+          {/* Modèles métier */}
+          <div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+              <Store className="w-4 h-4 text-emerald-600" /> Modèle métier
+            </p>
+            <p className="text-xs text-slate-400 mb-2">
+              Configure l’entreprise pour son métier en un clic : modules, catégories de produits, grilles tarifaires et premier point de vente.
+              Rien de ce que le client a déjà créé n’est supprimé.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {MODELES.map((m) => {
+                const Icon = m.icon;
+                const active = selected.secteur === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setModeleTarget(m.id)}
+                    disabled={busy}
+                    className={`p-4 rounded-xl border text-left transition-all disabled:opacity-50 ${
+                      active
+                        ? 'border-emerald-400 bg-emerald-50 dark:border-emerald-500/50 dark:bg-emerald-500/10'
+                        : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-slate-900 text-emerald-600 border border-slate-200 dark:border-slate-700'}`}>
+                        <Icon className="w-[18px] h-[18px]" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{m.label}</span>
+                        <span className="block text-xs text-slate-400">{active ? 'Modèle actuel' : m.desc}</span>
+                      </span>
+                      {active && <Check className="w-4 h-4 text-emerald-600 ml-auto" />}
+                    </span>
+                    <ul className="mt-3 space-y-1">
+                      {m.points.map((pt) => (
+                        <li key={pt} className="text-xs text-slate-500 dark:text-slate-400 flex gap-1.5">
+                          <span className="text-emerald-500" aria-hidden="true">•</span>{pt}
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Packs */}
           <div>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-2">
               <Package className="w-4 h-4 text-sky-600" /> Packs de modules
               {selected.pack && (
                 <span className="ml-2 text-xs font-normal text-slate-400">
-                  Pack actuel : {PACKS.find((p) => p.id === selected.pack)?.label ?? selected.pack}
+                  Pack actuel : {PACKS.find((p) => p.id === selected.pack)?.label ?? MODELES.find((m) => m.id === selected.pack)?.label ?? selected.pack}
                   {selected.pack !== 'complet' && ' (peut avoir été ajusté à la main)'}
                 </span>
               )}
@@ -329,6 +455,19 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
         }}
         title="Appliquer ce pack ?"
         message={`Les modules de ${selected?.nom ?? 'cette entreprise'} seront remplacés par ceux du pack sélectionné. Les ajustements manuels seront perdus.`}
+        confirmLabel="Appliquer"
+      />
+
+      <ConfirmDialog
+        open={!!modeleTarget}
+        onClose={() => setModeleTarget(null)}
+        onConfirm={() => {
+          const id = modeleTarget;
+          setModeleTarget(null);
+          if (id) applyModele(id);
+        }}
+        title={`Appliquer le modèle « ${MODELES.find((m) => m.id === modeleTarget)?.label ?? ''} » ?`}
+        message={`Les modules de ${selected?.nom ?? 'cette entreprise'} seront remplacés par ceux du modèle. Les catégories, grilles tarifaires et le premier point de vente manquants seront ajoutés ; rien d’existant n’est supprimé.`}
         confirmLabel="Appliquer"
       />
 
@@ -438,7 +577,31 @@ export function ModulesParEntreprise({ entreprise, entreprises, onEntrepriseSave
                   </select>
                 </div>
 
-                <div>
+                <div className="sm:col-span-2">
+                  <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Modèle métier
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[{ id: '' as const, label: 'Configuration libre', desc: 'Choisir un pack' }, ...MODELES.map((m) => ({ id: m.id, label: m.label, desc: m.desc }))].map((m) => (
+                      <button
+                        key={m.id || 'libre'}
+                        type="button"
+                        onClick={() => setNewEnt({ ...newEnt, secteur: m.id })}
+                        aria-pressed={newEnt.secteur === m.id}
+                        className={`p-2.5 rounded-xl border text-left transition-colors ${
+                          newEnt.secteur === m.id
+                            ? 'border-emerald-400 bg-emerald-50 dark:border-emerald-500/50 dark:bg-emerald-500/10'
+                            : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{m.label}</span>
+                        <span className="block text-xs text-slate-400">{m.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={newEnt.secteur ? 'hidden' : ''}>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                     Pack initial
                   </label>
