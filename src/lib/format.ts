@@ -1,13 +1,42 @@
-export function formatCurrency(value: number, devise: string = 'EUR'): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: devise === 'XOF' ? 'XOF' : devise,
-    maximumFractionDigits: devise === 'XOF' ? 0 : 2,
-  }).format(value);
+/**
+ * Formate un montant dans la devise spécifiée (par défaut FCFA / XOF pour la zone UEMOA).
+ * - Zone Franc CFA (XOF, XAF, FCFA, CFA) : formatage entier sans centimes avec 'FCFA'
+ * - Aucun crash Intl.NumberFormat sur 'FCFA' ou devise non ISO
+ * - Valeurs null / undefined protégées
+ */
+export function formatCurrency(value: number | string | null | undefined, devise: string = 'XOF'): string {
+  const num = typeof value === 'number' ? value : parseFloat(String(value || 0)) || 0;
+  const d = (devise || 'XOF').trim().toUpperCase();
+
+  // Zone Franc CFA (XOF / XAF / FCFA / CFA) : 0 décimales, séparateur de milliers
+  if (d === 'XOF' || d === 'FCFA' || d === 'CFA' || d === 'XAF') {
+    const formatted = new Intl.NumberFormat('fr-FR', {
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+    }).format(Math.round(num));
+    return `${formatted} FCFA`;
+  }
+
+  // Autres devises internationales avec gestion d'erreur sécurisée
+  try {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: d,
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+    }).format(num);
+  } catch {
+    // Fallback gracieux si code devise non standard
+    const formatted = new Intl.NumberFormat('fr-FR', {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+    }).format(num);
+    return `${formatted} ${devise || 'FCFA'}`;
+  }
 }
 
 // Alias métier: formate dans la devise de l'entreprise (FCFA par défaut)
-export function montant(value: number, devise?: string): string {
+export function montant(value: number | string | null | undefined, devise?: string): string {
   return formatCurrency(value, devise || 'XOF');
 }
 

@@ -4,7 +4,7 @@ import type { ProduitWithCategorie, Lot } from '@/lib/supabase';
 import { Modal } from '@/components/Modal';
 import { showToast } from '@/components/Toast';
 import { writeRow } from '@/lib/dataLayer';
-import { daysUntil, peremptionLabel, formatShortDate } from '@/lib/format';
+import { daysUntil, peremptionLabel, formatShortDate, formatCurrency } from '@/lib/format';
 import { can, type Role } from '@/lib/permissions';
 
 // Gestion des lots / numéros de série / dates de péremption d'un produit.
@@ -102,7 +102,7 @@ export function LotManager({ produit, lots, onClose, onChanged, role }: {
                       ) : <span className="text-slate-400">—</span>}
                     </td>
                     <td className="px-4 py-2 text-right font-semibold text-slate-900">{l.quantite}</td>
-                    <td className="px-4 py-2 hidden sm:table-cell text-right text-slate-600">{l.prix_unitaire > 0 ? Number(l.prix_unitaire).toFixed(2) + ' €' : '—'}</td>
+                    <td className="px-4 py-2 hidden sm:table-cell text-right text-slate-600">{l.prix_unitaire > 0 ? formatCurrency(l.prix_unitaire) : '—'}</td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex justify-end gap-1">
                         <button onClick={() => printLabel(l)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors" title="Étiquette"><Printer className="w-4 h-4" /></button>

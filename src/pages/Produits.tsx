@@ -765,7 +765,7 @@ function LabelModal({ produit, onClose }: { produit: ProduitWithCategorie; onClo
           <div className="mt-3">
             <Barcode39 value={code} height={60} moduleWidth={2} />
           </div>
-          <p className="text-sm font-semibold text-slate-900 mt-2">{produit.prix_vente.toFixed(2)} €</p>
+          <p className="text-sm font-semibold text-slate-900 mt-2">{formatCurrency(produit.prix_vente)}</p>
         </div>
         <button
           onClick={() => window.print()}

@@ -3,7 +3,7 @@ import { ScanLine, Keyboard, Printer, Camera, CameraOff, PackageSearch, Tag, Che
 import type { ProduitWithCategorie, Lot } from '@/lib/supabase';
 import { Barcode39 } from '@/components/Barcode39';
 import { showToast } from '@/components/Toast';
-import { formatNumber, daysUntil, peremptionLabel } from '@/lib/format';
+import { formatNumber, formatCurrency, daysUntil, peremptionLabel } from '@/lib/format';
 import { can, type Role } from '@/lib/permissions';
 import { Modal } from '@/components/Modal';
 import { Card, Callout } from '@/components/adminlte';
@@ -303,10 +303,10 @@ export function Scan({ produits, lots, role }: Props) {
                   Stock : <strong className="text-slate-900 dark:text-slate-100 font-bold">{formatNumber(found.quantite)} {found.unite}</strong>
                 </p>
                 <p>
-                  Prix de vente : <strong className="text-slate-900 dark:text-slate-100">{found.prix_vente.toFixed(2)} €</strong>
+                  Prix de vente : <strong className="text-slate-900 dark:text-slate-100">{formatCurrency(found.prix_vente)}</strong>
                 </p>
                 <p>
-                  CMUP : <strong className="text-slate-900 dark:text-slate-100">{Number(found.cmup).toFixed(2)} €</strong>
+                  CMUP : <strong className="text-slate-900 dark:text-slate-100">{formatCurrency(Number(found.cmup))}</strong>
                 </p>
               </div>
             </div>
@@ -362,7 +362,7 @@ export function Scan({ produits, lots, role }: Props) {
               <div className="mt-3">
                 <Barcode39 value={found.code_barres || found.sku || found.id.slice(0, 8).toUpperCase()} height={60} moduleWidth={2} />
               </div>
-              <p className="text-sm font-semibold text-slate-900 mt-2">{found.prix_vente.toFixed(2)} €</p>
+              <p className="text-sm font-semibold text-slate-900 mt-2">{formatCurrency(found.prix_vente)}</p>
             </div>
             <button
               onClick={() => window.print()}
