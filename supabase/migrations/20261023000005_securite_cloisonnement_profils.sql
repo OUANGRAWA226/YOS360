@@ -29,6 +29,9 @@ Corrige quatre failles critiques relevées à l'audit des profils.
    - Avant : la contrainte n'acceptait que admin, gestionnaire, magasinier, vendeur.
    - Après : les 8 rôles de l'application sont acceptés.
 
+   • le journal d'audit est cloisonné par entreprise (il était lisible en entier
+     par tout administrateur dans le schéma d'installation complète).
+
 4. Secret de double authentification lisible
    - Avant : `profiles.two_factor_secret`, lisible par quiconque pouvait lire le profil.
    - Après : déplacé dans `profils_secrets`, sans aucun accès depuis l'application
@@ -316,7 +319,47 @@ CREATE TRIGGER trg_protect_entreprise_governance
   FOR EACH ROW EXECUTE FUNCTION public.protect_entreprise_governance();
 
 -- =============================================================================
--- 5. SECRET DE DOUBLE AUTHENTIFICATION HORS DU PROFIL
+-- 5. JOURNAL D'AUDIT : CHAQUE ENTREPRISE LIT LE SIEN
+-- =============================================================================
+-- Le schéma d'installation complète n'a pas de colonne entreprise_id sur le journal
+-- et le laissait lire en entier par tout administrateur.
+
+ALTER TABLE public.journal_audit ADD COLUMN IF NOT EXISTS entreprise_id uuid REFERENCES public.entreprises(id);
+ALTER TABLE public.journal_audit ALTER COLUMN entreprise_id SET DEFAULT public.current_entreprise_id();
+
+-- Entrées existantes : entreprise de l'auteur de l'action
+UPDATE public.journal_audit j
+SET entreprise_id = p.entreprise_id
+FROM public.profiles p
+WHERE j.entreprise_id IS NULL AND p.id = j.user_id;
+
+DO $$
+DECLARE pol record;
+BEGIN
+  FOR pol IN
+    SELECT policyname FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'journal_audit' AND cmd IN ('SELECT', 'ALL')
+  LOOP
+    EXECUTE format('DROP POLICY %I ON public.journal_audit', pol.policyname);
+  END LOOP;
+END $$;
+
+-- Mêmes rôles que la matrice de l'application (module audit : lecture)
+CREATE POLICY "journal_audit_select" ON public.journal_audit FOR SELECT TO authenticated
+  USING (
+    public.is_super_admin()
+    OR (
+      entreprise_id = public.current_entreprise_id()
+      AND EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND actif = true
+          AND role IN ('proprietaire', 'admin', 'gerant', 'gestionnaire', 'comptable')
+      )
+    )
+  );
+
+-- =============================================================================
+-- 6. SECRET DE DOUBLE AUTHENTIFICATION HORS DU PROFIL
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.profils_secrets (
