@@ -8,6 +8,8 @@ interface CardProps {
   variant?: CardVariant;
   outline?: boolean;
   tools?: React.ReactNode;
+  actions?: React.ReactNode;
+  badge?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   collapsible?: boolean;
@@ -48,6 +50,8 @@ export const Card: React.FC<CardProps> = ({
   variant = 'primary',
   outline = true,
   tools,
+  actions,
+  badge,
   children,
   footer,
   collapsible = false,
@@ -88,12 +92,12 @@ export const Card: React.FC<CardProps> = ({
       } ${outlineStyle} ${className}`}
     >
       {/* Card Header */}
-      {(title || tools || collapsible || maximizable) && (
+      {(title || tools || actions || badge || collapsible || maximizable) && (
         <div
           className={`flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-800 ${headerSolidStyle} ${headerClassName}`}
         >
           {/* Card Title */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
             {icon && <span className="flex-shrink-0 text-current opacity-85">{renderIcon()}</span>}
             {typeof title === 'string' ? (
               <h3 className="text-base font-semibold tracking-tight truncate">
@@ -102,11 +106,17 @@ export const Card: React.FC<CardProps> = ({
             ) : (
               title
             )}
+            {badge && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300">
+                {badge}
+              </span>
+            )}
           </div>
 
-          {/* Card Tools */}
+          {/* Card Tools & Actions */}
           <div className="flex items-center gap-1.5 ml-3 flex-shrink-0">
             {tools}
+            {actions}
 
             {collapsible && (
               <button

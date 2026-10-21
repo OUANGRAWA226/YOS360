@@ -7,9 +7,11 @@ interface InfoBoxProps {
   title: string;
   value: string | number;
   variant?: InfoBoxVariant;
+  color?: InfoBoxVariant | string;
   icon?: LucideIcon | string | React.ComponentType<{ className?: string }> | React.ReactNode;
   progress?: number; // 0 to 100
   description?: string;
+  subText?: string;
   className?: string;
   onClick?: () => void;
 }
@@ -38,12 +40,16 @@ export const InfoBox: React.FC<InfoBoxProps> = ({
   title,
   value,
   variant = 'primary',
+  color,
   icon,
   progress,
   description,
+  subText,
   className = '',
   onClick,
 }) => {
+  const effectiveVariant: InfoBoxVariant = ((color as InfoBoxVariant) || variant || 'primary');
+  const effectiveDescription = subText || description;
   const renderIcon = () => {
     if (!icon) return null;
     if (React.isValidElement(icon)) return icon;
@@ -66,7 +72,7 @@ export const InfoBox: React.FC<InfoBoxProps> = ({
     >
       {/* Icon Square */}
       <div
-        className={`w-14 h-14 sm:w-16 sm:h-16 rounded flex items-center justify-center flex-shrink-0 shadow-sm ${iconVariantBg[variant]}`}
+        className={`w-14 h-14 sm:w-16 sm:h-16 rounded flex items-center justify-center flex-shrink-0 shadow-sm ${iconVariantBg[effectiveVariant]}`}
       >
         {renderIcon()}
       </div>
@@ -84,16 +90,16 @@ export const InfoBox: React.FC<InfoBoxProps> = ({
         {typeof progress === 'number' && (
           <div className="mt-1.5 w-full bg-gray-200 dark:bg-slate-700 h-1 rounded-full overflow-hidden">
             <div
-              className={`h-full ${progressVariantBg[variant]} transition-all duration-500`}
+              className={`h-full ${progressVariantBg[effectiveVariant]} transition-all duration-500`}
               style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
             />
           </div>
         )}
 
         {/* Optional Description */}
-        {description && (
+        {effectiveDescription && (
           <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-            {description}
+            {effectiveDescription}
           </span>
         )}
       </div>

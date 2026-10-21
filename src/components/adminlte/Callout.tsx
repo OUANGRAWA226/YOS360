@@ -6,6 +6,7 @@ export type CalloutVariant = 'info' | 'warning' | 'danger' | 'success';
 interface CalloutProps {
   title?: string;
   variant?: CalloutVariant;
+  type?: CalloutVariant;
   children: React.ReactNode;
   className?: string;
 }
@@ -49,11 +50,13 @@ const calloutStyles: Record<CalloutVariant, {
 
 export const Callout: React.FC<CalloutProps> = ({
   title,
-  variant = 'info',
+  variant,
+  type,
   children,
   className = '',
 }) => {
-  const style = calloutStyles[variant];
+  const effectiveVariant = variant || type || 'info';
+  const style = calloutStyles[effectiveVariant];
   const Icon = style.icon;
 
   return (

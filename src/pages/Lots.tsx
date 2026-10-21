@@ -307,36 +307,36 @@ export function Lots({
           title="Total des Lots"
           value={stats.totalLots}
           icon={Layers}
-          color="info"
-          subText={`${formatNumber(stats.totalQte)} unités tracées`}
+          variant="info"
+          description={`${formatNumber(stats.totalQte)} unités tracées`}
         />
         <InfoBox
           title="Alerte DLUO J-30"
           value={stats.alerteJ30}
           icon={Clock}
-          color="warning"
-          subText="À écouler en priorité"
+          variant="warning"
+          description="À écouler en priorité"
         />
         <InfoBox
           title="Critique DLUO J-7"
           value={stats.critiqueJ7}
           icon={AlertTriangle}
-          color="danger"
-          subText="Péril imminent"
+          variant="danger"
+          description="Péril imminent"
         />
         <InfoBox
           title="Lots Périmés"
           value={stats.perimes}
           icon={ShieldAlert}
-          color="danger"
-          subText="Retrait immédiat"
+          variant="danger"
+          description="Retrait immédiat"
         />
         <InfoBox
           title="En Quarantaine"
           value={stats.quarantaine}
           icon={AlertOctagon}
-          color="secondary"
-          subText="Bloqués à la vente"
+          variant="secondary"
+          description="Bloqués à la vente"
         />
       </div>
 
@@ -780,7 +780,7 @@ export function Lots({
         size="lg"
       >
         <div className="space-y-4">
-          <Callout type="info" title="Principe de fonctionnement FEFO">
+          <Callout variant="info" title="Principe de fonctionnement FEFO">
             Lorsqu'une commande client ou une vente en caisse est validée, l'algorithme FEFO alloue en
             priorité les lots dont la <strong>Date Limite d'Utilisation Optimale (DLUO)</strong> est la
             plus proche afin de minimiser les pertes par péremption.
