@@ -458,6 +458,16 @@ export function Validations({ role, entrepots, loading: parentLoading }: Props) 
                 <p>{inspectTarget.motif_rejet}</p>
               </div>
             )}
+
+            <div className="modal-footer-lte">
+              <button
+                type="button"
+                onClick={() => setInspectTarget(null)}
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+              >
+                Fermer
+              </button>
+            </div>
           </div>
         )}
       </Modal>
@@ -479,12 +489,12 @@ export function Validations({ role, entrepots, loading: parentLoading }: Props) 
         title={`Refuser la demande ${rejectTarget?.reference_numero}`}
       >
         <div className="space-y-4 text-xs">
-          <p className="text-slate-500">
+          <p className="text-slate-500 dark:text-slate-400">
             Veuillez motiver le motif du rejet. Ce message sera consigné dans l'audit et communiqué au demandeur.
           </p>
 
           <div>
-            <label className="block font-semibold mb-1">Motif obligatoire du refus *</label>
+            <label className="form-label-lte">Motif obligatoire du refus *</label>
             <textarea
               rows={3}
               value={motifRejet}
@@ -494,11 +504,11 @@ export function Validations({ role, entrepots, loading: parentLoading }: Props) 
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button onClick={() => setRejectTarget(null)} className="btn-lte btn-lte-outline">
+          <div className="modal-footer-lte">
+            <button onClick={() => setRejectTarget(null)} className="btn-lte btn-lte-sm btn-lte-outline-secondary">
               Annuler
             </button>
-            <button onClick={handleReject} disabled={saving} className="btn-lte btn-lte-danger">
+            <button onClick={handleReject} disabled={saving} className="btn-lte btn-lte-sm btn-lte-danger">
               Confirmer le Refus
             </button>
           </div>

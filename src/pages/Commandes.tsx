@@ -430,29 +430,61 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
 
       {/* Create modal */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Nouvelle commande" size="lg">
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => { setCmdType('vente'); setPartnerId(''); }} className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${cmdType === 'vente' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Vente (Client)</button>
-            <button onClick={() => { setCmdType('achat'); setPartnerId(''); }} className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${cmdType === 'achat' ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Achat (Fournisseur)</button>
+            <button
+              type="button"
+              onClick={() => { setCmdType('vente'); setPartnerId(''); }}
+              className={`btn-lte py-2.5 ${cmdType === 'vente' ? 'btn-lte-success font-semibold shadow-sm' : 'btn-lte-outline-secondary'}`}
+            >
+              Vente (Client)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setCmdType('achat'); setPartnerId(''); }}
+              className={`btn-lte py-2.5 ${cmdType === 'achat' ? 'btn-lte-primary font-semibold shadow-sm' : 'btn-lte-outline-secondary'}`}
+            >
+              Achat (Fournisseur)
+            </button>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{cmdType === 'achat' ? 'Fournisseur *' : 'Client *'}</label>
-            <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+            <label className="form-label-lte">{cmdType === 'achat' ? 'Fournisseur *' : 'Client *'}</label>
+            <select
+              value={partnerId}
+              onChange={(e) => setPartnerId(e.target.value)}
+              className="form-select-lte text-sm"
+              required
+            >
               <option value="">Sélectionner...</option>
               {(cmdType === 'achat' ? fournisseurs : clients).map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date de livraison prévue</label>
-            <input type="date" value={dateLivraison} onChange={(e) => setDateLivraison(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <label className="form-label-lte">Date de livraison prévue</label>
+            <input
+              type="date"
+              value={dateLivraison}
+              onChange={(e) => setDateLivraison(e.target.value)}
+              className="form-control-lte text-sm"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Type de document</label>
-              <select value={typeDocument} onChange={(e) => setTypeDocument(e.target.value as 'facture' | 'devis' | 'bon_livraison' | 'avoir')} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+              <label className="form-label-lte">Type de document</label>
+              <select
+                value={typeDocument}
+                onChange={(e) => setTypeDocument(e.target.value as 'facture' | 'devis' | 'bon_livraison' | 'avoir')}
+                className="form-select-lte text-sm"
+              >
                 {(['facture', 'devis', 'bon_livraison', 'avoir'] as const).map((t) => (
                   <option key={t} value={t}>{TYPE_DOCUMENT_LABELS[t]}</option>
                 ))}
@@ -460,48 +492,109 @@ export function Commandes({ commandes, produits, fournisseurs, clients, entrepri
               <p className="text-xs text-slate-400 mt-1">Numéro attribué : {nextNumeroDocument(typeDocument, numerosFactures)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Échéance de paiement</label>
-              <input type="date" value={dateEcheance} onChange={(e) => setDateEcheance(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="form-label-lte">Échéance de paiement</label>
+              <input
+                type="date"
+                value={dateEcheance}
+                onChange={(e) => setDateEcheance(e.target.value)}
+                className="form-control-lte text-sm"
+              />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-slate-700">Produits</label>
-              <button onClick={addItem} className="text-sm text-sky-600 font-medium hover:text-sky-700 flex items-center gap-1"><Plus className="w-4 h-4" /> Ajouter ligne</button>
+              <label className="form-label-lte mb-0">Articles de la commande</label>
+              <button
+                type="button"
+                onClick={addItem}
+                className="btn-lte btn-lte-xs btn-lte-outline-primary flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> Ajouter une ligne
+              </button>
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {items.map((it, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-xl p-2">
-                  <select value={it.produit_id} onChange={(e) => updateItem(idx, 'produit_id', e.target.value)} className="flex-1 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white min-w-0">
-                    <option value="">Produit...</option>
+                <div key={idx} className="flex items-center gap-2 bg-slate-50 dark:bg-[#101e17] border border-slate-200 dark:border-[#1c3328] rounded-md p-2">
+                  <select
+                    value={it.produit_id}
+                    onChange={(e) => updateItem(idx, 'produit_id', e.target.value)}
+                    className="form-select-lte text-sm flex-1 min-w-0"
+                  >
+                    <option value="">Sélectionner un produit...</option>
                     {produits.map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
                   </select>
                   {cmdType === 'vente' && it.produit_id && unitesDe(it.produit_id).length > 0 && (
-                    <select value={it.unite_id} onChange={(e) => updateItem(idx, 'unite_id', e.target.value)} aria-label="Unité" className="w-28 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+                    <select
+                      value={it.unite_id}
+                      onChange={(e) => updateItem(idx, 'unite_id', e.target.value)}
+                      aria-label="Unité"
+                      className="form-select-lte text-sm w-28"
+                    >
                       <option value="">{produits.find((p) => p.id === it.produit_id)?.unite || 'Unité'}</option>
                       {unitesDe(it.produit_id).map((u) => <option key={u.id} value={u.id}>{u.nom_unite} ({Number(u.coefficient)})</option>)}
                     </select>
                   )}
-                  <input type="number" value={it.quantite} onChange={(e) => updateItem(idx, 'quantite', e.target.value)} min="0" step="any" className="w-16 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Qté" />
-                  <input type="number" step="0.01" value={it.prix_unitaire} onChange={(e) => updateItem(idx, 'prix_unitaire', e.target.value)} className="w-20 px-2 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Prix" />
-                  <button onClick={() => removeItem(idx)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><X className="w-4 h-4" /></button>
+                  <input
+                    type="number"
+                    value={it.quantite}
+                    onChange={(e) => updateItem(idx, 'quantite', e.target.value)}
+                    min="0"
+                    step="any"
+                    className="form-control-lte text-sm w-16"
+                    placeholder="Qté"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={it.prix_unitaire}
+                    onChange={(e) => updateItem(idx, 'prix_unitaire', e.target.value)}
+                    className="form-control-lte text-sm w-24"
+                    placeholder="Prix"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem(idx)}
+                    className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
-            <div className="mt-2 text-right text-sm font-semibold text-slate-900">Total: {formatCurrency(totalCmd)}</div>
+            <div className="mt-2 text-right text-sm font-semibold text-slate-900 dark:text-white">
+              Total : {formatCurrency(totalCmd)}
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" />
+            <label className="form-label-lte">Note / Remarques</label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="form-control-lte text-sm resize-none"
+              placeholder="Instructions particulières..."
+            />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button onClick={() => setCreateOpen(false)} className="px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors">Annuler</button>
-            <button onClick={save} disabled={saving} className="px-4 py-2.5 text-sm font-medium text-white bg-sky-600 rounded-xl hover:bg-sky-700 transition-colors shadow-sm disabled:opacity-50">{saving ? 'Enregistrement...' : 'Créer la commande'}</button>
+          <div className="modal-footer-lte">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(false)}
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
+            >
+              {saving ? 'Enregistrement...' : 'Créer la commande'}
+            </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* View modal */}
@@ -664,29 +757,29 @@ function ReceiveModal({ commande, onClose, onDone }: {
   return (
     <Modal open={true} onClose={onClose} title={`Réception — ${commande.reference || ''}`} size="lg">
       <div className="space-y-4">
-        <p className="text-sm text-slate-500">Saisissez les quantités réellement reçues. Le reliquat reste suivi sur la commande (80 reçus sur 100 = 20 en attente).</p>
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <p className="text-xs text-slate-500 dark:text-slate-400">Saisissez les quantités réellement reçues. Le reliquat reste suivi sur la commande (80 reçus sur 100 = 20 en attente).</p>
+        <div className="border border-slate-200 dark:border-[#24382e] rounded-md overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="bg-slate-50 dark:bg-[#101e17] border-b border-slate-200 dark:border-[#24382e]">
               <tr>
-                <th className="text-left px-4 py-2 font-semibold text-slate-600">Produit</th>
-                <th className="text-right px-4 py-2 font-semibold text-slate-600">Commandé</th>
-                <th className="text-right px-4 py-2 font-semibold text-slate-600">Déjà reçu</th>
-                <th className="text-right px-4 py-2 font-semibold text-slate-600">Reliquat</th>
-                <th className="text-right px-4 py-2 font-semibold text-slate-600">Recevoir</th>
+                <th className="text-left px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Produit</th>
+                <th className="text-right px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Commandé</th>
+                <th className="text-right px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Déjà reçu</th>
+                <th className="text-right px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Reliquat</th>
+                <th className="text-right px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Recevoir</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1c3328]">
               {(commande.commande_items || []).map((it) => {
                 const recu = it.quantite_recue || 0;
                 const reste = Math.max(it.quantite - recu, 0);
                 return (
-                  <tr key={it.id} className={reste === 0 ? 'opacity-50' : ''}>
-                    <td className="px-4 py-2 text-slate-900">{it.produits?.nom || '—'}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{it.quantite}</td>
-                    <td className="px-4 py-2 text-right text-emerald-700 font-medium">{recu}</td>
-                    <td className={`px-4 py-2 text-right font-semibold ${reste > 0 ? 'text-amber-700' : 'text-slate-400'}`}>{reste}</td>
-                    <td className="px-4 py-2 text-right">
+                  <tr key={it.id} className={reste === 0 ? 'opacity-50' : 'hover:bg-slate-50/50 dark:hover:bg-[#101e17]/50'}>
+                    <td className="px-3 py-2 text-slate-900 dark:text-slate-100 font-medium">{it.produits?.nom || '—'}</td>
+                    <td className="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{it.quantite}</td>
+                    <td className="px-3 py-2 text-right text-emerald-600 dark:text-emerald-400 font-medium">{recu}</td>
+                    <td className={`px-3 py-2 text-right font-semibold ${reste > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`}>{reste}</td>
+                    <td className="px-3 py-2 text-right">
                       <input
                         type="number"
                         min="0"
@@ -695,7 +788,7 @@ function ReceiveModal({ commande, onClose, onDone }: {
                         onChange={(e) => setQty((prev) => ({ ...prev, [it.id]: e.target.value }))}
                         disabled={reste === 0}
                         placeholder="0"
-                        className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-slate-50"
+                        className="w-20 form-control-lte text-xs text-right disabled:opacity-40"
                       />
                     </td>
                   </tr>
@@ -704,10 +797,21 @@ function ReceiveModal({ commande, onClose, onDone }: {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-slate-400">Reliquat total : {restantTotal} unité(s). Chaque quantité reçue crée automatiquement une entrée de stock valorisée au prix d'achat.</p>
-        <div className="flex items-center justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors">Annuler</button>
-          <button onClick={receive} disabled={saving} className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50">
+        <p className="text-xs text-slate-400 dark:text-slate-500">Reliquat total : {restantTotal} unité(s). Chaque quantité reçue crée automatiquement une entrée de stock valorisée au prix d'achat.</p>
+        <div className="modal-footer-lte">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={receive}
+            disabled={saving}
+            className="btn-lte btn-lte-sm btn-lte-success flex items-center gap-1.5 disabled:opacity-50"
+          >
             <PackageCheck className="w-4 h-4" /> {saving ? 'Réception...' : 'Enregistrer la réception'}
           </button>
         </div>

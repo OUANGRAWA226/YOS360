@@ -132,7 +132,7 @@ export function PackagingUnitsModal({ produit, onClose }: UnitsModalProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Nom du conditionnement *</label>
+              <label className="form-label-lte">Nom du conditionnement *</label>
               <input
                 type="text"
                 value={nomUnite}
@@ -143,7 +143,7 @@ export function PackagingUnitsModal({ produit, onClose }: UnitsModalProps) {
             </div>
 
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Code court</label>
+              <label className="form-label-lte">Code court</label>
               <input
                 type="text"
                 value={codeCourt}
@@ -154,7 +154,7 @@ export function PackagingUnitsModal({ produit, onClose }: UnitsModalProps) {
             </div>
 
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">
+              <label className="form-label-lte">
                 Contient combien de {produit.unite}s ? *
               </label>
               <input
@@ -169,7 +169,7 @@ export function PackagingUnitsModal({ produit, onClose }: UnitsModalProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Prix de vente suggéré (FCFA)</label>
+              <label className="form-label-lte">Prix de vente suggéré (FCFA)</label>
               <input
                 type="number"
                 placeholder={`Ex: ${produit.prix_vente * (parseFloat(coefficient) || 1)}`}
@@ -180,7 +180,7 @@ export function PackagingUnitsModal({ produit, onClose }: UnitsModalProps) {
             </div>
 
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Code-barres du carton</label>
+              <label className="form-label-lte">Code-barres du carton</label>
               <input
                 type="text"
                 placeholder="Scan du code-barres sur le carton"
@@ -251,6 +251,16 @@ export function PackagingUnitsModal({ produit, onClose }: UnitsModalProps) {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="modal-footer-lte">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+          >
+            Fermer
+          </button>
         </div>
       </div>
     </Modal>
@@ -346,7 +356,7 @@ export function VariantsModal({ produit, onClose }: VariantsModalProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Taille / Format</label>
+              <label className="form-label-lte">Taille / Format</label>
               <input
                 type="text"
                 placeholder="Ex: S, M, L, XL, 500ml"
@@ -357,7 +367,7 @@ export function VariantsModal({ produit, onClose }: VariantsModalProps) {
             </div>
 
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Couleur / Teinte</label>
+              <label className="form-label-lte">Couleur / Teinte</label>
               <input
                 type="text"
                 placeholder="Ex: Bleu, Noir, Rouge"
@@ -368,7 +378,7 @@ export function VariantsModal({ produit, onClose }: VariantsModalProps) {
             </div>
 
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">SKU Variante (Optionnel)</label>
+              <label className="form-label-lte">SKU Variante (Optionnel)</label>
               <input
                 type="text"
                 placeholder="Généré auto si vide"
@@ -379,7 +389,7 @@ export function VariantsModal({ produit, onClose }: VariantsModalProps) {
             </div>
 
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Prix Vente (FCFA)</label>
+              <label className="form-label-lte">Prix Vente (FCFA)</label>
               <input
                 type="number"
                 value={prixVente}
@@ -457,6 +467,16 @@ export function VariantsModal({ produit, onClose }: VariantsModalProps) {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="modal-footer-lte">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+          >
+            Fermer
+          </button>
         </div>
       </div>
     </Modal>
@@ -579,11 +599,11 @@ export function BOMKitModal({ produit, catalogueProduits, onClose }: BOMModalPro
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Composant / Ingrédient *</label>
+              <label className="form-label-lte">Composant / Ingrédient *</label>
               <select
                 value={selectedCompId}
                 onChange={(e) => setSelectedCompId(e.target.value)}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
               >
                 <option value="">Sélectionner un article du stock</option>
                 {catalogueProduits
@@ -597,7 +617,7 @@ export function BOMKitModal({ produit, catalogueProduits, onClose }: BOMModalPro
             </div>
 
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 mb-1">Quantité requise par kit *</label>
+              <label className="form-label-lte">Quantité requise par kit *</label>
               <input
                 type="number"
                 step="0.01"
@@ -678,6 +698,16 @@ export function BOMKitModal({ produit, catalogueProduits, onClose }: BOMModalPro
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="modal-footer-lte">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+          >
+            Fermer
+          </button>
         </div>
       </div>
     </Modal>

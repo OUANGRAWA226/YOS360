@@ -674,7 +674,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
       >
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block font-semibold mb-1">Nom de la grille *</label>
+            <label className="form-label-lte">Nom de la grille *</label>
             <input
               type="text"
               placeholder="Ex: Tarif Revendeurs & Grossistes"
@@ -686,11 +686,11 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">Catégorie Client Cible</label>
+              <label className="form-label-lte">Catégorie Client Cible</label>
               <select
                 value={grilleForm.categorie_client}
                 onChange={(e) => setGrilleForm({ ...grilleForm, categorie_client: e.target.value as CategorieClient })}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
               >
                 <option value="detail">Détail</option>
                 <option value="demi_gros">Demi-gros</option>
@@ -701,7 +701,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Remise Globale (%)</label>
+              <label className="form-label-lte">Remise Globale (%)</label>
               <input
                 type="number"
                 min="0"
@@ -714,7 +714,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Description / Conditions</label>
+            <label className="form-label-lte">Description / Conditions</label>
             <textarea
               rows={2}
               value={grilleForm.description}
@@ -724,11 +724,11 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button onClick={() => setModalGrilleOpen(false)} className="btn-lte btn-lte-outline">
+          <div className="modal-footer-lte">
+            <button onClick={() => setModalGrilleOpen(false)} className="btn-lte btn-lte-sm btn-lte-outline-secondary">
               Annuler
             </button>
-            <button onClick={handleSaveGrille} className="btn-lte btn-lte-primary">
+            <button onClick={handleSaveGrille} className="btn-lte btn-lte-sm btn-lte-primary">
               Enregistrer
             </button>
           </div>
@@ -743,7 +743,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
       >
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block font-semibold mb-1">Nom de la Campagne *</label>
+            <label className="form-label-lte">Nom de la Campagne *</label>
             <input
               type="text"
               placeholder="Ex: Solde Tabaski 2026"
@@ -755,7 +755,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">Code Coupon (Saisi par le client/caissier)</label>
+              <label className="form-label-lte">Code Coupon (Saisi par le client/caissier)</label>
               <input
                 type="text"
                 placeholder="Ex: TABASKI15"
@@ -766,11 +766,11 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Type de remise</label>
+              <label className="form-label-lte">Type de remise</label>
               <select
                 value={promoForm.type_remise}
                 onChange={(e) => setPromoForm({ ...promoForm, type_remise: e.target.value as any })}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
               >
                 <option value="pourcentage">Pourcentage (%)</option>
                 <option value="montant_fixe">Montant Fixe (FCFA)</option>
@@ -780,7 +780,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">
+              <label className="form-label-lte">
                 Valeur de la Remise ({promoForm.type_remise === 'pourcentage' ? '%' : 'FCFA'})
               </label>
               <input
@@ -793,7 +793,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Panier Minimum Requis (FCFA)</label>
+              <label className="form-label-lte">Panier Minimum Requis (FCFA)</label>
               <input
                 type="number"
                 min="0"
@@ -806,7 +806,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">Date de début</label>
+              <label className="form-label-lte">Date de début</label>
               <input
                 type="date"
                 value={promoForm.date_debut}
@@ -816,7 +816,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Date d'expiration</label>
+              <label className="form-label-lte">Date d'expiration</label>
               <input
                 type="date"
                 value={promoForm.date_fin}
@@ -827,7 +827,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Nombre d'utilisations maximal</label>
+            <label className="form-label-lte">Nombre d'utilisations maximal</label>
             <input
               type="number"
               min="1"
@@ -837,11 +837,11 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button onClick={() => setModalPromoOpen(false)} className="btn-lte btn-lte-outline">
+          <div className="modal-footer-lte">
+            <button onClick={() => setModalPromoOpen(false)} className="btn-lte btn-lte-sm btn-lte-outline-secondary">
               Annuler
             </button>
-            <button onClick={handleSavePromo} className="btn-lte btn-lte-primary">
+            <button onClick={handleSavePromo} className="btn-lte btn-lte-sm btn-lte-primary">
               Créer la promotion
             </button>
           </div>
@@ -856,11 +856,11 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
       >
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block font-semibold mb-1">Article / Produit</label>
+            <label className="form-label-lte">Article / Produit</label>
             <select
               value={ligneForm.produit_id}
               onChange={(e) => setLigneForm({ ...ligneForm, produit_id: e.target.value })}
-              className="form-control-lte text-xs"
+              className="form-select-lte text-xs"
             >
               <option value="">Sélectionner un produit</option>
               {produits.map((p) => (
@@ -873,7 +873,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">Prix Négocié Fixe (FCFA)</label>
+              <label className="form-label-lte">Prix Négocié Fixe (FCFA)</label>
               <input
                 type="number"
                 placeholder="Ex: 2500"
@@ -884,7 +884,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">OU Remise Spécifique (%)</label>
+              <label className="form-label-lte">OU Remise Spécifique (%)</label>
               <input
                 type="number"
                 placeholder="Ex: 12"
@@ -896,7 +896,7 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Palier : Quantité minimale requise</label>
+            <label className="form-label-lte">Palier : Quantité minimale requise</label>
             <input
               type="number"
               min="1"
@@ -906,11 +906,11 @@ export function TarifsPromos({ produits, clients, role, loading: parentLoading }
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button onClick={() => setModalLigneOpen(false)} className="btn-lte btn-lte-outline">
+          <div className="modal-footer-lte">
+            <button onClick={() => setModalLigneOpen(false)} className="btn-lte btn-lte-sm btn-lte-outline-secondary">
               Annuler
             </button>
-            <button onClick={handleSaveLigne} className="btn-lte btn-lte-primary">
+            <button onClick={handleSaveLigne} className="btn-lte btn-lte-sm btn-lte-primary">
               Ajouter à la grille
             </button>
           </div>

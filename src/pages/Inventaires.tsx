@@ -381,74 +381,116 @@ export function Inventaires({ inventaires, produits, entrepots, loading, onRefre
 
       {/* Create modal */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Nouvelle session d'inventaire" size="lg">
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+          className="space-y-4"
+        >
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Site concerné</label>
-            <select value={entrepotId} onChange={(e) => setEntrepotId(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+            <label className="form-label-lte">Site d'entreposage concerné</label>
+            <select
+              value={entrepotId}
+              onChange={(e) => setEntrepotId(e.target.value)}
+              className="form-select-lte text-sm"
+            >
               <option value="">Tous les sites (stock global)</option>
               {entrepots.map((e) => <option key={e.id} value={e.id}>{e.nom}</option>)}
             </select>
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-slate-700">Produits à compter ({selectedProducts.size} sélectionné{selectedProducts.size > 1 ? 's' : ''})</label>
-              <button onClick={selectAll} className="text-sm text-sky-600 font-medium hover:text-sky-700">Tout sélectionner</button>
+              <label className="form-label-lte mb-0">Produits à compter ({selectedProducts.size} sélectionné{selectedProducts.size > 1 ? 's' : ''})</label>
+              <button
+                type="button"
+                onClick={selectAll}
+                className="btn-lte btn-lte-xs btn-lte-outline-primary"
+              >
+                Tout sélectionner
+              </button>
             </div>
-            <input type="text" value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Filtrer les produits..."
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 mb-2" />
-            <div className="border border-slate-200 rounded-xl max-h-64 overflow-y-auto divide-y divide-slate-100">
+            <input
+              type="text"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              placeholder="Filtrer les produits par nom ou SKU..."
+              className="form-control-lte text-sm mb-2"
+            />
+            <div className="border border-slate-200 dark:border-[#24382e] rounded-md max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1c3328] bg-white dark:bg-[#0f1c16]">
               {productsToCount.map((p) => (
-                <label key={p.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => toggleProduct(p.id)} className="w-4 h-4 accent-sky-600" />
-                  <span className="flex-1 text-sm text-slate-900">{p.nom}</span>
-                  <span className="text-xs text-slate-400 font-mono">{p.sku || '—'}</span>
-                  <span className="text-xs text-slate-500">théorique: {p.quantite}</span>
+                <label key={p.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-[#162920] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.has(p.id)}
+                    onChange={() => toggleProduct(p.id)}
+                    className="w-4 h-4 rounded text-brand-blue dark:text-brand-green focus:ring-brand-blue"
+                  />
+                  <span className="flex-1 text-xs text-slate-900 dark:text-slate-100 font-medium">{p.nom}</span>
+                  <span className="text-[11px] text-slate-400 font-mono">{p.sku || '—'}</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">théorique: {p.quantite}</span>
                 </label>
               ))}
-              {productsToCount.length === 0 && <p className="px-3 py-4 text-sm text-slate-400 text-center">Aucun produit</p>}
+              {productsToCount.length === 0 && <p className="px-3 py-4 text-xs text-slate-400 text-center">Aucun produit trouvé</p>}
             </div>
           </div>
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button onClick={() => setCreateOpen(false)} className="px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors">Annuler</button>
-            <button onClick={save} disabled={saving} className="px-4 py-2.5 text-sm font-medium text-white bg-sky-600 rounded-xl hover:bg-sky-700 transition-colors shadow-sm disabled:opacity-50">
+          <div className="modal-footer-lte">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(false)}
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
+            >
               {saving ? 'Création...' : 'Démarrer l\u2019inventaire'}
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* Count modal */}
       {countTarget && (
         <Modal open={true} onClose={() => setCountTarget(null)} title={`Comptage — ${countTarget.reference}`} size="lg">
           <div className="space-y-4">
-            <p className="text-sm text-slate-500">Saisissez la quantité réellement comptée pour chaque produit. L'écart avec le stock théorique sera calculé automatiquement.</p>
-            <div className="border border-slate-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Saisissez la quantité réellement comptée pour chaque produit. L'écart avec le stock théorique sera calculé automatiquement.</p>
+            <div className="border border-slate-200 dark:border-[#24382e] rounded-md overflow-hidden max-h-80 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 dark:bg-[#101e17] border-b border-slate-200 dark:border-[#24382e] sticky top-0">
                   <tr>
-                    <th className="text-left px-4 py-2 font-semibold text-slate-600">Produit</th>
-                    <th className="text-right px-4 py-2 font-semibold text-slate-600">Théorique</th>
-                    <th className="text-right px-4 py-2 font-semibold text-slate-600">Compté</th>
-                    <th className="text-right px-4 py-2 font-semibold text-slate-600">Écart</th>
+                    <th className="text-left px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Produit</th>
+                    <th className="text-right px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Théorique</th>
+                    <th className="text-right px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Compté</th>
+                    <th className="text-right px-3 py-2 font-semibold text-slate-700 dark:text-slate-300">Écart</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-[#1c3328]">
                   {(countTarget.inventaire_lignes || []).map((l) => {
                     const raw = counts[l.produit_id];
                     const compte = raw === '' || raw === undefined ? null : parseInt(raw);
                     const ecart = compte === null || isNaN(compte) ? null : compte - l.stock_theorique;
                     return (
-                      <tr key={l.id}>
-                        <td className="px-4 py-2 text-slate-900">{l.produits?.nom || '—'}</td>
-                        <td className="px-4 py-2 text-right text-slate-600">{l.stock_theorique}</td>
-                        <td className="px-4 py-2 text-right">
-                          <input type="number" min="0" value={counts[l.produit_id] ?? ''} onChange={(e) => setCounts((prev) => ({ ...prev, [l.produit_id]: e.target.value }))}
-                            className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="—" />
+                      <tr key={l.id} className="hover:bg-slate-50/50 dark:hover:bg-[#101e17]/50">
+                        <td className="px-3 py-2 text-slate-900 dark:text-slate-100 font-medium">{l.produits?.nom || '—'}</td>
+                        <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">{l.stock_theorique}</td>
+                        <td className="px-3 py-2 text-right">
+                          <input
+                            type="number"
+                            min="0"
+                            value={counts[l.produit_id] ?? ''}
+                            onChange={(e) => setCounts((prev) => ({ ...prev, [l.produit_id]: e.target.value }))}
+                            className="w-20 form-control-lte text-xs text-right"
+                            placeholder="—"
+                          />
                         </td>
-                        <td className="px-4 py-2 text-right font-semibold">
+                        <td className="px-3 py-2 text-right font-semibold">
                           {ecart === null ? <span className="text-slate-300">—</span>
-                            : ecart > 0 ? <span className="text-emerald-600 inline-flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5" />+{ecart}</span>
-                            : ecart < 0 ? <span className="text-red-600 inline-flex items-center gap-1"><TrendingDown className="w-3.5 h-3.5" />{ecart}</span>
+                            : ecart > 0 ? <span className="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5" />+{ecart}</span>
+                            : ecart < 0 ? <span className="text-red-600 dark:text-red-400 inline-flex items-center gap-1"><TrendingDown className="w-3.5 h-3.5" />{ecart}</span>
                             : <span className="text-slate-400 inline-flex items-center gap-1"><Minus className="w-3.5 h-3.5" />0</span>}
                         </td>
                       </tr>
@@ -457,9 +499,20 @@ export function Inventaires({ inventaires, produits, entrepots, loading, onRefre
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-end gap-3">
-              <button onClick={() => setCountTarget(null)} className="px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors">Fermer</button>
-              <button onClick={saveCounts} disabled={saving} className="px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50">
+            <div className="modal-footer-lte">
+              <button
+                type="button"
+                onClick={() => setCountTarget(null)}
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+              >
+                Fermer
+              </button>
+              <button
+                type="button"
+                onClick={saveCounts}
+                disabled={saving}
+                className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"
+              >
                 {saving ? 'Enregistrement...' : 'Enregistrer le comptage'}
               </button>
             </div>

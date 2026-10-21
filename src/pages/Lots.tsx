@@ -575,21 +575,28 @@ export function Lots({
 
       {/* 5. Modal Création / Modification de Lot */}
       <Modal
-        isOpen={modalOpen}
+        open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editingLot ? `Modifier le lot ${editingLot.numero_lot}` : 'Création d\'un Nouveau Lot & DLUO'}
         size="lg"
       >
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Article / Produit <span className="text-red-500">*</span>
               </label>
               <select
                 value={form.produit_id}
                 onChange={(e) => setForm({ ...form, produit_id: e.target.value })}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
+                required
               >
                 <option value="">Sélectionnez un produit</option>
                 {produits.map((p) => (
@@ -601,13 +608,13 @@ export function Lots({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Site / Dépôt de Stockage
               </label>
               <select
                 value={form.entrepot_id}
                 onChange={(e) => setForm({ ...form, entrepot_id: e.target.value })}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
               >
                 <option value="">Dépôt Central / Aucun</option>
                 {entrepots.map((e) => (
@@ -621,11 +628,12 @@ export function Lots({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Numéro de Lot <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={form.numero_lot}
                 onChange={(e) => setForm({ ...form, numero_lot: e.target.value })}
                 placeholder="Ex: LOT-2026-0048"
@@ -634,7 +642,7 @@ export function Lots({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Numéro de Série (Optionnel)
               </label>
               <input
@@ -649,7 +657,7 @@ export function Lots({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Date de Fabrication
               </label>
               <input
@@ -661,9 +669,9 @@ export function Lots({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+              <label className="form-label-lte flex items-center justify-between">
                 <span>Date de Péremption (DLUO)</span>
-                <span className="text-[10px] text-sky-500 font-normal">Déstockage FEFO</span>
+                <span className="text-[10px] text-brand-blue font-normal">Déstockage FEFO</span>
               </label>
               <input
                 type="date"
@@ -676,7 +684,7 @@ export function Lots({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Quantité en Stock
               </label>
               <input
@@ -684,12 +692,12 @@ export function Lots({
                 min="0"
                 value={form.quantite}
                 onChange={(e) => setForm({ ...form, quantite: e.target.value })}
-                className="form-control-lte text-xs font-mono"
+                className="form-control-lte text-xs font-mono font-semibold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Prix Unitaire d'Entrée (FIFO)
               </label>
               <input
@@ -702,13 +710,13 @@ export function Lots({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Statut du Lot
               </label>
               <select
                 value={form.statut}
                 onChange={(e) => setForm({ ...form, statut: e.target.value as LotStatut })}
-                className="form-control-lte text-xs font-semibold"
+                className="form-select-lte text-xs font-semibold"
               >
                 <option value="actif">Actif (autorisé à la vente)</option>
                 <option value="quarantaine">Quarantaine (bloqué)</option>
@@ -719,7 +727,7 @@ export function Lots({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="form-label-lte">
               Fabricant / Laboratoire / Origine
             </label>
             <input
@@ -732,7 +740,7 @@ export function Lots({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="form-label-lte">
               Notes & Remarques
             </label>
             <textarea
@@ -740,29 +748,28 @@ export function Lots({
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="Instructions de conservation, température requise, certification..."
-              className="form-control-lte text-xs"
+              className="form-control-lte text-xs resize-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <div className="modal-footer-lte">
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="btn-lte btn-lte-outline"
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
             >
               Annuler
             </button>
             <button
-              type="button"
-              onClick={handleSave}
+              type="submit"
               disabled={saving}
-              className="btn-lte btn-lte-primary flex items-center gap-2"
+              className="btn-lte btn-lte-sm btn-lte-primary flex items-center gap-2 disabled:opacity-50"
             >
               {saving && <span className="animate-spin">⏳</span>}
               {editingLot ? 'Enregistrer les modifications' : 'Créer le lot'}
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* 6. Simulateur FEFO Interactif */}

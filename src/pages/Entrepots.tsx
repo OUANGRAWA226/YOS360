@@ -258,42 +258,84 @@ export function Entrepots({ entrepots, stocksEntrepot, produits, loading, onRefr
         </div>
       )}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Modifier le site' : 'Nouveau site'}>
-        <div className="space-y-4">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Modifier le site' : 'Nouveau site'} size="md">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+          className="space-y-4"
+        >
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
-            <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: Entrepôt Nord"
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <label className="form-label-lte">Nom du site d'entreposage <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              required
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Ex: Entrepôt Central, Dépôt Nord..."
+              className="form-control-lte text-sm"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Code</label>
-              <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="EX: NORD1"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="form-label-lte">Code référence</label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="EX: NORD1"
+                className="form-control-lte text-sm font-mono uppercase"
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Responsable</label>
-              <input type="text" value={responsable} onChange={(e) => setResponsable(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label className="form-label-lte">Responsable du site</label>
+              <input
+                type="text"
+                value={responsable}
+                onChange={(e) => setResponsable(e.target.value)}
+                placeholder="Ex: M. Jean Ilboudo"
+                className="form-control-lte text-sm"
+              />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Adresse</label>
-            <input type="text" value={adresse} onChange={(e) => setAdresse(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <label className="form-label-lte">Adresse géographique</label>
+            <input
+              type="text"
+              value={adresse}
+              onChange={(e) => setAdresse(e.target.value)}
+              placeholder="Zone industrielle de Kossodo..."
+              className="form-control-lte text-sm"
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Ville</label>
-            <input type="text" value={ville} onChange={(e) => setVille(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <label className="form-label-lte">Ville</label>
+            <input
+              type="text"
+              value={ville}
+              onChange={(e) => setVille(e.target.value)}
+              placeholder="Ouagadougou"
+              className="form-control-lte text-sm"
+            />
           </div>
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors">Annuler</button>
-            <button onClick={save} disabled={saving} className="px-4 py-2.5 text-sm font-medium text-white bg-sky-600 rounded-xl hover:bg-sky-700 transition-colors shadow-sm disabled:opacity-50">
-              {saving ? 'Enregistrement...' : 'Enregistrer'}
+          <div className="modal-footer-lte">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
+            >
+              {saving ? 'Enregistrement...' : editing ? 'Modifier le site' : 'Enregistrer le site'}
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <ConfirmDialog

@@ -356,20 +356,23 @@ export function Scan({ produits, lots, role }: Props) {
       {labelOpen && found && (
         <Modal open={true} onClose={() => setLabelOpen(false)} title={`Étiquette — ${found.nom}`} size="sm">
           <div className="space-y-4">
-            <div className="flex flex-col items-center bg-white border border-slate-200 rounded-xl p-6">
-              <p className="font-semibold text-slate-900 text-center">{found.nom}</p>
-              {found.sku && <p className="text-xs text-slate-500 font-mono">{found.sku}</p>}
+            <div className="flex flex-col items-center bg-white dark:bg-[#15231c] border border-slate-200 dark:border-[#24382e] rounded-xl p-6">
+              <p className="font-semibold text-slate-900 dark:text-white text-center">{found.nom}</p>
+              {found.sku && <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{found.sku}</p>}
               <div className="mt-3">
                 <Barcode39 value={found.code_barres || found.sku || found.id.slice(0, 8).toUpperCase()} height={60} moduleWidth={2} />
               </div>
-              <p className="text-sm font-semibold text-slate-900 mt-2">{formatCurrency(found.prix_vente)}</p>
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-2">{formatCurrency(found.prix_vente)}</p>
             </div>
-            <button
-              onClick={() => window.print()}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-900 transition-colors"
-            >
-              <Printer className="w-4 h-4" /> Imprimer
-            </button>
+            <div className="modal-footer-lte !border-t-0 !pt-0">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="btn-lte btn-lte-primary w-full justify-center"
+              >
+                <Printer className="w-4 h-4 mr-1.5" /> Imprimer l'étiquette
+              </button>
+            </div>
           </div>
         </Modal>
       )}

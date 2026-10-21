@@ -621,72 +621,85 @@ export function Equipe({ role, entrepots, commandes, loading: parentLoading }: P
       {/* ========================================================================= */}
       {/* MODAL : NOUVEAU COLLABORATEUR */}
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* MODAL : NOUVEAU COLLABORATEUR */}
+      {/* ========================================================================= */}
       {newCollabModal && (
         <Modal open={true} onClose={() => setNewCollabModal(false)} title="Nouveau Collaborateur" size="md">
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateCollab();
+            }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Matricule *</label>
+                <label className="form-label-lte">Matricule <span className="text-red-500">*</span></label>
                 <input
                   type="text"
+                  required
                   value={collabForm.matricule}
                   onChange={(e) => setCollabForm({ ...collabForm, matricule: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs font-mono font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Poste / Rôle *</label>
+                <label className="form-label-lte">Poste / Rôle <span className="text-red-500">*</span></label>
                 <input
                   type="text"
+                  required
                   placeholder="ex: Vendeur Showroom"
                   value={collabForm.poste}
                   onChange={(e) => setCollabForm({ ...collabForm, poste: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nom de famille *</label>
+                <label className="form-label-lte">Nom de famille <span className="text-red-500">*</span></label>
                 <input
                   type="text"
+                  required
                   value={collabForm.nom}
                   onChange={(e) => setCollabForm({ ...collabForm, nom: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prénom(s) *</label>
+                <label className="form-label-lte">Prénom(s) <span className="text-red-500">*</span></label>
                 <input
                   type="text"
+                  required
                   value={collabForm.prenom}
                   onChange={(e) => setCollabForm({ ...collabForm, prenom: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Téléphone</label>
+                <label className="form-label-lte">Téléphone</label>
                 <input
                   type="text"
                   placeholder="+226 70..."
                   value={collabForm.telephone}
                   onChange={(e) => setCollabForm({ ...collabForm, telephone: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Boutique / Site d'affectation</label>
+                <label className="form-label-lte">Boutique / Site d'affectation</label>
                 <select
                   value={collabForm.site_id}
                   onChange={(e) => setCollabForm({ ...collabForm, site_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-select-lte text-xs"
                 >
                   <option value="">Non assigné</option>
                   {entrepots.map((e) => (
@@ -698,47 +711,46 @@ export function Equipe({ role, entrepots, commandes, loading: parentLoading }: P
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Salaire fixe (FCFA)</label>
+                <label className="form-label-lte">Salaire fixe (FCFA)</label>
                 <input
                   type="number"
                   min="0"
                   value={collabForm.salaire_base}
                   onChange={(e) => setCollabForm({ ...collabForm, salaire_base: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 text-right"
+                  className="form-control-lte text-xs font-mono text-right"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Taux de commission (%)</label>
+                <label className="form-label-lte">Taux de commission (%)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={collabForm.taux_commission_pct}
                   onChange={(e) => setCollabForm({ ...collabForm, taux_commission_pct: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 text-right"
+                  className="form-control-lte text-xs font-mono text-right"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setNewCollabModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
-                type="button"
-                onClick={handleCreateCollab}
+                type="submit"
                 disabled={saving}
-                className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
               >
                 {saving ? 'Création...' : 'Créer le collaborateur'}
               </button>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
 
@@ -747,13 +759,20 @@ export function Equipe({ role, entrepots, commandes, loading: parentLoading }: P
       {/* ========================================================================= */}
       {newObjectifModal && (
         <Modal open={true} onClose={() => setNewObjectifModal(false)} title="Fixer un Objectif Mensuel" size="md">
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveObjectif();
+            }}
+            className="space-y-4"
+          >
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Collaborateur *</label>
+              <label className="form-label-lte">Collaborateur <span className="text-red-500">*</span></label>
               <select
                 value={objectifForm.collaborateur_id}
                 onChange={(e) => setObjectifForm({ ...objectifForm, collaborateur_id: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100"
+                className="form-select-lte text-xs font-medium"
+                required
               >
                 {collaborateurs.map((c) => (
                   <option key={c.id} value={c.id}>{c.prenom} {c.nom} ({c.poste})</option>
@@ -763,56 +782,57 @@ export function Equipe({ role, entrepots, commandes, loading: parentLoading }: P
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Mois cible *</label>
+                <label className="form-label-lte">Mois cible <span className="text-red-500">*</span></label>
                 <input
                   type="month"
+                  required
                   value={objectifForm.periode}
                   onChange={(e) => setObjectifForm({ ...objectifForm, periode: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Objectif Chiffre d'Affaires (FCFA) *</label>
+                <label className="form-label-lte">Objectif Chiffre d'Affaires (FCFA) <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   min="0"
+                  required
                   value={objectifForm.objectif_ca}
                   onChange={(e) => setObjectifForm({ ...objectifForm, objectif_ca: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 text-right"
+                  className="form-control-lte text-xs font-mono font-bold text-right"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prime en cas d'atteinte 100% (FCFA)</label>
+              <label className="form-label-lte">Prime en cas d'atteinte 100% (FCFA)</label>
               <input
                 type="number"
                 min="0"
                 value={objectifForm.prime_objectif}
                 onChange={(e) => setObjectifForm({ ...objectifForm, prime_objectif: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 text-right"
+                className="form-control-lte text-xs font-mono text-right"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setNewObjectifModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
-                type="button"
-                onClick={handleSaveObjectif}
+                type="submit"
                 disabled={saving}
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
               >
                 {saving ? 'Enregistrement...' : 'Enregistrer l\'objectif'}
               </button>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
     </div>

@@ -936,13 +936,13 @@ export function Achats({
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Fournisseur *
+                <label className="form-label-lte">
+                  Fournisseur <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={fournisseurId}
                   onChange={(e) => setFournisseurId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="form-select-lte text-xs"
                 >
                   <option value="">Sélectionner un fournisseur...</option>
                   {fournisseurs.map((f) => (
@@ -954,13 +954,13 @@ export function Achats({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Site / Entrepôt de destination
                 </label>
                 <select
                   value={siteId}
                   onChange={(e) => setSiteId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="form-select-lte text-xs"
                 >
                   {entrepots.map((ent) => (
                     <option key={ent.id} value={ent.id}>
@@ -973,19 +973,19 @@ export function Achats({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Date de livraison souhaitée
                 </label>
                 <input
                   type="date"
                   value={dateLivraisonPrevue}
                   onChange={(e) => setDateLivraisonPrevue(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="form-control-lte text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Notes / Conditions de paiement
                 </label>
                 <input
@@ -993,20 +993,20 @@ export function Achats({
                   placeholder="ex. Règlement à 30 jours, virement..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="form-control-lte text-xs"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label className="form-label-lte mb-0">
                   Articles à commander
                 </label>
                 <button
                   type="button"
                   onClick={addLigne}
-                  className="text-xs font-bold text-sky-600 hover:text-sky-500 inline-flex items-center gap-1"
+                  className="btn-lte btn-lte-xs btn-lte-outline-primary inline-flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Ajouter un article
                 </button>
@@ -1018,7 +1018,7 @@ export function Achats({
                     <select
                       value={l.produit_id}
                       onChange={(e) => updateLigne(idx, 'produit_id', e.target.value)}
-                      className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-select-lte text-xs flex-1"
                     >
                       <option value="">Sélectionner un produit...</option>
                       {produits.map((p) => (
@@ -1033,7 +1033,7 @@ export function Achats({
                       placeholder="Qté"
                       value={l.quantite}
                       onChange={(e) => updateLigne(idx, 'quantite', e.target.value)}
-                      className="w-20 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-control-lte text-xs w-20"
                     />
 
                     <input
@@ -1041,7 +1041,7 @@ export function Achats({
                       placeholder="Prix unit."
                       value={l.prix_unitaire}
                       onChange={(e) => updateLigne(idx, 'prix_unitaire', e.target.value)}
-                      className="w-28 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-control-lte text-xs w-28"
                     />
 
                     {lignes.length > 1 && (
@@ -1057,19 +1057,19 @@ export function Achats({
                 ))}
               </div>
 
-              <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between text-xs font-bold">
+              <div className="mt-3 p-3 rounded-md bg-slate-50 dark:bg-[#101e17] border border-slate-200 dark:border-[#1c3328] flex items-center justify-between text-xs font-bold">
                 <span>Total estimé (HT)</span>
-                <span className="text-base text-sky-600 dark:text-sky-400">
+                <span className="text-base text-brand-blue dark:text-brand-green">
                   {formatCurrency(totalBC, entreprise?.devise)}
                 </span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setCreateBcOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
@@ -1077,7 +1077,7 @@ export function Achats({
                 type="button"
                 disabled={saving}
                 onClick={handleCreateBc}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 transition-all inline-flex items-center gap-2"
+                className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {saving ? 'Création en cours...' : 'Valider le Bon de Commande'}
               </button>
@@ -1096,26 +1096,26 @@ export function Achats({
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Demandeur (Nom complet) *
+                <label className="form-label-lte">
+                  Demandeur (Nom complet) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   placeholder="ex. Ousmane Ouédraogo"
                   value={daDemandeur}
                   onChange={(e) => setDaDemandeur(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="form-control-lte text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Département / Service
                 </label>
                 <select
                   value={daDepartement}
                   onChange={(e) => setDaDepartement(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="form-select-lte text-xs"
                 >
                   <option value="Magasin">Magasin / Stock</option>
                   <option value="Ventes">Direction Commerciale</option>
@@ -1127,13 +1127,13 @@ export function Achats({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Degré d'urgence
                 </label>
                 <select
                   value={daUrgence}
                   onChange={(e) => setDaUrgence(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="form-select-lte text-xs"
                 >
                   <option value="normale">Normale (Planification classique)</option>
                   <option value="haute">Haute (Risque de rupture proche)</option>
@@ -1142,13 +1142,13 @@ export function Achats({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Site destinataire
                 </label>
                 <select
                   value={daSiteId}
                   onChange={(e) => setDaSiteId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="form-select-lte text-xs"
                 >
                   {entrepots.map((ent) => (
                     <option key={ent.id} value={ent.id}>
@@ -1160,7 +1160,7 @@ export function Achats({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Motif / Justification du besoin
               </label>
               <textarea
@@ -1168,21 +1168,21 @@ export function Achats({
                 placeholder="Précisez pourquoi cet achat est nécessaire..."
                 value={daMotif}
                 onChange={(e) => setDaMotif(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="form-control-lte text-xs resize-none"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label className="form-label-lte mb-0">
                   Articles requis
                 </label>
                 <button
                   type="button"
                   onClick={() => setDaLignes((prev) => [...prev, { produit_id: '', quantite: '5' }])}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-500 inline-flex items-center gap-1"
+                  className="btn-lte btn-lte-xs btn-lte-outline-primary inline-flex items-center gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Ajouter
+                  <Plus className="w-3.5 h-3.5" /> Ajouter un article
                 </button>
               </div>
 
@@ -1195,7 +1195,7 @@ export function Achats({
                         const val = e.target.value;
                         setDaLignes((prev) => prev.map((item, i) => (i === idx ? { ...item, produit_id: val } : item)));
                       }}
-                      className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-select-lte text-xs flex-1"
                     >
                       <option value="">Sélectionner un produit...</option>
                       {produits.map((p) => (
@@ -1207,13 +1207,13 @@ export function Achats({
 
                     <input
                       type="number"
-                      placeholder="Quantité souhaitée"
+                      placeholder="Qté"
                       value={l.quantite}
                       onChange={(e) => {
                         const val = e.target.value;
                         setDaLignes((prev) => prev.map((item, i) => (i === idx ? { ...item, quantite: val } : item)));
                       }}
-                      className="w-28 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-control-lte text-xs w-28"
                     />
 
                     {daLignes.length > 1 && (
@@ -1230,18 +1230,18 @@ export function Achats({
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setCreateDaOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
                 type="button"
                 onClick={handleCreateDa}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-all inline-flex items-center gap-2"
+                className="btn-lte btn-lte-sm btn-lte-primary inline-flex items-center gap-2"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Soumettre la Demande d'Achat</span>
@@ -1260,8 +1260,8 @@ export function Achats({
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Bon de Commande d'origine (Reçu) *
+              <label className="form-label-lte">
+                Bon de Commande d'origine (Reçu) <span className="text-red-500">*</span>
               </label>
               <select
                 value={retourCmdId}
@@ -1279,7 +1279,7 @@ export function Achats({
                     );
                   }
                 }}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                className="form-select-lte text-xs"
               >
                 <option value="">Sélectionner une commande reçue...</option>
                 {achatsCommandes
@@ -1294,13 +1294,13 @@ export function Achats({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Motif du retour *
+              <label className="form-label-lte">
+                Motif du retour <span className="text-red-500">*</span>
               </label>
               <select
                 value={retourMotif}
                 onChange={(e) => setRetourMotif(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                className="form-select-lte text-xs"
               >
                 <option value="Marchandise défectueuse ou avariée">Marchandise défectueuse ou avariée</option>
                 <option value="Non-conformité au cahier des charges">Non-conformité au cahier des charges</option>
@@ -1310,7 +1310,7 @@ export function Achats({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+              <label className="form-label-lte mb-2">
                 Articles à réexpédier / sortir du stock
               </label>
               <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -1322,7 +1322,7 @@ export function Achats({
                         const val = e.target.value;
                         setRetourLignes((prev) => prev.map((item, i) => (i === idx ? { ...item, produit_id: val } : item)));
                       }}
-                      className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-select-lte text-xs flex-1"
                     >
                       <option value="">Produit...</option>
                       {produits.map((p) => (
@@ -1340,7 +1340,7 @@ export function Achats({
                         const val = e.target.value;
                         setRetourLignes((prev) => prev.map((item, i) => (i === idx ? { ...item, quantite: val } : item)));
                       }}
-                      className="w-20 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-control-lte text-xs w-20"
                     />
 
                     <input
@@ -1351,18 +1351,18 @@ export function Achats({
                         const val = e.target.value;
                         setRetourLignes((prev) => prev.map((item, i) => (i === idx ? { ...item, prix: val } : item)));
                       }}
-                      className="w-24 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                      className="form-control-lte text-xs w-24"
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setCreateRetourOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
@@ -1370,7 +1370,7 @@ export function Achats({
                 type="button"
                 disabled={saving}
                 onClick={handleCreateRetour}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all inline-flex items-center gap-2"
+                className="btn-lte btn-lte-sm btn-lte-danger inline-flex items-center gap-2 disabled:opacity-50"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>{saving ? 'Enregistrement...' : 'Valider le retour et déduire du stock'}</span>
@@ -1401,30 +1401,30 @@ export function Achats({
           onClose={() => setViewBcTarget(null)}
         >
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-[#101e17] border border-slate-200 dark:border-[#1c3328] p-3 rounded-md">
               <div>
-                <p className="text-slate-400">Fournisseur</p>
+                <p className="text-slate-500 dark:text-slate-400">Fournisseur</p>
                 <p className="font-bold text-slate-800 dark:text-slate-100">{viewBcTarget.fournisseurs?.nom || '—'}</p>
               </div>
               <div>
-                <p className="text-slate-400">Date commande</p>
+                <p className="text-slate-500 dark:text-slate-400">Date commande</p>
                 <p className="font-bold text-slate-800 dark:text-slate-100">{formatDate(viewBcTarget.date_commande)}</p>
               </div>
               <div>
-                <p className="text-slate-400">Livraison prévue</p>
+                <p className="text-slate-500 dark:text-slate-400">Livraison prévue</p>
                 <p className="font-bold text-slate-800 dark:text-slate-100">{viewBcTarget.date_livraison ? formatDate(viewBcTarget.date_livraison) : 'Non définie'}</p>
               </div>
               <div>
-                <p className="text-slate-400">Statut</p>
-                <p className="font-bold text-sky-600 dark:text-sky-400">{viewBcTarget.statut.toUpperCase()}</p>
+                <p className="text-slate-500 dark:text-slate-400">Statut</p>
+                <p className="font-bold text-brand-blue dark:text-brand-green">{viewBcTarget.statut.toUpperCase()}</p>
               </div>
             </div>
 
             <div>
               <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Articles commandés :</p>
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden text-xs">
+              <div className="border border-slate-200 dark:border-[#1c3328] rounded-md overflow-hidden text-xs">
                 <table className="w-full text-left">
-                  <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  <thead className="bg-slate-100 dark:bg-[#162920] text-slate-700 dark:text-slate-300 font-semibold">
                     <tr>
                       <th className="p-2">Produit</th>
                       <th className="p-2 text-right">Quantité</th>
@@ -1432,13 +1432,13 @@ export function Achats({
                       <th className="p-2 text-right">Sous-total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-100 dark:divide-[#1c3328]">
                     {(viewBcTarget.commande_items || []).map((it) => (
                       <tr key={it.id}>
-                        <td className="p-2">{it.produits?.nom || it.produit_id}</td>
+                        <td className="p-2 text-slate-900 dark:text-slate-100 font-medium">{it.produits?.nom || it.produit_id}</td>
                         <td className="p-2 text-right font-semibold">{it.quantite}</td>
                         <td className="p-2 text-right">{formatCurrency(it.prix_unitaire, entreprise?.devise)}</td>
-                        <td className="p-2 text-right font-bold">{formatCurrency(it.sous_total, entreprise?.devise)}</td>
+                        <td className="p-2 text-right font-bold text-slate-900 dark:text-slate-100">{formatCurrency(it.sous_total, entreprise?.devise)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1446,9 +1446,9 @@ export function Achats({
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
-              <span className="font-bold">Total TTC</span>
-              <span className="text-base font-extrabold text-sky-600 dark:text-sky-400">
+            <div className="modal-footer-lte flex justify-between items-center text-xs">
+              <span className="font-bold text-slate-700 dark:text-slate-300">Total TTC</span>
+              <span className="text-base font-extrabold text-brand-blue dark:text-brand-green">
                 {formatCurrency(viewBcTarget.montant_total, entreprise?.devise)}
               </span>
             </div>

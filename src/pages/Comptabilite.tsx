@@ -1500,11 +1500,11 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setClotureModalOpen(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
@@ -1512,7 +1512,7 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
                 type="button"
                 onClick={() => handleCloturerExercice(selectedExoCloture.id)}
                 disabled={clotureLoading || !balanceResult.estEquilibree}
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-sm"
+                className="btn-lte btn-lte-sm btn-lte-warning flex items-center gap-1.5"
               >
                 {clotureLoading ? 'Clôture en cours...' : 'Confirmer la Clôture Définitive'}
               </button>
@@ -1603,13 +1603,13 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
             {/* En-tête de la pièce */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Journal comptable *
                 </label>
                 <select
                   value={pieceForm.journal_id}
                   onChange={(e) => setPieceForm({ ...pieceForm, journal_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="form-select-lte text-xs"
                 >
                   {journaux.map((j) => (
                     <option key={j.id} value={j.id}>{j.code} — {j.libelle}</option>
@@ -1618,19 +1618,19 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Date de la pièce *
                 </label>
                 <input
                   type="date"
                   value={pieceForm.date_piece}
                   onChange={(e) => setPieceForm({ ...pieceForm, date_piece: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="form-control-lte text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="form-label-lte">
                   Référence doc externe
                 </label>
                 <input
@@ -1638,13 +1638,13 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
                   placeholder="ex: FACT-2026-089"
                   value={pieceForm.reference_document}
                   onChange={(e) => setPieceForm({ ...pieceForm, reference_document: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="form-control-lte text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Libellé général de l'opération *
               </label>
               <input
@@ -1652,7 +1652,7 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
                 placeholder="ex: Règlement facture client Société ABC par virement"
                 value={pieceForm.libelle}
                 onChange={(e) => setPieceForm({ ...pieceForm, libelle: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="form-control-lte text-xs"
               />
             </div>
 
@@ -1665,7 +1665,7 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
                 <button
                   type="button"
                   onClick={addLigne}
-                  className="text-xs text-sky-600 dark:text-sky-400 font-semibold hover:underline flex items-center gap-1"
+                  className="btn-lte btn-lte-sm btn-lte-outline-primary flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Ajouter une ligne</span>
@@ -1676,14 +1676,14 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
                 {lignesForm.map((ligne, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 grid grid-cols-12 gap-2 items-center"
+                    className="p-3 rounded-xl border border-slate-200 dark:border-[#24382e] bg-slate-50 dark:bg-[#15231c] grid grid-cols-12 gap-2 items-center"
                   >
                     <div className="col-span-12 sm:col-span-4">
-                      <label className="block text-[10px] text-slate-500 mb-0.5">Compte OHADA</label>
+                      <label className="form-label-lte !mb-0.5 text-[10px]">Compte OHADA</label>
                       <select
                         value={ligne.compte_numero}
                         onChange={(e) => updateLigne(idx, 'compte_numero', e.target.value)}
-                        className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono text-slate-800 dark:text-slate-200"
+                        className="form-select-lte text-xs font-mono !py-1"
                       >
                         {(comptes.length > 0 ? comptes : PLAN_SYSCOHADA_STANDARD).map((c) => (
                           <option key={c.numero} value={c.numero}>
@@ -1694,35 +1694,35 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
                     </div>
 
                     <div className="col-span-12 sm:col-span-3">
-                      <label className="block text-[10px] text-slate-500 mb-0.5">Tiers (optionnel)</label>
+                      <label className="form-label-lte !mb-0.5 text-[10px]">Tiers (optionnel)</label>
                       <input
                         type="text"
                         placeholder="Nom du tiers"
                         value={ligne.tiers_nom}
                         onChange={(e) => updateLigne(idx, 'tiers_nom', e.target.value)}
-                        className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200"
+                        className="form-control-lte text-xs !py-1"
                       />
                     </div>
 
                     <div className="col-span-5 sm:col-span-2">
-                      <label className="block text-[10px] text-slate-500 mb-0.5 text-right">Débit (FCFA)</label>
+                      <label className="form-label-lte !mb-0.5 text-[10px] text-right">Débit (FCFA)</label>
                       <input
                         type="number"
                         min="0"
                         value={ligne.debit}
                         onChange={(e) => updateLigne(idx, 'debit', e.target.value)}
-                        className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono text-right text-slate-800 dark:text-slate-200"
+                        className="form-control-lte text-xs font-mono text-right !py-1"
                       />
                     </div>
 
                     <div className="col-span-5 sm:col-span-2">
-                      <label className="block text-[10px] text-slate-500 mb-0.5 text-right">Crédit (FCFA)</label>
+                      <label className="form-label-lte !mb-0.5 text-[10px] text-right">Crédit (FCFA)</label>
                       <input
                         type="number"
                         min="0"
                         value={ligne.credit}
                         onChange={(e) => updateLigne(idx, 'credit', e.target.value)}
-                        className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono text-right text-slate-800 dark:text-slate-200"
+                        className="form-control-lte text-xs font-mono text-right !py-1"
                       />
                     </div>
 
@@ -1741,7 +1741,7 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
               </div>
 
               {/* Barre de contrôle d'équilibre en bas du formulaire */}
-              <div className="mt-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-between text-xs font-mono font-bold">
+              <div className="mt-3 p-3 rounded-xl border border-slate-200 dark:border-[#24382e] bg-slate-100 dark:bg-[#15231c] flex items-center justify-between text-xs font-mono font-bold">
                 <div>
                   Total Débit : <span className="text-sky-600 dark:text-sky-400">{formatCurrency(totalDebitSaisie)}</span>
                 </div>
@@ -1763,11 +1763,11 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
             </div>
 
             {/* Actions modal */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setNewPieceModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
@@ -1775,7 +1775,7 @@ export function Comptabilite({ role, entrepots, loading: parentLoading }: Props)
                 type="button"
                 onClick={handleSavePiece}
                 disabled={saving || !estEquilibreeSaisie}
-                className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-sm"
+                className="btn-lte btn-lte-sm btn-lte-primary flex items-center gap-1.5"
               >
                 {saving ? 'Validation...' : 'Valider et Enregistrer'}
               </button>

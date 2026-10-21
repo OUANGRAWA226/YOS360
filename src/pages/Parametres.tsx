@@ -31,6 +31,7 @@ import { canManageUsers, ROLE_LABELS, type Role } from '@/lib/permissions';
 import { supabase, type ProduitWithCategorie, type Categorie, type Fournisseur, type Client, type MouvementWithProduit, type CommandeWithRelations, type Entreprise } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { exportCSV, exportExcel, exportJSON, exportPDF, parseCSV, readFileAsText } from '@/lib/io';
+import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Integrations } from '@/components/Integrations';
 import { ModulesParEntreprise } from '@/components/ModulesParEntreprise';
@@ -988,137 +989,120 @@ export function Parametres({
       />
 
       {/* Modal Création Utilisateur */}
-      {showUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 sm:p-7 relative">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-violet-500/10 dark:bg-violet-500/20 flex items-center justify-center text-violet-600 dark:text-violet-400">
-                  <UserPlus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Créer un utilisateur</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Ajoutez un collaborateur ou un gérant sans code</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowUserModal(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+      <Modal
+        open={showUserModal}
+        onClose={() => setShowUserModal(false)}
+        title="Créer un utilisateur"
+        size="md"
+      >
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <div>
+            <label className="form-label-lte">
+              Nom complet
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: Amadou Traoré"
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
+              className="form-control-lte text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="form-label-lte">
+              Adresse Email *
+            </label>
+            <input
+              type="email"
+              required
+              placeholder="collaborateur@yos360.com"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+              className="form-control-lte text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="form-label-lte">
+              Mot de passe provisoire * (min 6 caractères)
+            </label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="••••••••"
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+              className="form-control-lte text-xs"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="form-label-lte">
+                Entreprise
+              </label>
+              <select
+                value={newUserEntrepriseId}
+                onChange={(e) => setNewUserEntrepriseId(e.target.value)}
+                className="form-select-lte text-xs"
               >
-                <X className="w-5 h-5" />
-              </button>
+                {entreprises.map((e) => (
+                  <option key={e.id} value={e.id}>{e.nom}</option>
+                ))}
+              </select>
             </div>
 
-            <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Nom complet
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Amadou Traoré"
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Adresse Email *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="collaborateur@yos360.com"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Mot de passe provisoire * (min 6 caractères)
-                </label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                  value={newUserPassword}
-                  onChange={(e) => setNewUserPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Entreprise
-                  </label>
-                  <select
-                    value={newUserEntrepriseId}
-                    onChange={(e) => setNewUserEntrepriseId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  >
-                    {entreprises.map((e) => (
-                      <option key={e.id} value={e.id}>{e.nom}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Rôle attribué
-                  </label>
-                  <select
-                    value={newUserRole}
-                    onChange={(e) => setNewUserRole(e.target.value as Role)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  >
-                    {(Object.keys(ROLE_LABELS) as Role[]).map((r) => (
-                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {profile?.super_admin && (
-                <div className="pt-2">
-                  <label className="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isNewUserSuperAdmin}
-                      onChange={(e) => setIsNewUserSuperAdmin(e.target.checked)}
-                      className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 border-slate-300"
-                    />
-                    <span className="font-medium text-amber-600 dark:text-amber-400">Accorder les privilèges Super Admin (vision globale)</span>
-                  </label>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowUserModal(false)}
-                  className="px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={creatingUser}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl shadow-md shadow-violet-500/20 transition-all disabled:opacity-50"
-                >
-                  {creatingUser && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Créer l'utilisateur
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="form-label-lte">
+                Rôle attribué
+              </label>
+              <select
+                value={newUserRole}
+                onChange={(e) => setNewUserRole(e.target.value as Role)}
+                className="form-select-lte text-xs"
+              >
+                {(Object.keys(ROLE_LABELS) as Role[]).map((r) => (
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
-      )}
+
+          {profile?.super_admin && (
+            <div className="pt-2">
+              <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isNewUserSuperAdmin}
+                  onChange={(e) => setIsNewUserSuperAdmin(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-[#24382e]"
+                />
+                <span className="font-medium text-amber-600 dark:text-amber-400">Accorder les privilèges Super Admin (vision globale)</span>
+              </label>
+            </div>
+          )}
+
+          <div className="modal-footer-lte">
+            <button
+              type="button"
+              onClick={() => setShowUserModal(false)}
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={creatingUser}
+              className="btn-lte btn-lte-sm btn-lte-primary flex items-center gap-1.5"
+            >
+              {creatingUser && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>Créer l'utilisateur</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

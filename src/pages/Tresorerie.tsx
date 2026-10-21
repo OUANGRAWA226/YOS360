@@ -886,23 +886,33 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
       {/* ========================================================================= */}
       {/* MODAL : NOUVEAU COMPTE */}
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* MODAL : NOUVEAU COMPTE */}
+      {/* ========================================================================= */}
       {newCompteModal && (
         <Modal open={true} onClose={() => setNewCompteModal(false)} title="Créer un compte de trésorerie" size="md">
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateCompte();
+            }}
+            className="space-y-4"
+          >
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nom du compte *</label>
+              <label className="form-label-lte">Nom du compte <span className="text-red-500">*</span></label>
               <input
                 type="text"
+                required
                 placeholder="ex: Compte Coris Bank Entreprise, Caisse Showroom..."
                 value={compteForm.nom}
                 onChange={(e) => setCompteForm({ ...compteForm, nom: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                className="form-control-lte text-xs"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Type de compte *</label>
+                <label className="form-label-lte">Type de compte <span className="text-red-500">*</span></label>
                 <select
                   value={compteForm.type}
                   onChange={(e) => {
@@ -914,7 +924,7 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
                     if (t === 'wave') cNum = '521300';
                     setCompteForm({ ...compteForm, type: t, compte_comptable_numero: cNum });
                   }}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-select-lte text-xs"
                 >
                   <option value="banque">Banque locale</option>
                   <option value="caisse_physique">Caisse physique (Espèces)</option>
@@ -926,59 +936,58 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Établissement</label>
+                <label className="form-label-lte">Établissement bancaire / Opérateur</label>
                 <input
                   type="text"
                   placeholder="ex: Coris Bank, Orange, Moov..."
                   value={compteForm.etablissement}
                   onChange={(e) => setCompteForm({ ...compteForm, etablissement: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Numéro de compte / Tél</label>
+                <label className="form-label-lte">Numéro de compte / Tél</label>
                 <input
                   type="text"
                   placeholder="ex: BF054... ou +226 70..."
                   value={compteForm.numero_compte}
                   onChange={(e) => setCompteForm({ ...compteForm, numero_compte: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Solde initial (FCFA)</label>
+                <label className="form-label-lte">Solde initial (FCFA)</label>
                 <input
                   type="number"
                   min="0"
                   value={compteForm.solde_initial}
                   onChange={(e) => setCompteForm({ ...compteForm, solde_initial: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-slate-100 text-right"
+                  className="form-control-lte text-xs font-mono text-right font-semibold"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setNewCompteModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
-                type="button"
-                onClick={handleCreateCompte}
+                type="submit"
                 disabled={saving}
-                className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
               >
                 {saving ? 'Création...' : 'Créer le compte'}
               </button>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
 
@@ -987,18 +996,25 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
       {/* ========================================================================= */}
       {virementModal && (
         <Modal open={true} onClose={() => setVirementModal(false)} title="Virement Interne de Trésorerie" size="md">
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleVirement();
+            }}
+            className="space-y-4"
+          >
             <Callout variant="info" title="Virement entre comptes">
               Cette opération débite immédiatement le compte source et crédite le compte de destination sans impact sur le résultat comptable.
             </Callout>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Compte source (Débité) *</label>
+                <label className="form-label-lte">Compte source (Débité) <span className="text-red-500">*</span></label>
                 <select
                   value={virementForm.compte_source_id}
                   onChange={(e) => setVirementForm({ ...virementForm, compte_source_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100"
+                  className="form-select-lte text-xs font-medium"
+                  required
                 >
                   <option value="">Sélectionner</option>
                   {comptes.map((c) => (
@@ -1008,11 +1024,12 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Compte destination (Crédité) *</label>
+                <label className="form-label-lte">Compte destination (Crédité) <span className="text-red-500">*</span></label>
                 <select
                   value={virementForm.compte_dest_id}
                   onChange={(e) => setVirementForm({ ...virementForm, compte_dest_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100"
+                  className="form-select-lte text-xs font-medium"
+                  required
                 >
                   <option value="">Sélectionner</option>
                   {comptes.map((c) => (
@@ -1024,55 +1041,57 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Montant à transférer (FCFA) *</label>
+                <label className="form-label-lte">Montant à transférer (FCFA) <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   min="1"
+                  required
                   value={virementForm.montant}
                   onChange={(e) => setVirementForm({ ...virementForm, montant: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 text-right"
+                  className="form-control-lte text-xs font-mono font-bold text-right"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date du virement *</label>
+                <label className="form-label-lte">Date du virement <span className="text-red-500">*</span></label>
                 <input
                   type="date"
+                  required
                   value={virementForm.date_virement}
                   onChange={(e) => setVirementForm({ ...virementForm, date_virement: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Motif du virement</label>
+              <label className="form-label-lte">Motif du virement</label>
               <input
                 type="text"
+                placeholder="Ex: Approvisionnement caisse principale..."
                 value={virementForm.motif}
                 onChange={(e) => setVirementForm({ ...virementForm, motif: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                className="form-control-lte text-xs"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setVirementModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
-                type="button"
-                onClick={handleVirement}
+                type="submit"
                 disabled={saving}
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-success disabled:opacity-50"
               >
                 {saving ? 'Exécution...' : 'Confirmer le virement'}
               </button>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
 
@@ -1081,14 +1100,20 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
       {/* ========================================================================= */}
       {newDepenseModal && (
         <Modal open={true} onClose={() => setNewDepenseModal(false)} title="Enregistrer une dépense d'exploitation" size="md">
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveDepense();
+            }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Catégorie budgétaire *</label>
+                <label className="form-label-lte">Catégorie budgétaire <span className="text-red-500">*</span></label>
                 <select
                   value={depenseForm.categorie_id}
                   onChange={(e) => setDepenseForm({ ...depenseForm, categorie_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100"
+                  className="form-select-lte text-xs font-medium"
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{c.nom}</option>
@@ -1097,11 +1122,11 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Compte débité</label>
+                <label className="form-label-lte">Compte débité</label>
                 <select
                   value={depenseForm.compte_tresorerie_id}
                   onChange={(e) => setDepenseForm({ ...depenseForm, compte_tresorerie_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100"
+                  className="form-select-lte text-xs font-medium"
                 >
                   <option value="">Aucun (Déjà réglé en externe)</option>
                   {comptes.map((c) => (
@@ -1113,23 +1138,24 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Montant (FCFA) *</label>
+                <label className="form-label-lte">Montant (FCFA) <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   min="1"
+                  required
                   placeholder="0"
                   value={depenseForm.montant}
                   onChange={(e) => setDepenseForm({ ...depenseForm, montant: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 text-right"
+                  className="form-control-lte text-xs font-mono font-bold text-right"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Mode de règlement *</label>
+                <label className="form-label-lte">Mode de règlement <span className="text-red-500">*</span></label>
                 <select
                   value={depenseForm.mode_reglement}
                   onChange={(e) => setDepenseForm({ ...depenseForm, mode_reglement: e.target.value as any })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100"
+                  className="form-select-lte text-xs font-medium"
                 >
                   <option value="especes">Espèces (Caisse)</option>
                   <option value="orange_money">Orange Money</option>
@@ -1143,56 +1169,58 @@ export function Tresorerie({ role, entrepots, loading: parentLoading }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bénéficiaire *</label>
+                <label className="form-label-lte">Bénéficiaire <span className="text-red-500">*</span></label>
                 <input
                   type="text"
+                  required
                   placeholder="ex: Propriétaire immeuble, SONABEL, TOTAL..."
                   value={depenseForm.beneficiaire}
                   onChange={(e) => setDepenseForm({ ...depenseForm, beneficiaire: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date de la dépense *</label>
+                <label className="form-label-lte">Date de la dépense <span className="text-red-500">*</span></label>
                 <input
                   type="date"
+                  required
                   value={depenseForm.date_depense}
                   onChange={(e) => setDepenseForm({ ...depenseForm, date_depense: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                  className="form-control-lte text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Motif détaillé *</label>
+              <label className="form-label-lte">Motif détaillé <span className="text-red-500">*</span></label>
               <input
                 type="text"
+                required
                 placeholder="ex: Loyer du magasin principal pour le mois en cours"
                 value={depenseForm.motif}
                 onChange={(e) => setDepenseForm({ ...depenseForm, motif: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                className="form-control-lte text-xs"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setNewDepenseModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
-                type="button"
-                onClick={handleSaveDepense}
+                type="submit"
                 disabled={saving}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                className="btn-lte btn-lte-sm btn-lte-danger disabled:opacity-50"
               >
                 {saving ? 'Enregistrement...' : 'Valider la dépense'}
               </button>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
     </div>

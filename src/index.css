@@ -185,7 +185,8 @@ body {
 }
 
 /* AdminLTE Form Inputs with Brand Focus Rings */
-.form-control-lte {
+.form-control-lte,
+.form-select-lte {
   width: 100%;
   padding: 0.425rem 0.75rem;
   font-size: 0.875rem;
@@ -197,20 +198,48 @@ body {
   border-radius: 0.375rem;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
-.form-control-lte:focus {
+.form-control-lte:focus,
+.form-select-lte:focus {
   border-color: #0270B8;
   outline: 0;
-  box-shadow: 0 0 0 0.25rem rgba(2, 112, 184, 0.2);
+  box-shadow: 0 0 0 0.2rem rgba(2, 112, 184, 0.2);
 }
-.dark .form-control-lte {
+.dark .form-control-lte,
+.dark .form-select-lte {
   color: #f8fafc;
   background-color: #0f1c16;
   border-color: #24382e;
 }
-.dark .form-control-lte:focus {
+.dark .form-control-lte:focus,
+.dark .form-select-lte:focus {
   border-color: #48B068;
-  box-shadow: 0 0 0 0.25rem rgba(72, 176, 104, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(72, 176, 104, 0.25);
 }
+
+.form-label-lte {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.375rem;
+}
+.dark .form-label-lte {
+  color: #cbd5e1;
+}
+
+.modal-footer-lte {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+.dark .modal-footer-lte {
+  border-top-color: #192b22;
+}
+
 
 .dark ::-webkit-scrollbar-thumb {
   background: #475569;

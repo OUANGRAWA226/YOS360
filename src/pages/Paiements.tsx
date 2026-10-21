@@ -656,15 +656,22 @@ export function Paiements({
       )}
 
       {/* Modal Nouvel Enregistrement Paiement */}
+      {/* Modal Nouvel Enregistrement Paiement */}
       {modalOpen && (
         <Modal
           title={sens === 'encaissement' ? 'Enregistrer un Encaissement Client' : 'Enregistrer un Décaissement Fournisseur'}
           open={modalOpen}
           onClose={() => setModalOpen(false)}
         >
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              save();
+            }}
+            className="space-y-4"
+          >
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Facture / Commande rattachée
               </label>
               <select
@@ -681,7 +688,7 @@ export function Paiements({
                     setMontant(String(reste));
                   }
                 }}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
+                className="form-select-lte text-xs"
               >
                 <option value="">Sélectionner une facture (optionnel)...</option>
                 {commandes
@@ -697,26 +704,27 @@ export function Paiements({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Montant à régler * ({devise})
+                <label className="form-label-lte">
+                  Montant à régler ({devise}) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
+                  required
                   value={montant}
                   onChange={(e) => setMontant(e.target.value)}
                   placeholder="ex. 50000"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold"
+                  className="form-control-lte text-xs font-bold font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Moyen de paiement *
+                <label className="form-label-lte">
+                  Moyen de paiement <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={mode}
                   onChange={(e) => setMode(e.target.value as ModePaiement)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
+                  className="form-select-lte text-xs font-semibold"
                 >
                   {MODES_PAIEMENT.map((m) => (
                     <option key={m.value} value={m.value}>
@@ -728,7 +736,7 @@ export function Paiements({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Référence Transaction Télécom / Chèque / Virement
               </label>
               <input
@@ -744,12 +752,12 @@ export function Paiements({
                 }
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono"
+                className="form-control-lte text-xs font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Notes / Motif
               </label>
               <input
@@ -757,28 +765,27 @@ export function Paiements({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="ex. Acompte 50%, solde facture..."
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
+                className="form-control-lte text-xs"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="modal-footer-lte">
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
-                type="button"
+                type="submit"
                 disabled={saving}
-                onClick={save}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md inline-flex items-center gap-1.5"
+                className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
               >
                 {saving ? 'Enregistrement...' : 'Valider le paiement'}
               </button>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
 

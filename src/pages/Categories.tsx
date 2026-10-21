@@ -205,37 +205,46 @@ export function Categories({ categories, produits, loading, onRefresh, role }: P
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editing ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+        size="md"
       >
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+          className="space-y-4"
+        >
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
+            <label className="form-label-lte">Nom de la catégorie <span className="text-red-500">*</span></label>
             <input
               type="text"
+              required
               value={nom}
               onChange={(e) => setNom(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-              placeholder="Nom de la catégorie"
+              className="form-control-lte text-sm"
+              placeholder="Ex: Électronique, Alimentation, etc."
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <label className="form-label-lte">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-              placeholder="Description optionnelle"
+              className="form-control-lte text-sm resize-none"
+              placeholder="Description optionnelle de la catégorie"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Couleur</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="form-label-lte">Couleur d'identification</label>
+            <div className="flex flex-wrap gap-2 pt-1">
               {colorOptions.map((c) => (
                 <button
+                  type="button"
                   key={c.value}
                   onClick={() => setCouleur(c.value)}
-                  className={`w-8 h-8 rounded-lg transition-all ${
-                    couleur === c.value ? 'ring-2 ring-offset-2 ring-slate-400 scale-110' : 'hover:scale-105'
+                  className={`w-7 h-7 rounded-md transition-all ${
+                    couleur === c.value ? 'ring-2 ring-offset-2 ring-brand-blue scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'
                   }`}
                   style={{ backgroundColor: c.value }}
                   title={c.name}
@@ -243,22 +252,23 @@ export function Categories({ categories, produits, loading, onRefresh, role }: P
               ))}
             </div>
           </div>
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="modal-footer-lte">
             <button
+              type="button"
               onClick={() => setModalOpen(false)}
-              className="px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
             >
               Annuler
             </button>
             <button
-              onClick={save}
+              type="submit"
               disabled={saving}
-              className="px-4 py-2.5 text-sm font-medium text-white bg-violet-600 rounded-xl hover:bg-violet-700 transition-colors shadow-sm disabled:opacity-50"
+              className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
             >
               {saving ? 'Enregistrement...' : editing ? 'Modifier' : 'Ajouter'}
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <ConfirmDialog

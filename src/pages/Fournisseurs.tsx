@@ -225,23 +225,123 @@ export function Fournisseurs({ fournisseurs, loading, onRefresh, role }: Props) 
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Modifier le fournisseur' : 'Nouveau fournisseur'} size="lg">
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Nom *</label><input type="text" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Personne de contact</label><input type="text" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Email</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Téléphone</label><input type="tel" value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div className="sm:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Adresse</label><input type="text" value={form.adresse} onChange={(e) => setForm({ ...form, adresse: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Ville</label><input type="text" value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Code postal</label><input type="text" value={form.code_postal} onChange={(e) => setForm({ ...form, code_postal: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 mb-1">Pays</label><input type="text" value={form.pays} onChange={(e) => setForm({ ...form, pays: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" /></div>
-            <div className="sm:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Note</label><textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" /></div>
+            <div>
+              <label className="form-label-lte">Raison sociale / Nom <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                required
+                value={form.nom}
+                onChange={(e) => setForm({ ...form, nom: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="Ex: Fournisseur SARL"
+              />
+            </div>
+            <div>
+              <label className="form-label-lte">Interlocuteur / Contact principal</label>
+              <input
+                type="text"
+                value={form.contact}
+                onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="Ex: M. Ouédraogo"
+              />
+            </div>
+            <div>
+              <label className="form-label-lte">Adresse Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="contact@fournisseur.com"
+              />
+            </div>
+            <div>
+              <label className="form-label-lte">Téléphone</label>
+              <input
+                type="tel"
+                value={form.telephone}
+                onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="+226 25 00 00 00"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="form-label-lte">Adresse géographique</label>
+              <input
+                type="text"
+                value={form.adresse}
+                onChange={(e) => setForm({ ...form, adresse: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="Zone industrielle, Rue..."
+              />
+            </div>
+            <div>
+              <label className="form-label-lte">Ville</label>
+              <input
+                type="text"
+                value={form.ville}
+                onChange={(e) => setForm({ ...form, ville: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="Ouagadougou"
+              />
+            </div>
+            <div>
+              <label className="form-label-lte">Code postal / Boîte Postale</label>
+              <input
+                type="text"
+                value={form.code_postal}
+                onChange={(e) => setForm({ ...form, code_postal: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="01 BP ..."
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="form-label-lte">Pays</label>
+              <input
+                type="text"
+                value={form.pays}
+                onChange={(e) => setForm({ ...form, pays: e.target.value })}
+                className="form-control-lte text-sm"
+                placeholder="Burkina Faso"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="form-label-lte">Note interne</label>
+              <textarea
+                value={form.note}
+                onChange={(e) => setForm({ ...form, note: e.target.value })}
+                rows={2}
+                className="form-control-lte text-sm resize-none"
+                placeholder="Conditions de paiement, délais de livraison habituels..."
+              />
+            </div>
           </div>
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button onClick={() => setModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors">Annuler</button>
-            <button onClick={save} disabled={saving} className="px-4 py-2.5 text-sm font-medium text-white bg-sky-600 rounded-xl hover:bg-sky-700 transition-colors shadow-sm disabled:opacity-50">{saving ? 'Enregistrement...' : editing ? 'Modifier' : 'Ajouter'}</button>
+          <div className="modal-footer-lte">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-lte btn-lte-sm btn-lte-primary disabled:opacity-50"
+            >
+              {saving ? 'Enregistrement...' : editing ? 'Modifier le fournisseur' : 'Créer le fournisseur'}
+            </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} title="Supprimer le fournisseur" message={`Voulez-vous vraiment supprimer « ${deleteTarget?.nom} » ?`} confirmLabel="Supprimer" />

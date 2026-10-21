@@ -612,15 +612,21 @@ export function Mouvements({
         onClose={() => setModalOpen(false)}
         title="Enregistrer un mouvement de stock"
       >
-        <div className="space-y-4 text-xs">
-          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveMouvement();
+          }}
+          className="space-y-4 text-xs"
+        >
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setType('entree')}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
+              className={`btn-lte ${
                 type === 'entree'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'btn-lte-success shadow-sm'
+                  : 'btn-lte-outline-secondary'
               }`}
             >
               Entrée (+)
@@ -628,10 +634,10 @@ export function Mouvements({
             <button
               type="button"
               onClick={() => setType('sortie')}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
+              className={`btn-lte ${
                 type === 'sortie'
-                  ? 'bg-red-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'btn-lte-danger shadow-sm'
+                  : 'btn-lte-outline-secondary'
               }`}
             >
               Sortie (−)
@@ -639,11 +645,12 @@ export function Mouvements({
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Article *</label>
+            <label className="form-label-lte">Article <span className="text-red-500">*</span></label>
             <select
               value={produitId}
               onChange={(e) => setProduitId(e.target.value)}
-              className="form-control-lte text-xs"
+              className="form-select-lte text-xs"
+              required
             >
               {produits.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -655,21 +662,22 @@ export function Mouvements({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">Quantité *</label>
+              <label className="form-label-lte">Quantité <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 min="1"
+                required
                 value={quantite}
                 onChange={(e) => setQuantite(e.target.value)}
                 className="form-control-lte text-xs font-mono font-bold"
               />
             </div>
             <div>
-              <label className="block font-semibold mb-1">Site / Dépôt</label>
+              <label className="form-label-lte">Site / Dépôt</label>
               <select
                 value={entrepotId}
                 onChange={(e) => setEntrepotId(e.target.value)}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
               >
                 <option value="">Stock central</option>
                 {entrepots.map((e) => (
@@ -682,7 +690,7 @@ export function Mouvements({
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Motif du mouvement</label>
+            <label className="form-label-lte">Motif du mouvement</label>
             <input
               type="text"
               value={motif}
@@ -694,14 +702,14 @@ export function Mouvements({
 
           {produitLots.length > 0 && (
             <div>
-              <label className="block font-semibold mb-1 flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-sky-500" />
+              <label className="form-label-lte flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-brand-blue" />
                 Lot concerné (Tri FEFO recommandé)
               </label>
               <select
                 value={lotId}
                 onChange={(e) => setLotId(e.target.value)}
-                className="form-control-lte text-xs font-mono"
+                className="form-select-lte text-xs font-mono"
               >
                 <option value="">Sélection automatique ou aucun</option>
                 {produitLots.map((l, idx) => (
@@ -713,19 +721,23 @@ export function Mouvements({
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button onClick={() => setModalOpen(false)} className="btn-lte btn-lte-outline">
+          <div className="modal-footer-lte">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+            >
               Annuler
             </button>
             <button
-              onClick={saveMouvement}
+              type="submit"
               disabled={saving}
-              className={`btn-lte ${type === 'entree' ? 'btn-lte-success' : 'btn-lte-danger'}`}
+              className={`btn-lte btn-lte-sm ${type === 'entree' ? 'btn-lte-success' : 'btn-lte-danger'} disabled:opacity-50`}
             >
               Valider le mouvement
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* 7. Modal Ajustement Réglementé */}
@@ -735,8 +747,14 @@ export function Mouvements({
         title="Déclarer un Ajustement de Stock Réglementé"
         size="lg"
       >
-        <div className="space-y-4 text-xs">
-          <Callout type="warning" title="Procédure de Contrôle des Pertes & Régularisations">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveAjustement();
+          }}
+          className="space-y-4 text-xs"
+        >
+          <Callout variant="warning" title="Procédure de Contrôle des Pertes & Régularisations">
             Les ajustements de stock modifient l'inventaire comptable. Choisissez obligatoirement un motif
             réglementaire et justifiez l'opération. Si le montant excède {formatCurrency(SEUIL_VALIDATION_DEFAUT)},
             la demande sera soumise à l'approbation du gérant.
@@ -744,11 +762,12 @@ export function Mouvements({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">Article à ajuster *</label>
+              <label className="form-label-lte">Article à ajuster <span className="text-red-500">*</span></label>
               <select
                 value={ajustProduitId}
                 onChange={(e) => setAjustProduitId(e.target.value)}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
+                required
               >
                 {produits.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -759,11 +778,11 @@ export function Mouvements({
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Dépôt concerné</label>
+              <label className="form-label-lte">Dépôt concerné</label>
               <select
                 value={ajustSiteId}
                 onChange={(e) => setAjustSiteId(e.target.value)}
-                className="form-control-lte text-xs"
+                className="form-select-lte text-xs"
               >
                 <option value="">Dépôt Central</option>
                 {entrepots.map((e) => (
@@ -777,11 +796,11 @@ export function Mouvements({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-1">Sens de l'ajustement</label>
+              <label className="form-label-lte">Sens de l'ajustement</label>
               <select
                 value={ajustType}
                 onChange={(e) => setAjustType(e.target.value as any)}
-                className="form-control-lte text-xs font-semibold"
+                className="form-select-lte text-xs font-semibold"
               >
                 <option value="negatif">Diminution / Perte (−)</option>
                 <option value="positif">Augmentation / Surplus (+)</option>
@@ -789,10 +808,11 @@ export function Mouvements({
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Quantité à ajuster *</label>
+              <label className="form-label-lte">Quantité à ajuster <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 min="1"
+                required
                 value={ajustQuantite}
                 onChange={(e) => setAjustQuantite(e.target.value)}
                 className="form-control-lte text-xs font-mono font-bold"
@@ -801,11 +821,11 @@ export function Mouvements({
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Motif Réglementaire Obligatoire *</label>
+            <label className="form-label-lte">Motif Réglementaire Obligatoire <span className="text-red-500">*</span></label>
             <select
               value={ajustMotif}
               onChange={(e) => setAjustMotif(e.target.value as MotifAjustement)}
-              className="form-control-lte text-xs font-bold"
+              className="form-select-lte text-xs font-bold"
             >
               {MOTIFS_REGLEMENTAIRES.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -816,30 +836,35 @@ export function Mouvements({
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Description & Justification Détaillée *</label>
+            <label className="form-label-lte">Description & Justification Détaillée <span className="text-red-500">*</span></label>
             <textarea
               rows={2}
+              required
               value={ajustDescription}
               onChange={(e) => setAjustDescription(e.target.value)}
               placeholder="Circonstances constatées, n° de procès-verbal ou rapport de casse..."
-              className="form-control-lte text-xs"
+              className="form-control-lte text-xs resize-none"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button onClick={() => setAjustementModalOpen(false)} className="btn-lte btn-lte-outline">
+          <div className="modal-footer-lte">
+            <button
+              type="button"
+              onClick={() => setAjustementModalOpen(false)}
+              className="btn-lte btn-lte-sm btn-lte-outline-secondary"
+            >
               Annuler
             </button>
             <button
-              onClick={saveAjustement}
+              type="submit"
               disabled={saving}
-              className="btn-lte btn-lte-primary flex items-center gap-1.5"
+              className="btn-lte btn-lte-sm btn-lte-primary flex items-center gap-1.5 disabled:opacity-50"
             >
               <FileCheck2 className="w-4 h-4" />
               Soumettre l'ajustement
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* 8. Dialog de suppression */}

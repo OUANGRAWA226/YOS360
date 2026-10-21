@@ -905,6 +905,7 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
       </div>
 
       {/* Modal Ouverture de session */}
+      {/* Modal Ouverture de session */}
       {openSessionModal && (
         <Modal
           title="Ouverture de la Session de Caisse"
@@ -917,28 +918,30 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
             </Callout>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Fond de caisse initial (Espèces physiques) *
+              <label className="form-label-lte">
+                Fond de caisse initial (Espèces physiques) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 value={fondOuvertureInput}
                 onChange={(e) => setFondOuvertureInput(e.target.value)}
                 placeholder="ex. 25000"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="form-control-lte text-sm font-bold font-mono"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="modal-footer-lte">
               <button
+                type="button"
                 onClick={() => setOpenSessionModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
+                type="button"
                 onClick={handleOuvrirSession}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow-md inline-flex items-center gap-1.5"
+                className="btn-lte btn-lte-sm btn-lte-primary flex items-center gap-1.5"
               >
                 <Unlock className="w-4 h-4" />
                 <span>Confirmer l'ouverture de caisse</span>
@@ -960,15 +963,15 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
               Veuillez compter physiquement les espèces dans le tiroir ainsi que les soldes des téléphones Mobile Money. Tout écart avec le total théorique sera consigné dans le Ticket Z.
             </Callout>
 
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl text-xs">
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-[#101e17] border border-slate-200 dark:border-[#1c3328] p-3 rounded-md text-xs">
               <div>
-                <p className="text-slate-400">Total Ventes</p>
+                <p className="text-slate-500 dark:text-slate-400">Total Ventes</p>
                 <p className="font-extrabold text-sm text-slate-800 dark:text-slate-100">
                   {formatCurrency(session.total_ventes, devise)} ({session.nb_ventes} ventes)
                 </p>
               </div>
               <div>
-                <p className="text-slate-400">Espèces Théoriques Attendues</p>
+                <p className="text-slate-500 dark:text-slate-400">Espèces Théoriques Attendues</p>
                 <p className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(session.total_especes_theorique, devise)}
                 </p>
@@ -977,14 +980,14 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Espèces réelles comptées *
+                <label className="form-label-lte">
+                  Espèces réelles comptées <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   value={comptageEspeces}
                   onChange={(e) => setComptageEspeces(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold"
+                  className="form-control-lte text-xs font-bold font-mono"
                 />
                 {comptageEspeces && (
                   <p
@@ -1001,20 +1004,20 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Mobile Money total compté *
+                <label className="form-label-lte">
+                  Mobile Money total compté <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   value={comptageMobileMoney}
                   onChange={(e) => setComptageMobileMoney(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold"
+                  className="form-control-lte text-xs font-bold font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="form-label-lte">
                 Remarques / Justification d'écart éventuel
               </label>
               <textarea
@@ -1022,20 +1025,22 @@ export function Caisse({ produits, clients, entreprise, numerosFactures, role, o
                 value={notesCloture}
                 onChange={(e) => setNotesCloture(e.target.value)}
                 placeholder="Ex. Erreur rendu monnaie, billet endommagé..."
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
+                className="form-control-lte text-xs resize-none"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="modal-footer-lte">
               <button
+                type="button"
                 onClick={() => setCloseSessionModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                className="btn-lte btn-lte-sm btn-lte-outline-secondary"
               >
                 Annuler
               </button>
               <button
+                type="button"
                 onClick={handleCloturerSession}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md inline-flex items-center gap-1.5"
+                className="btn-lte btn-lte-sm btn-lte-danger flex items-center gap-1.5"
               >
                 <Printer className="w-4 h-4" />
                 <span>Valider Clôture & Imprimer Ticket Z</span>
